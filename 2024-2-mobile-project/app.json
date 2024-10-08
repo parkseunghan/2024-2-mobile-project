@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "scheme": "acme",
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      
+    ],
+    "name": "2024-2-mobile-project",
+    "slug": "2024-2-mobile-project"
+  }
+}
