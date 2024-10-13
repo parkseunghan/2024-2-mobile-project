@@ -1,0 +1,24 @@
+# 패키지 목록
+
+# backend
+Flask
+Flask-Cors
+PyMySQL
+python-dotenv
+
+# frontend
+npm install
+@react-navigation/stack
+# @react-navigation/native
+# react-native-gesture-handler
+# react-native-reanimated
+# react-native-screens
+# react-native-safe-area-context
+# @react-native-community/masked-view
+npx expo install 
+react-native-web
+react-dom
+@expo/metro-runtime
+
+
+
