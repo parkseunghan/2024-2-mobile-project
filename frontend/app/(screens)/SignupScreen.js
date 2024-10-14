@@ -1,31 +1,31 @@
+import axios from 'axios';
 import React, { useState } from 'react';
-import { View, Text, TextInput, Alert, Pressable, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet } from 'react-native';
+import { useNavigation, useRouter } from 'expo-router'; // useRouter 사용
 
-const SignupScreen = ({ navigation }) => {
+
+const SignupScreen = () => {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState('');
+    const navigation = useNavigation();
 
     const handleSignup = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/auth/signup', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, email, password, confirmPassword }),
+            const response = await axios.post('http://localhost:5000/api/auth/signup', {
+                username,
+                email,
+                password,
+                confirmPassword,
             });
-            const data = await response.json();
-
-            if (response.ok) {
-                Alert.alert('성공', '회원가입이 완료되었습니다!');
-                navigation.navigate('Login');
-            } else {
-                Alert.alert('오류', data.message);
-            }
-        } catch (error) {
-            Alert.alert('오류', '회원가입 중 문제가 발생했습니다.');
+            console.log('Signup Success:', response.data);
+            alert("회원가입 성공!");
+            navigation.navigate('Login');
+        } catch (err) {
+            // 백엔드에서 받은 에러 메시지를 설정
+            setError(err.response?.data?.message || '회원');
         }
     };
 
@@ -42,7 +42,7 @@ const SignupScreen = ({ navigation }) => {
                 placeholder="이메일"
                 value={email}
                 onChangeText={setEmail}
-                keyboardType="email-address" // 이메일 전용 키보드
+                inputMode="email-address" // 이메일 전용 키보드
             />
             <TextInput
                 style={styles.input}
@@ -58,6 +58,7 @@ const SignupScreen = ({ navigation }) => {
                 onChangeText={setConfirmPassword}
                 secureTextEntry
             />
+            {error ? <Text style={{ color: 'red' }}>{error}</Text> : null}
             <Pressable style={styles.button} onPress={handleSignup}>
                 <Text style={styles.buttonText}>회원가입</Text>
             </Pressable>
@@ -107,7 +108,7 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         color: 'white', // 버튼 텍스트 색상
-      
+
         fontSize: 16,
         fontWeight: 'bold',
         textAlign: 'center',

@@ -1,31 +1,30 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, Alert, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { StyleSheet, View, Text, TextInput, Pressable } from 'react-native';
+import axios from 'axios';  // axios import 추가
+import { useRouter } from 'expo-router'; // useRouter 사용
 
-const LoginScreen = ({ navigation }) => {
+const LoginScreen = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const router = useRouter();
+    const [error, setError] = useState('');
+
+    const router = useRouter(); // 라우터 사용 준비
 
     const handleLogin = async () => {
         try {
-            const response = await fetch('http://localhost:5000/api/auth/login', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password }),
+            const response = await axios.post('http://localhost:5000/api/auth/login', {
+                email,
+                password,
             });
-            const data = await response.json();
 
-            if (response.ok) {
-                // 로그인 성공 후 /app/(tabs)/home.js로 이동
-                router.push('(tabs)/home'); // 'HomeTab' 스크린으로 이동
-            } else {
-                Alert.alert('오류', data.message);
-            }
-        } catch (error) {
-            Alert.alert('오류', '로그인 중 문제가 발생했습니다.');
+            console.log('Login Success:', response.data);
+            alert("로그인 성공!");
+            // 로그인 성공 시, 다음 화면으로 이동
+            router.push('/home'); // 성공 후 home 페이지로 이동 (home은 이동할 경로)
+
+        } catch (err) {
+            // 백엔드에서 받은 에러 메시지를 설정
+            setError(err.response?.data?.message || '로그인 실패');
         }
     };
 
@@ -36,6 +35,7 @@ const LoginScreen = ({ navigation }) => {
                 placeholder="이메일"
                 value={email}
                 onChangeText={setEmail}
+                inputMode="email-address"
             />
             <TextInput
                 style={styles.input}
@@ -44,6 +44,7 @@ const LoginScreen = ({ navigation }) => {
                 onChangeText={setPassword}
                 secureTextEntry
             />
+            {error ? <Text style={{ color: 'red' }}>{error}</Text> : null}
             <Pressable style={styles.button} onPress={handleLogin}>
                 <Text style={styles.buttonText}>로그인</Text>
             </Pressable>
@@ -52,21 +53,12 @@ const LoginScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-    pink: {
-        color: 'black',
-    },
     container: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 16,
         backgroundColor: '#f5f5f5',
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-        color: '#333',
     },
     input: {
         width: '80%',
@@ -93,7 +85,6 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         color: 'white', // 버튼 텍스트 색상
-      
         fontSize: 16,
         fontWeight: 'bold',
         textAlign: 'center',
