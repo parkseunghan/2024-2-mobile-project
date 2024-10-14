@@ -6,6 +6,18 @@ Flask-Cors
 PyMySQL
 python-dotenv
 
+# nodejs
+npm init -y
+npm install <명령어>
+express
+mysql2
+dotenv
+bcryptjs
+jsonwebtoken
+cors
+axios
+
+
 # frontend
 npm install
 @react-navigation/stack
