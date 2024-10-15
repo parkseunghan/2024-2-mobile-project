@@ -1,10 +1,12 @@
 import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Animated } from 'react-native';
+import LogoutButton from './LogoutButton';
 
 const LogoutModal = ({ slideAnim, onClose }) => {
     return (
         <Animated.View style={[styles.modal, { transform: [{ translateX: slideAnim }] }]}>
             <Text style={styles.text}>로그아웃 하시겠습니까?</Text>
+            <LogoutButton/>
             <TouchableOpacity style={styles.logoutButton} onPress={() => alert('로그아웃')}>
                 <Text style={styles.buttonText}>로그아웃</Text>
             </TouchableOpacity>

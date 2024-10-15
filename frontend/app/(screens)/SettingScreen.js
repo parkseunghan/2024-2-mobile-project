@@ -11,10 +11,8 @@ const SettingScreen = ({ navigation }) => {
             <Text >설정 1</Text>
             <Text >설정 2</Text>
 
-            <Button title="저장" onPress={() => {
-                // 로그아웃 처리 로직 추가
-                // 예: 사용자 세션 삭제 후 로그인 화면으로 이동
-                navigation.navigate('Login'); // 로그인 화면으로 이동
+            <Button title="관리" onPress={() => {
+                navigation.navigate('Admin');
             }} />
         </View>
     );

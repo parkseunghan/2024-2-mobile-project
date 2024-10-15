@@ -6,6 +6,7 @@ Flask-Cors
 PyMySQL
 python-dotenv
 
+
 # nodejs
 npm init -y
 npm install <명령어>
@@ -16,7 +17,8 @@ bcryptjs
 jsonwebtoken
 cors
 axios
-
+cookie-parser
+express-session
 
 # frontend
 npm install

@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text, TextInput, Pressable } from 'react-native';
-import axios from 'axios';  // axios import 추가
-import { useRouter } from 'expo-router'; // useRouter 사용
+import axios from 'axios';
+import { useRouter } from 'expo-router';
 
 const LoginScreen = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     const router = useRouter(); // 라우터 사용 준비
 
@@ -15,40 +16,65 @@ const LoginScreen = () => {
             const response = await axios.post('http://localhost:5000/api/auth/login', {
                 email,
                 password,
-            });
+            }, { withCredentials: true });
 
             console.log('Login Success:', response.data);
             alert("로그인 성공!");
             // 로그인 성공 시, 다음 화면으로 이동
             router.push('/home'); // 성공 후 home 페이지로 이동 (home은 이동할 경로)
-
         } catch (err) {
             // 백엔드에서 받은 에러 메시지를 설정
             setError(err.response?.data?.message || '로그인 실패');
         }
     };
 
+    useEffect(() => {
+        const checkAuth = async () => {
+            try {
+                const response = await axios.get('http://localhost:5000/api/auth/check', {
+                    withCredentials: true,
+                });
+                if (response.status === 200) {
+                    setIsLoggedIn(true);
+                }
+            } catch (error) {
+                console.error('인증 상태 확인 실패:', error);
+                setIsLoggedIn(false);
+            }
+        };
+
+        checkAuth();
+    }, []);
+
     return (
-        <View style={styles.container}>
-            <TextInput
-                style={styles.input}
-                placeholder="이메일"
-                value={email}
-                onChangeText={setEmail}
-                inputMode="email-address"
-            />
-            <TextInput
-                style={styles.input}
-                placeholder="비밀번호"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-            />
-            {error ? <Text style={{ color: 'red' }}>{error}</Text> : null}
-            <Pressable style={styles.button} onPress={handleLogin}>
-                <Text style={styles.buttonText}>로그인</Text>
-            </Pressable>
-        </View>
+        <div>
+            {isLoggedIn ? (
+
+                router.push('/home')
+
+            ) : (
+                <View style={styles.container}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="이메일"
+                        value={email}
+                        onChangeText={setEmail}
+                        inputMode="email-address"
+                    />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="비밀번호"
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry
+                    />
+                    {error ? <Text style={{ color: 'red' }}>{error}</Text> : null}
+                    <Pressable style={styles.button} onPress={handleLogin}>
+                        <Text style={styles.buttonText}>로그인</Text>
+                    </Pressable>
+                </View>
+            )}
+        </div>
     );
 };
 
