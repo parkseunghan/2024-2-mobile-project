@@ -47,7 +47,7 @@ const LoginScreen = () => {
     }, []);
 
     return (
-        <div>
+        <View>
             {isLoggedIn ? (
 
                 router.push('/home')
@@ -74,7 +74,7 @@ const LoginScreen = () => {
                     </Pressable>
                 </View>
             )}
-        </div>
+        </View>
     );
 };
 
