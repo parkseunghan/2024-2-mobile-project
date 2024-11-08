@@ -1,12 +1,12 @@
 import { View, Text } from 'react-native';
 import { Stack } from 'expo-router';
 
-export default function Community() {
+export default function Profile() {
   return (
     <>
-      <Stack.Screen options={{ title: '커뮤니티' }} />
+      <Stack.Screen options={{ title: '프로필' }} />
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>커뮤니티 화면</Text>
+        <Text>프로필 화면</Text>
       </View>
     </>
   );

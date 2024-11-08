@@ -1,38 +1,98 @@
-// (tabs)/HomeTab.js
-import React from 'react';
-import { createStackNavigator } from '@react-navigation/stack';
-import LoginScreen from '../(screens)/LoginScreen'; // 추가할 스크린 임포트
-import HomeScreen from '../(screens)/HomeScreen'; // 홈 화면 컴포넌트 분리
-import SignupScreen from '../(screens)/SignupScreen';
-import ProfileScreen from '../(screens)/ProfileScreen';
+import { View, Text, StyleSheet } from 'react-native';
+import { Stack } from 'expo-router';
+import { Button } from '@app/_components/common/Button';
+import { useAuth } from '@app/_context/AuthContext';
+import { colors } from '@app/_styles/colors';
+import { spacing } from '@app/_styles/spacing';
+import { typography } from '@app/_styles/typography';
+import { useRouter } from 'expo-router';
 
-const Stack = createStackNavigator(); // 스택 내비게이터 생성
+export default function Home() {
+  const { user, logout } = useAuth();
+  const router = useRouter();
 
-const HomeTab = () => {
-    return (
-        <Stack.Navigator >
-            <Stack.Screen
-                name="Home"
-                component={HomeScreen}
-                options={{ title: '홈' }} // 홈 스크린 옵션
-            />
-            <Stack.Screen
-                name="Login"
-                component={LoginScreen}
-                options={{ title: '로그인' }} // 로그인 스크린 옵션
-            />
-            <Stack.Screen
-                name="Signup"
-                component={SignupScreen}
-                options={{ title: '회원가입' }} // 로그인 스크린 옵션
-            />
-            <Stack.Screen
-                name="Profile"
-                component={ProfileScreen}
-                options={{ title: '프로필' }} // 로그인 스크린 옵션
-            />
-        </Stack.Navigator>
-    );
-};
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
-export default HomeTab;
+  const handleLogin = () => {
+    router.push('/login');
+  };
+
+  return (
+    <>
+      <Stack.Screen 
+        options={{
+          title: '홈',
+          headerRight: () => (
+            user ? (
+              <Button
+                title="로그아웃"
+                onPress={handleLogout}
+                variant="secondary"
+                style={styles.headerButton}
+              />
+            ) : (
+              <Button
+                title="로그인"
+                onPress={handleLogin}
+                variant="primary"
+                style={styles.headerButton}
+              />
+            )
+          ),
+          headerStyle: {
+            backgroundColor: colors.background,
+          },
+          headerTintColor: colors.text.primary,
+          headerTitleStyle: {
+            ...typography.h2,
+          },
+        }} 
+      />
+      <View style={styles.container}>
+        <Text style={styles.welcomeText}>
+          {user ? `환영합니다, ${user.username}님!` : '환영합니다!'}
+        </Text>
+        {!user && (
+          <Text style={styles.guestText}>
+            현재 비회원으로 이용 중입니다
+          </Text>
+        )}
+        <Text style={styles.text}>홈 화면</Text>
+      </View>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    padding: spacing.xl,
+  },
+  welcomeText: {
+    ...typography.h2,
+    marginBottom: spacing.sm,
+  },
+  guestText: {
+    ...typography.body,
+    color: colors.text.secondary,
+    marginBottom: spacing.md,
+  },
+  text: {
+    ...typography.body,
+    color: colors.text.secondary,
+  },
+  headerButton: {
+    marginRight: spacing.md,
+    paddingHorizontal: spacing.md,
+    height: 36,
+  },
+}); 

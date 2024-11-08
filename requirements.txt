@@ -1,38 +1,35 @@
 # 패키지 목록
 
-# backend
-Flask
-Flask-Cors
-PyMySQL
-python-dotenv
+Models: 데이터베이스 조작
+Controllers: 비즈니스 로직
+Routes: URL 라우팅
+Middleware: 인증/권한 체크
+Config: 환경 설정
+
+
+
 
 
 # nodejs
 npm init -y
 npm install <명령어>
-express
-mysql2
-dotenv
-bcryptjs
-jsonwebtoken
-cors
-axios
-cookie-parser
-express-session
+npm install express mysql2 bcrypt jsonwebtoken cookie-parser cors dotenv
+
+
+
 
 # frontend
-npm install
-@react-navigation/stack
-# @react-navigation/native
-# react-native-gesture-handler
-# react-native-reanimated
-# react-native-screens
-# react-native-safe-area-context
-# @react-native-community/masked-view
-npx expo install 
-react-native-web
-react-dom
-@expo/metro-runtime
+npm install --save-dev babel-plugin-module-resolver
+# package.json 확인
+npm list expo
 
+# expo 업데이트가 필요한 경우
+npx expo install expo
+npx expo install expo-router
 
+# expo-secure-store 설치 (AuthContext에서 사용)
+npx expo install expo-secure-store
+
+# axios 설치 (api.js에서 사용)
+npm install axios
 

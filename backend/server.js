@@ -1,30 +1,40 @@
-const express = require('express'); // Express 모듈
-const cors = require('./config/cors'); // CORS 설정
-const dotenv = require('dotenv'); // 환경변수 모듈
-const cookieParser = require('cookie-parser'); // 쿠키 파서
-const session = require('express-session'); // 세션 관리 모듈
-const authRouter = require('./routes/auth'); // 인증 라우터
-const sessionConfig = require('./config/session'); // 세션 설정 파일 import
-const usersRouter = require('./routes/users')
+const express = require('express');
+const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
-dotenv.config(); // 환경변수 파일 로드
+const app = express();
 
-const app = express(); // Express 앱 초기화
-const PORT = process.env.PORT || 5000;
+app.use(cors({
+  origin: ['http://localhost:8081', 'http://localhost:19006'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.use(express.json());
+app.use(cookieParser());
 
-// CORS 설정 (옵션으로 설정 가능)
+// 요청 로깅 미들웨어 추가
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
 
-// 미들웨어 설정
-app.use(cors); // CORS 활성화
-app.use(cookieParser()); // 쿠키 파서 사용
-app.use(express.json()); // JSON 요청 처리
-app.use(session(sessionConfig)); // 세션 설정 적용
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', require('./routes/admin'));
 
-// 라우터 등록
-app.use('/api/auth', authRouter); // 인증 관련 API
-app.use('/api/users', usersRouter); // 인증 관련 API
+app.get('/', (req, res) => {
+  res.json({ message: '서버가 정상적으로 실행 중입니다.' });
+});
 
-// 서버 실행
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: '서버 오류가 발생했습니다.' });
+});
+
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`http://localhost:${PORT}/ 에서 서버 실행 중.`);
+  console.log(`서버가 포트 ${PORT}에서 실행 중입니다.`);
+  console.log(`CORS가 활성화된 출처: http://localhost:8081`);
 });

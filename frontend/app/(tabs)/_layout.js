@@ -1,29 +1,53 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { colors } from '@app/_styles/colors';
+import { spacing } from '@app/_styles/spacing';
 
-const TabLayout = () => {
+export default function TabsLayout() {
     return (
-        <Tabs screenOptions={{ headerShown: false }}>
+        <Tabs
+            screenOptions={{
+                headerShown: false,
+                tabBarStyle: {
+                    backgroundColor: colors.background,
+                    height: 60,
+                    paddingBottom: spacing.sm,
+                    paddingTop: spacing.xs,
+                    borderTopColor: colors.border,
+                },
+                tabBarActiveTintColor: colors.primary,
+                tabBarInactiveTintColor: colors.text.secondary,
+            }}
+        >
             <Tabs.Screen
                 name="home"
                 options={{
-                    headerShown: false,
-                    tabBarIcon: ({ color, size }) => <FontAwesome5 name="home" size={size} color={color} />,
-                }} />
+                    title: '홈',
+                    tabBarIcon: ({ color, size }) => (
+                        <FontAwesome5 name="home" size={size} color={color} />
+                    ),
+                }}
+            />
             <Tabs.Screen
                 name="community"
                 options={{
-                    tabBarIcon: ({ color, size }) => <FontAwesome5 name="comments" size={size} color={color} />
-                }} />
+                    title: '커뮤니티',
+                    tabBarIcon: ({ color, size }) => (
+                        <FontAwesome5 name="users" size={size} color={color} />
+                    ),
+                }}
+            />
             <Tabs.Screen
-                name="setting"
+                name="profile"
                 options={{
-                    tabBarIcon: ({ color, size }) => <FontAwesome5 name="cog" size={size} color={color} />
-                }} />
+                    title: '프로필',
+                    tabBarIcon: ({ color, size }) => (
+                        <FontAwesome5 name="user" size={size} color={color} />
+                    ),
+                }}
+            />
         </Tabs>
     );
-};
-
-export default TabLayout;
+}
 

@@ -1,22 +1,20 @@
-import React from 'react';
+import { Redirect } from 'expo-router';
+import { useAuth } from '@app/_context/AuthContext';
 
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import LoginScreen from './(screens)/LoginScreen';
-import SignupScreen from './(screens)/SignupScreen';
-import WelcomeScreen from './(screens)/WelcomeScreen';
+export default function Index() {
+  const { user, isLoading } = useAuth();
 
-const Stack = createNativeStackNavigator();
+  if (isLoading) {
+    return null; // 또는 로딩 스피너
+  }
 
-const App = () => {
-    return (
+  if (!user) {
+    return <Redirect href="/(auth)/welcome" />;
+  }
 
-        <Stack.Navigator initialRouteName="Welcome">
-            <Stack.Screen name="Welcome" component={WelcomeScreen} />
-            <Stack.Screen name="Login" component={LoginScreen} />
-            <Stack.Screen name="Signup" component={SignupScreen} />
-        </Stack.Navigator>
+  if (user.role === 'admin') {
+    return <Redirect href="/(admin)/dashboard" />;
+  }
 
-    );
-};
-
-export default App;
+  return <Redirect href="/(tabs)/home" />;
+}
