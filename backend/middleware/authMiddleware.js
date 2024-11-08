@@ -4,13 +4,16 @@ const User = require('../models/User');
 // JWT 인증 미들웨어
 const authenticateToken = async (req, res, next) => {
   try {
-    const token = req.cookies.authToken || req.headers.authorization?.split(' ')[1];
+    // Authorization 헤더에서 토큰 추출
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
+
     if (!token) {
-      return res.status(401).json({ message: '인증이 필요합니다.' });
+      return res.status(401).json({ message: '인증 토큰이 필요합니다.' });
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id);
     
     if (!user) {
       return res.status(401).json({ message: '유효하지 않은 사용자입니다.' });
@@ -19,10 +22,12 @@ const authenticateToken = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    const errorMessage = error instanceof jwt.JsonWebTokenError 
-      ? '유효하지 않은 토큰입니다.'
-      : '인증에 실패했습니다.';
-    res.status(401).json({ message: errorMessage });
+    console.error('Auth middleware error:', error);
+    return res.status(401).json({ 
+      message: error instanceof jwt.JsonWebTokenError 
+        ? '유효하지 않은 토큰입니다.' 
+        : '인증에 실패했습니다.' 
+    });
   }
 };
 

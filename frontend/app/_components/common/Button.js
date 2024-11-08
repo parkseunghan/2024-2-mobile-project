@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, Text, StyleSheet, Platform } from 'react-native';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
@@ -23,6 +23,7 @@ export const Button = ({
         fullWidth && styles.fullWidth,
         disabled && styles.disabled,
         pressed && styles.pressed,
+        Platform.OS === 'web' && styles.webButton,
         style,
       ]}
     >
@@ -38,6 +39,13 @@ export const Button = ({
   );
 };
 
+const webStyles = Platform.OS === 'web' ? {
+  cursor: 'pointer',
+  outlineStyle: 'none',
+  WebkitTapHighlightColor: 'transparent',
+  boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+} : {};
+
 const styles = StyleSheet.create({
   button: {
     height: 48,
@@ -45,6 +53,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
+  },
+  webButton: {
+    ...webStyles,
   },
   fullWidth: {
     width: '100%',

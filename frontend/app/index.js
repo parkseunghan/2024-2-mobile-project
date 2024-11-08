@@ -1,20 +1,26 @@
 import { Redirect } from 'expo-router';
-import { useAuth } from '@app/_context/AuthContext';
+import { useAuth } from '@app/_utils/hooks/useAuth';
+import { View, ActivityIndicator } from 'react-native';
+import { colors } from '@app/_styles/colors';
 
 export default function Index() {
-  const { user, isLoading } = useAuth();
+    const { user, isLoading } = useAuth();
 
-  if (isLoading) {
-    return null; // 또는 로딩 스피너
-  }
+    if (isLoading) {
+        return (
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+        );
+    }
 
-  if (!user) {
-    return <Redirect href="/(auth)/welcome" />;
-  }
+    if (!user) {
+        return <Redirect href="/(auth)/welcome" />;
+    }
 
-  if (user.role === 'admin') {
-    return <Redirect href="/(admin)/dashboard" />;
-  }
+    if (user.role === 'admin') {
+        return <Redirect href="/(admin)/dashboard" />;
+    }
 
-  return <Redirect href="/(tabs)/home" />;
+    return <Redirect href="/(tabs)/home" />;
 }

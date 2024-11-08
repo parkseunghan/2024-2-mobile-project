@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import api from '@app/_utils/api';
 import storage from '@app/_utils/storage';
 
-const AuthContext = createContext({});
+export const AuthContext = createContext({});
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -17,16 +17,36 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
+      setIsLoading(true);
       const token = await storage.getItem('userToken');
-      if (token) {
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      
+      if (!token) {
+        setUser(null);
+        api.setToken(null);
+        setIsLoading(false);
+        return;
+      }
+
+      api.setToken(token);
+      
+      try {
         const response = await api.get('/auth/me');
-        setUser(response.data.user);
+        if (response.data.user) {
+          setUser(response.data.user);
+        } else {
+          throw new Error('User data not found');
+        }
+      } catch (apiError) {
+        console.error('API Error:', apiError);
+        await storage.removeItem('userToken');
+        api.setToken(null);
+        setUser(null);
       }
     } catch (error) {
-      console.log('Auth check failed:', error);
+      console.error('Auth check failed:', error);
       await storage.removeItem('userToken');
-      delete api.defaults.headers.common['Authorization'];
+      api.setToken(null);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -34,35 +54,33 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      console.log('Login attempt:', { email });
-      
-      // 기존 세션 정리
-      await storage.removeItem('userToken');
-      delete api.defaults.headers.common['Authorization'];
-      setUser(null);
-      
-      const response = await api.post('/auth/login', { 
-        email, 
-        password 
-      });
-      
-      console.log('Login response:', response.data);
-      
+      const response = await api.post('/auth/login', { email, password });
       const { user, token } = response.data;
       
-      if (!user || !token) {
-        console.error('Missing user or token in response:', response.data);
-        throw new Error('로그인 응답에 필요한 정보가 없습니다.');
+      if (!token) {
+        throw new Error('토큰이 없습니다.');
       }
 
       await storage.setItem('userToken', token);
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      api.setToken(token);
       setUser(user);
-      router.replace('/(tabs)/home');  // 로그인 성공 시 홈 화면으로 리다이렉트
+      
       return user;
     } catch (error) {
-      console.error('Login error:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || '로그인에 실패했습니다.');
+      console.error('Login error:', error);
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (error) {
+      console.log('Logout failed:', error);
+    } finally {
+      await storage.removeItem('userToken');
+      api.setToken(null);
+      setUser(null);
     }
   };
 
@@ -76,21 +94,8 @@ export function AuthProvider({ children }) {
       setSignupEmail(email);
       return response.data.user;
     } catch (error) {
-      console.error('Signup error:', error.response?.data || error.message);
-      throw new Error(error.response?.data?.message || '회원가입에 실패했습니다.');
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await api.post('/auth/logout');
-    } catch (error) {
-      console.log('Logout failed:', error);
-    } finally {
-      await storage.removeItem('userToken');
-      delete api.defaults.headers.common['Authorization'];
-      setUser(null);
-      router.replace('/login');
+      console.error('Signup error:', error);
+      throw error;
     }
   };
 
@@ -109,5 +114,3 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
-
-export const useAuth = () => useContext(AuthContext);
