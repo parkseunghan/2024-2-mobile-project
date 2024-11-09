@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet, Platform } from 'react-native';
+import { Pressable, Text, StyleSheet, Platform, View } from 'react-native';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
@@ -12,6 +12,7 @@ export const Button = ({
   fullWidth = false,
   style,
   textStyle,
+  icon,
 }) => {
   return (
     <Pressable
@@ -27,6 +28,7 @@ export const Button = ({
         style,
       ]}
     >
+      {icon && <View style={styles.iconContainer}>{icon}</View>}
       <Text style={[
         styles.text,
         styles[`${variant}Text`],
@@ -85,5 +87,8 @@ const styles = StyleSheet.create({
   },
   disabledText: {
     color: colors.text.disabled,
+  },
+  iconContainer: {
+    marginBottom: spacing.xs,
   },
 }); 

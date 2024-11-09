@@ -94,7 +94,7 @@ export function Menu({ isVisible, onClose }) {
             </Pressable>
           </View>
 
-          <ScrollView style={styles.menuItems}>
+          <ScrollView style={styles.menuItems} showsVerticalScrollIndicator={false}>
             {menuItems.map((item, index) => (
               <Pressable
                 key={index}

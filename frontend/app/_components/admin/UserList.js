@@ -53,6 +53,16 @@ export function UserList({ users, onRoleUpdate, loading, error }) {
       renderItem={renderUser}
       keyExtractor={item => item.id.toString()}
       contentContainerStyle={styles.list}
+      removeClippedSubviews={true}
+      showsVerticalScrollIndicator={true} // 스크롤 바 표시
+      maxToRenderPerBatch={10}
+      updateCellsBatchingPeriod={50}
+      onStartShouldSetResponder={() => true}
+      onMoveShouldSetResponder={() => true}
+      scrollEventThrottle={16}
+      webProps={{
+        onWheel: { passive: true }
+      }}
     />
   );
 }
