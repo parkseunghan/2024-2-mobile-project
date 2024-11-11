@@ -7,7 +7,7 @@ import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 import { Ionicons } from '@expo/vector-icons';
 
-export const VideoList = ({ videos, error }) => {
+export const VideoList = ({ videos, error, onVideoSelect }) => {
   const router = useRouter();
   const scrollViewRef = useRef(null);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -36,7 +36,7 @@ export const VideoList = ({ videos, error }) => {
   }
 
   const handleVideoPress = (videoId) => {
-    router.push(`/(video)/${videoId}`);
+    onVideoSelect?.(videoId);
   };
 
   const handleScroll = (event) => {

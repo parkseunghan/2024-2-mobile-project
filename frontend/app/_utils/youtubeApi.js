@@ -74,26 +74,24 @@ export const searchVideos = async (query, categoryId = null) => {
 
 export const getVideoDetails = async (videoId) => {
   try {
-    const response = await youtubeApi.get('/videos', {
-      params: {
-        key: EXPO_PUBLIC_YOUTUBE_API_KEY,
-        id: videoId,
-        part: 'snippet,statistics',
-        regionCode: 'KR'
+    const response = await axios.get(
+      `https://www.googleapis.com/youtube/v3/videos`,
+      {
+        params: {
+          part: 'snippet,statistics',
+          id: videoId,
+          key: YOUTUBE_API_KEY,
+        },
       }
-    });
+    );
 
-    if (!response.data?.items?.[0]) {
-      throw new Error('비디오를 찾을 수 없습니다.');
+    if (response.data.items.length === 0) {
+      throw new Error('Video not found');
     }
 
     return response.data.items[0];
   } catch (error) {
-    console.error('비디오 상세정보 조회 에러:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data
-    });
+    console.error('Error fetching video details:', error);
     throw error;
   }
 }; 

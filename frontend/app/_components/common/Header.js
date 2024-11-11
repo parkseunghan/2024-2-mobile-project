@@ -8,7 +8,7 @@ import { typography } from '@app/_styles/typography';
 import { useAuth } from '@app/_utils/hooks/useAuth';
 import { Menu } from './Menu';
 
-export function Header({ title, showBackButton }) {
+export function Header({ title, showBackButton, onBackPress }) {
   const router = useRouter();
   const navigation = useNavigation();
   const { user } = useAuth();
@@ -19,7 +19,9 @@ export function Header({ title, showBackButton }) {
   };
 
   const handleBackPress = () => {
-    if (navigation.canGoBack()) {
+    if (onBackPress) {
+      onBackPress();
+    } else if (navigation.canGoBack()) {
       navigation.goBack();
     } else {
       router.push('/(tabs)/home');
@@ -75,21 +77,23 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.h2,
+    flex: 1,
+    textAlign: 'center',
   },
   rightContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    minWidth: 80,
   },
   iconButton: {
     padding: spacing.xs,
   },
   backButton: {
     padding: spacing.xs,
+    minWidth: 40,
   },
   titleWithBack: {
-    flex: 1,
-    textAlign: 'center',
-    marginRight: 48,
+    marginHorizontal: spacing.md,
   },
 }); 

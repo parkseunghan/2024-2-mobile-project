@@ -5,11 +5,24 @@ import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 
+const decodeHTMLEntities = (text) => {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'");
+};
+
 export const VideoCard = ({ video, style, onPress }) => {
   const thumbnailUrl = 
     video.snippet.thumbnails.maxres?.url ||
     video.snippet.thumbnails.high?.url ||
     video.snippet.thumbnails.medium.url;
+
+  const decodedTitle = decodeHTMLEntities(video.snippet.title);
+  const decodedChannelTitle = decodeHTMLEntities(video.snippet.channelTitle);
 
   return (
     <Pressable 
@@ -27,13 +40,13 @@ export const VideoCard = ({ video, style, onPress }) => {
           numberOfLines={2}
           ellipsizeMode="tail"
         >
-          {video.snippet.title}
+          {decodedTitle}
         </Text>
         <Text 
           style={styles.channelTitle}
           numberOfLines={1}
         >
-          {video.snippet.channelTitle}
+          {decodedChannelTitle}
         </Text>
       </View>
     </Pressable>

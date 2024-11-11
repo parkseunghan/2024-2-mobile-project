@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View, ActivityIndicator } from 'react-native';
 import { SearchBar } from '@app/_components/main/SearchBar';
 import { CategoryButtons } from '@app/_components/main/CategoryButtons';
 import { VideoList } from '@app/_components/main/VideoList';
+import VideoDetailScreen from '@app/_screens/VideoDetailScreen';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { searchVideos } from '@app/_utils/youtubeApi';
@@ -12,6 +13,7 @@ const MainScreen = () => {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedVideoId, setSelectedVideoId] = useState(null);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -33,9 +35,20 @@ const MainScreen = () => {
   };
 
   const handleCategoryPress = (categoryId) => {
-    // 카테고리 검색 구현은 다음 단계에서 진행
     console.log('선택된 카테고리:', categoryId);
   };
+
+  const handleVideoSelect = (videoId) => {
+    setSelectedVideoId(videoId);
+  };
+
+  const handleBackPress = () => {
+    setSelectedVideoId(null);
+  };
+
+  if (selectedVideoId) {
+    return <VideoDetailScreen videoId={selectedVideoId} onBack={handleBackPress} />;
+  }
 
   return (
     <ScrollView 
@@ -54,7 +67,11 @@ const MainScreen = () => {
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       ) : (
-        <VideoList videos={videos} error={error} />
+        <VideoList 
+          videos={videos} 
+          error={error} 
+          onVideoSelect={handleVideoSelect}
+        />
       )}
     </ScrollView>
   );
