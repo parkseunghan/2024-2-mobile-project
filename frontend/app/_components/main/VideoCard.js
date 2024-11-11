@@ -1,0 +1,73 @@
+import React from 'react';
+import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
+import { colors } from '@app/_styles/colors';
+import { spacing } from '@app/_styles/spacing';
+import { typography } from '@app/_styles/typography';
+
+export const VideoCard = ({ video, style, onPress }) => {
+  const thumbnailUrl = 
+    video.snippet.thumbnails.maxres?.url ||
+    video.snippet.thumbnails.high?.url ||
+    video.snippet.thumbnails.medium.url;
+
+  return (
+    <Pressable 
+      onPress={() => onPress?.()}
+      style={[styles.container, style]}
+    >
+      <Image
+        source={{ uri: thumbnailUrl }}
+        style={styles.thumbnail}
+        resizeMode="cover"
+      />
+      <View style={styles.infoContainer}>
+        <Text 
+          style={styles.title}
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
+          {video.snippet.title}
+        </Text>
+        <Text 
+          style={styles.channelTitle}
+          numberOfLines={1}
+        >
+          {video.snippet.channelTitle}
+        </Text>
+      </View>
+    </Pressable>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  thumbnail: {
+    width: '100%',
+    height: 140,
+    backgroundColor: colors.border,
+  },
+  infoContainer: {
+    padding: spacing.sm,
+  },
+  title: {
+    ...typography.body,
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: spacing.xs,
+  },
+  channelTitle: {
+    ...typography.caption,
+    fontSize: 12,
+    color: colors.text.secondary,
+  },
+}); 

@@ -1,20 +1,39 @@
 import React, { useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, View, ActivityIndicator } from 'react-native';
 import { SearchBar } from '@app/_components/main/SearchBar';
 import { CategoryButtons } from '@app/_components/main/CategoryButtons';
+import { VideoList } from '@app/_components/main/VideoList';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
+import { searchVideos } from '@app/_utils/youtubeApi';
 
 const MainScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [videos, setVideos] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const handleSearch = () => {
-    // TODO: 검색 API 연동
-    console.log('검색어:', searchQuery);
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+      const searchResults = await searchVideos(searchQuery);
+      setVideos(searchResults);
+    } catch (error) {
+      console.error('검색 에러:', error);
+      setError(
+        error.response?.data?.error?.message || 
+        '검색 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCategoryPress = (categoryId) => {
-    // TODO: 카테고리별 페이지 이동
+    // 카테고리 검색 구현은 다음 단계에서 진행
     console.log('선택된 카테고리:', categoryId);
   };
 
@@ -29,6 +48,14 @@ const MainScreen = () => {
         onSubmit={handleSearch}
       />
       <CategoryButtons onCategoryPress={handleCategoryPress} />
+      
+      {loading ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
+        <VideoList videos={videos} error={error} />
+      )}
     </ScrollView>
   );
 };
@@ -40,6 +67,10 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingVertical: spacing.md,
+  },
+  centerContainer: {
+    padding: spacing.xl,
+    alignItems: 'center',
   },
 });
 
