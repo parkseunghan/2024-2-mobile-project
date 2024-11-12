@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Input } from '@app/_components/common/Input';
 import { Button } from '@app/_components/common/Button';
@@ -56,7 +56,11 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      contentContainerStyle={styles.contentContainer}
+      bounces={false}
+    >
       <View style={styles.header}>
         <Text style={styles.title}>로그인</Text>
         <Text style={styles.subtitle}>TipTube에 오신 것을 환영합니다</Text>
@@ -102,7 +106,7 @@ export default function LoginScreen() {
           fullWidth
         />
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -110,7 +114,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  contentContainer: {
     padding: spacing.xl,
+    flexGrow: 1,
   },
   header: {
     marginBottom: spacing.xl,
