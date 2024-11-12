@@ -37,19 +37,24 @@ const MainScreen = () => {
     }, [selectedVideoId]);
 
     const handleSearch = async () => {
-        if (!searchQuery.trim()) return;
+        if (!searchQuery.trim()) {
+            setSearchResults([]);
+            return;
+        }
 
         try {
             setLoading(true);
             setError(null);
             const results = await searchVideos(searchQuery);
-            setSearchResults(results);
+            console.log('검색 결과:', results);
+            setSearchResults(results || []);
         } catch (error) {
             console.error('검색 에러:', error);
             setError(
-                error.response?.data?.error?.message ||
+                error.message ||
                 '검색 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
             );
+            setSearchResults([]);
         } finally {
             setLoading(false);
         }

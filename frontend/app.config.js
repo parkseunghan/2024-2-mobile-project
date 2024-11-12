@@ -23,7 +23,6 @@ module.exports = {
     },
     plugins: ["expo-router"],
     extra: {
-      youtubeApiKey: process.env.EXPO_PUBLIC_YOUTUBE_API_KEY || null,
       eas: {
         projectId: "myProjectId"
       }

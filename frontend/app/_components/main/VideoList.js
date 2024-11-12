@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
 import { VideoCard } from './VideoCard';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
@@ -8,7 +7,6 @@ import { typography } from '@app/_styles/typography';
 import { Ionicons } from '@expo/vector-icons';
 
 export const VideoList = ({ videos, error, onVideoSelect }) => {
-  const router = useRouter();
   const scrollViewRef = useRef(null);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(0);
@@ -29,7 +27,7 @@ export const VideoList = ({ videos, error, onVideoSelect }) => {
     return (
       <View style={styles.messageContainer}>
         <Text style={styles.emptyText}>
-          검색어를 입력하여 영상을 찾아보세요.
+          {error || '검색 결과가 없습니다. 다른 검색어를 시도해보세요.'}
         </Text>
       </View>
     );
@@ -56,17 +54,10 @@ export const VideoList = ({ videos, error, onVideoSelect }) => {
 
   const scrollToOffset = (direction) => {
     let newOffset;
-
     if (direction === 'next') {
-      newOffset = Math.min(
-        scrollPosition + CARD_TOTAL_WIDTH,
-        maxScroll
-      );
+      newOffset = Math.min(scrollPosition + CARD_TOTAL_WIDTH, maxScroll);
     } else {
-      newOffset = Math.max(
-        scrollPosition - CARD_TOTAL_WIDTH,
-        0
-      );
+      newOffset = Math.max(scrollPosition - CARD_TOTAL_WIDTH, 0);
     }
 
     scrollViewRef.current?.scrollTo({
@@ -82,10 +73,7 @@ export const VideoList = ({ videos, error, onVideoSelect }) => {
     <View style={styles.container}>
       <View style={styles.carouselContainer}>
         <Pressable 
-          style={[
-            styles.navButton,
-            isStartReached && styles.navButtonDisabled
-          ]} 
+          style={[styles.navButton, isStartReached && styles.navButtonDisabled]} 
           onPress={() => !isStartReached && scrollToOffset('prev')}
         >
           <Ionicons 
@@ -108,24 +96,18 @@ export const VideoList = ({ videos, error, onVideoSelect }) => {
           onLayout={handleLayout}
           onContentSizeChange={handleContentSizeChange}
         >
-          {videos.map((video, index) => (
+          {videos.map((video) => (
             <VideoCard
-              key={video.id.videoId}
+              key={video.id?.videoId || video.id || Math.random().toString()}
               video={video}
-              style={[
-                styles.videoCard,
-                index === videos.length - 1 && styles.lastVideoCard
-              ]}
-              onPress={() => handleVideoPress(video.id.videoId)}
+              style={styles.videoCard}
+              onPress={() => handleVideoPress(video.id?.videoId || video.id)}
             />
           ))}
         </ScrollView>
 
         <Pressable 
-          style={[
-            styles.navButton,
-            isEndReached && styles.navButtonDisabled
-          ]} 
+          style={[styles.navButton, isEndReached && styles.navButtonDisabled]} 
           onPress={() => !isEndReached && scrollToOffset('next')}
         >
           <Ionicons 
@@ -147,18 +129,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  scrollViewContainer: {
-    flex: 1,
-    marginHorizontal: spacing.xs,
-  },
   scrollContent: {
     paddingHorizontal: spacing.md,
   },
   videoCard: {
     width: 280,
-    marginRight: spacing.md,
-  },
-  lastVideoCard: {
     marginRight: spacing.md,
   },
   navButton: {

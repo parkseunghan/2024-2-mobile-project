@@ -1,15 +1,63 @@
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Expo
 .expo/
 dist/
-.env
-npm-debug.*
+web-build/
 *.jks
 *.p8
 *.p12
 *.key
 *.mobileprovision
 *.orig.*
-web-build/
 
 # macOS
 .DS_Store
+*.pem
+
+# Local env files
+.env
+.env*.local
+.env.development
+.env.test
+.env.production
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.metro-health-check*
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# TypeScript
+*.tsbuildinfo
+
+# Logs
+logs
+*.log
+
+# Build
+build/
+dist/
+out/
+
+# Cache
+.cache/
+.next/
+.nuxt/
+.tmp/
+
+# Misc
+.DS_Store
+Thumbs.db

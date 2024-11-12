@@ -6,6 +6,10 @@ import { VideoPlayer } from './VideoPlayer';
 import { VideoInfo } from './VideoInfo';
 
 export const VideoDetail = ({ videoId, videoDetails, playing, onStateChange, onPlayPress }) => {
+  if (!videoId || !videoDetails) {
+    return null;
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.playerWrapper}>
@@ -18,15 +22,13 @@ export const VideoDetail = ({ videoId, videoDetails, playing, onStateChange, onP
         </View>
       </View>
       
-      {videoDetails && (
-        <View style={styles.infoWrapper}>
-          <VideoInfo 
-            videoDetails={videoDetails} 
-            playing={playing}
-            onPlayPress={onPlayPress}
-          />
-        </View>
-      )}
+      <View style={styles.infoWrapper}>
+        <VideoInfo 
+          videoDetails={videoDetails} 
+          playing={playing}
+          onPlayPress={onPlayPress}
+        />
+      </View>
     </View>
   );
 };

@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 
 const decodeHTMLEntities = (text) => {
+  if (!text) return '';
   return text
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
@@ -16,13 +16,17 @@ const decodeHTMLEntities = (text) => {
 };
 
 export const VideoCard = ({ video, style, onPress }) => {
-  const thumbnailUrl = 
-    video.snippet.thumbnails.maxres?.url ||
-    video.snippet.thumbnails.high?.url ||
-    video.snippet.thumbnails.medium.url;
+  if (!video) {
+    return null;
+  }
 
-  const decodedTitle = decodeHTMLEntities(video.snippet.title);
-  const decodedChannelTitle = decodeHTMLEntities(video.snippet.channelTitle);
+  // YouTube API 응답 구조에 맞게 수정
+  const thumbnailUrl = 
+    video.thumbnail ||
+    'https://via.placeholder.com/320x180.png?text=No+Thumbnail';
+
+  const decodedTitle = decodeHTMLEntities(video.title);
+  const decodedChannelTitle = decodeHTMLEntities(video.channelTitle);
 
   return (
     <Pressable 
@@ -40,13 +44,13 @@ export const VideoCard = ({ video, style, onPress }) => {
           numberOfLines={2}
           ellipsizeMode="tail"
         >
-          {decodedTitle}
+          {decodedTitle || '제목 없음'}
         </Text>
         <Text 
           style={styles.channelTitle}
           numberOfLines={1}
         >
-          {decodedChannelTitle}
+          {decodedChannelTitle || '채널 정보 없음'}
         </Text>
       </View>
     </Pressable>
