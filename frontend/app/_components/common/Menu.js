@@ -50,12 +50,12 @@ export function Menu({ isVisible, onClose }) {
       title: '프로필', 
       icon: 'user-circle', 
       onPress: () => {
-        router.push('/(tabs)/profile');
+        router.push('/(profile)/profile');
         onClose();
       }
     },
     ...(user?.role === 'admin' ? [{
-      title: router.pathname?.includes('(admin)') ? '일반 화면으로' : '관리자 대시보드',
+      title: router.pathname?.includes('(admin)') ? '일반 화면으로' : '관리자 설정',
       icon: router.pathname?.includes('(admin)') ? 'home' : 'cog',
       onPress: () => {
         if (router.pathname?.includes('(admin)')) {

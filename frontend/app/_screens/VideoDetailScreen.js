@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ScrollView, StyleSheet, Linking, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { LoadingState } from '@app/_components/common/LoadingState';
 import { ErrorState } from '@app/_components/common/ErrorState';
 import { VideoDetail } from '@app/_components/video/VideoDetail';
@@ -8,6 +9,7 @@ import { colors } from '@app/_styles/colors';
 import { Platform } from 'react-native';
 
 const VideoDetailScreen = ({ videoId, onBack }) => {
+  const router = useRouter();
   const [videoDetails, setVideoDetails] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -42,8 +44,6 @@ const VideoDetailScreen = ({ videoId, onBack }) => {
 
   return (
     <View style={styles.container}>
-      
-      
       {loading ? (
         <LoadingState />
       ) : error ? (

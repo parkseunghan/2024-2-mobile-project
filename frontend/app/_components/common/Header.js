@@ -15,7 +15,7 @@ export function Header({ title, showBackButton, onBackPress }) {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   const handleProfilePress = () => {
-    router.push('/(tabs)/profile');
+    router.push('/(profile)/profile');
   };
 
   const handleBackPress = () => {

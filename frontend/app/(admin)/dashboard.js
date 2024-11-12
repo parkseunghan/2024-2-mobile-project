@@ -11,7 +11,7 @@ export default function AdminDashboard() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>관리자 대시보드</Text>
+      <Text style={styles.title}>관리자 설정</Text>
       <UserList 
         users={users} 
         onRoleUpdate={handleRoleUpdate}

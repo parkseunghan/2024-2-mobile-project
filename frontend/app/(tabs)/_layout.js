@@ -39,11 +39,11 @@ export default function TabsLayout() {
                 }}
             />
             <Tabs.Screen
-                name="profile"
+                name="setting"
                 options={{
-                    title: '프로필',
+                    title: '설정',
                     tabBarIcon: ({ color, size }) => (
-                        <FontAwesome5 name="user" size={size} color={color} />
+                        <FontAwesome5 name="cog" size={size} color={color} />
                     ),
                 }}
             />
