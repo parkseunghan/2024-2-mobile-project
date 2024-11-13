@@ -5,7 +5,7 @@ import { spacing } from '@app/_styles/spacing';
 import { VideoPlayer } from './VideoPlayer';
 import { VideoInfo } from './VideoInfo';
 
-export const VideoDetail = ({ videoId, videoDetails, playing, onStateChange, onPlayPress }) => {
+export const VideoDetail = ({ videoId, videoDetails, onStateChange, onSourcePress }) => {
   if (!videoId || !videoDetails) {
     return null;
   }
@@ -16,7 +16,6 @@ export const VideoDetail = ({ videoId, videoDetails, playing, onStateChange, onP
         <View style={styles.playerContainer}>
           <VideoPlayer
             videoId={videoId}
-            playing={playing}
             onStateChange={onStateChange}
           />
         </View>
@@ -25,8 +24,7 @@ export const VideoDetail = ({ videoId, videoDetails, playing, onStateChange, onP
       <View style={styles.infoWrapper}>
         <VideoInfo 
           videoDetails={videoDetails} 
-          playing={playing}
-          onPlayPress={onPlayPress}
+          onSourcePress={onSourcePress}
         />
       </View>
     </View>

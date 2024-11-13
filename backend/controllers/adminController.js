@@ -2,6 +2,7 @@ const User = require('../models/User');
 const StatisticsService = require('../services/StatisticsService');
 const StatisticsRepository = require('../repositories/StatisticsRepository');
 const db = require('../config/database');
+const SearchHistory = require('../models/SearchHistory');
 
 const statisticsRepository = new StatisticsRepository(db);
 const statisticsService = new StatisticsService(statisticsRepository);
@@ -64,5 +65,46 @@ exports.getStatistics = async (req, res) => {
       success: false,
       message: '통계 정보 조회에 실패했습니다.' 
     });
+  }
+};
+
+exports.getDailyStatistics = async (req, res) => {
+  try {
+    const stats = await StatisticsService.getDailyStats();
+    res.json({ success: true, stats });
+  } catch (error) {
+    console.error('일일 통계 조회 에러:', error);
+    res.status(500).json({ message: '통계 조회에 실패했습니다.' });
+  }
+};
+
+exports.getUserGrowthStats = async (req, res) => {
+  try {
+    const { period = '30' } = req.query;
+    const stats = await StatisticsService.getUserGrowthStats(parseInt(period));
+    res.json({ success: true, stats });
+  } catch (error) {
+    console.error('사용자 증가 통계 조회 에러:', error);
+    res.status(500).json({ message: '통계 조회에 실패했습니다.' });
+  }
+};
+
+exports.getActivityStats = async (req, res) => {
+  try {
+    const stats = await StatisticsService.getActivityStats();
+    res.json({ success: true, stats });
+  } catch (error) {
+    console.error('활동 통계 조회 에러:', error);
+    res.status(500).json({ message: '통계 조회에 실패했습니다.' });
+  }
+};
+
+exports.getSearchStats = async (req, res) => {
+  try {
+    const stats = await SearchHistory.getSearchStats();
+    res.json({ success: true, stats });
+  } catch (error) {
+    console.error('검색 통계 조회 에러:', error);
+    res.status(500).json({ message: '통계 조회에 실패했습니다.' });
   }
 };

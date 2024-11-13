@@ -1,7 +1,8 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 import { useRouter } from 'expo-router';
 import api from '@app/_utils/api';
 import storage from '@app/_utils/storage';
+import { SearchContext } from './SearchContext';
 
 export const AuthContext = createContext({});
 
@@ -10,6 +11,7 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [signupEmail, setSignupEmail] = useState('');
   const router = useRouter();
+  const searchContext = useContext(SearchContext);
 
   useEffect(() => {
     checkAuth();
@@ -54,6 +56,10 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
+      if (searchContext) {
+        searchContext.clearAll();
+      }
+
       const response = await api.post('/auth/login', { email, password });
       const { user, token } = response.data;
       
@@ -81,6 +87,9 @@ export function AuthProvider({ children }) {
       await storage.removeItem('userToken');
       api.setToken(null);
       setUser(null);
+      if (searchContext) {
+        searchContext.clearAll();
+      }
     }
   };
 
