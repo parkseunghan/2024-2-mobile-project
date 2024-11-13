@@ -1,5 +1,5 @@
-import React, { createContext, useState, useEffect } from 'react';
-import { useAuth } from '@app/_utils/hooks/useAuth';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { AuthContext } from '@app/_context/AuthContext';
 import api from '@app/_utils/api';
 
 export const SearchContext = createContext();
@@ -8,7 +8,7 @@ export function SearchProvider({ children }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [searchHistory, setSearchHistory] = useState([]);
-    const { user } = useAuth();
+    const { user } = useContext(AuthContext);
 
     useEffect(() => {
         if (user) {

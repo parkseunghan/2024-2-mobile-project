@@ -27,6 +27,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     ...Platform.select({
+      web: {
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+      },
       ios: {
         shadowColor: colors.text.primary,
         shadowOffset: { width: 0, height: 1 },
@@ -35,11 +38,8 @@ const styles = StyleSheet.create({
       },
       android: {
         elevation: 2,
-      },
-      web: {
-        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-      },
-    }),
+      }
+    })
   },
   title: {
     ...typography.caption,

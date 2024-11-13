@@ -1,38 +1,51 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@app/_components/common/Button';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
+import { useRouter } from 'expo-router';
+import { CATEGORIES } from '@app/_config/constants';
 
-const CATEGORIES = [
-  { id: 'car', icon: 'car-sport', color: '#FF5733', title: '자동차 팁' },
-  { id: 'home', icon: 'home', color: '#4CAF50', title: '생활 팁' },
-  { id: 'travel', icon: 'airplane', color: '#FFC107', title: '여행 팁' },
-  { id: 'tech', icon: 'laptop', color: '#2196F3', title: '기술 팁' },
-  { id: 'food', icon: 'restaurant', color: '#9C27B0', title: '요리 팁' },
-  { id: 'fashion', icon: 'shirt', color: '#FF9800', title: '패션 팁' },
-];
+export const CategoryButtons = () => {
+  const router = useRouter();
 
-export const CategoryButtons = ({ onCategoryPress }) => {
-  const renderCategoryButton = (category) => (
-    <Button
-      key={category.id}
-      title={category.title}
-      onPress={() => onCategoryPress(category.id)}
-      variant="secondary"
-      style={styles.button}
-      icon={<Ionicons name={category.icon} size={24} color={category.color} />}
-    />
-  );
+  const handleCategoryPress = (categoryId) => {
+    router.push(`/category/${categoryId}`);
+  };
+
+  // 카테고리를 2행으로 나누기
+  const firstRow = CATEGORIES.slice(0, 3);
+  const secondRow = CATEGORIES.slice(3);
 
   return (
     <View style={styles.container}>
+      {/* 첫 번째 행 */}
       <View style={styles.row}>
-        {CATEGORIES.slice(0, 3).map(renderCategoryButton)}
+        {firstRow.map((category) => (
+          <Button
+            key={category.id}
+            title={category.title}
+            onPress={() => handleCategoryPress(category.id)}
+            icon={<Ionicons name={category.icon} size={24} color={category.color} />}
+            style={styles.button}
+            variant="secondary"
+          />
+        ))}
       </View>
+
+      {/* 두 번째 행 */}
       <View style={styles.row}>
-        {CATEGORIES.slice(3).map(renderCategoryButton)}
+        {secondRow.map((category) => (
+          <Button
+            key={category.id}
+            title={category.title}
+            onPress={() => handleCategoryPress(category.id)}
+            icon={<Ionicons name={category.icon} size={24} color={category.color} />}
+            style={styles.button}
+            variant="secondary"
+          />
+        ))}
       </View>
     </View>
   );
@@ -41,15 +54,38 @@ export const CategoryButtons = ({ onCategoryPress }) => {
 const styles = StyleSheet.create({
   container: {
     padding: spacing.md,
+    gap: spacing.md, // 행 간격
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    gap: spacing.md, // 버튼 간격
   },
   button: {
     flex: 1,
-    marginHorizontal: spacing.xs,
-    height: 80,
+    height: 80, // 버튼 높이 증가
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 12, // 모서리 더 둥글게
+    ...Platform.select({
+      web: {
+        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+        cursor: 'pointer',
+        transition: 'transform 0.2s ease',
+        ':hover': {
+          transform: 'translateY(-2px)',
+        },
+      },
+      ios: {
+        shadowColor: colors.text.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
 }); 
