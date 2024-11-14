@@ -57,6 +57,24 @@ export function useAdminUsers() {
     }
   };
 
+  const handleDeactivateUser = async (userId) => {
+    try {
+      setError(null);
+      await api.delete(`/admin/users/${userId}`);
+      await fetchUsers(); // 목록 새로고침
+    } catch (error) {
+      console.error('사용자 비활성화 실패:', error);
+      
+      if (error.response?.status === 401) {
+        await checkAuth();
+        setError('인증이 필요합니다. 다시 로그인해주세요.');
+        router.replace('/(auth)/login');
+      } else {
+        setError(error.response?.data?.message || '사용자 비활성화에 실패했습니다.');
+      }
+    }
+  };
+
   useEffect(() => {
     if (user && user.role === 'admin') {
       fetchUsers();
@@ -69,5 +87,6 @@ export function useAdminUsers() {
     error,
     fetchUsers,
     handleRoleUpdate,
+    handleDeactivateUser,
   };
 } 

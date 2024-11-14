@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { Button } from '@app/_components/common/Button';
 import { colors } from '@app/_styles/colors';
 import { typography } from '@app/_styles/typography';
 import { spacing } from '@app/_styles/spacing';
 
-export function UserList({ users, onRoleUpdate, loading, error }) {
+export function UserList({ users, onRoleUpdate, onDeactivateUser, loading, error }) {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -42,6 +42,24 @@ export function UserList({ users, onRoleUpdate, loading, error }) {
           title={item.role === 'user' ? '관리자로 변경' : '일반 사용자로 변경'}
           onPress={() => onRoleUpdate(item.id, item.role === 'user' ? 'admin' : 'user')}
           variant="secondary"
+        />
+        <Button
+          title="비활성화"
+          onPress={() => {
+            Alert.alert(
+              '사용자 비활성화',
+              '정말 이 사용자를 비활성화하시겠습니까?',
+              [
+                { text: '취소', style: 'cancel' },
+                { 
+                  text: '비활성화', 
+                  onPress: () => onDeactivateUser(item.id),
+                  style: 'destructive'
+                }
+              ]
+            );
+          }}
+          variant="danger"
         />
       </View>
     </View>
@@ -93,6 +111,7 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: spacing.sm,
+    alignItems: 'flex-end',
   },
   centerContainer: {
     flex: 1,

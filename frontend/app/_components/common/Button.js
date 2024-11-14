@@ -91,4 +91,10 @@ const styles = StyleSheet.create({
   iconContainer: {
     marginBottom: spacing.xs,
   },
+  danger: {
+    backgroundColor: colors.error,
+  },
+  dangerText: {
+    color: colors.background,
+  },
 }); 

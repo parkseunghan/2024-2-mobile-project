@@ -3,14 +3,20 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { colors } from '@app/_styles/colors';
 import { typography } from '@app/_styles/typography';
 import { spacing } from '@app/_styles/spacing';
-import { useAdminUsers } from '@app/_hooks/useAdminUsers';
+import { useAdminUsers } from '@app/_utils/hooks/useAdminUsers';
 import { UserList } from '@app/_components/admin/UserList';
 import { StatisticsCard } from '@app/_components/admin/StatisticsCard';
 import { SearchStatistics } from '@app/_components/admin/SearchStatistics';
 import api from '@app/_utils/api';
 
 export default function AdminDashboard() {
-  const { users, loading: usersLoading, error: usersError, handleRoleUpdate } = useAdminUsers();
+  const { 
+    users, 
+    loading: usersLoading, 
+    error: usersError, 
+    handleRoleUpdate,
+    handleDeactivateUser 
+  } = useAdminUsers();
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -74,6 +80,7 @@ export default function AdminDashboard() {
       <UserList 
         users={users} 
         onRoleUpdate={handleRoleUpdate}
+        onDeactivateUser={handleDeactivateUser}
         loading={usersLoading}
         error={usersError}
       />
