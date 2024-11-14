@@ -11,6 +11,7 @@ import { typography } from '@app/_styles/typography';
 import { SearchContext } from '@app/_context/SearchContext';
 import { useAuth } from '@app/_utils/hooks/useAuth';
 import { searchVideos } from '@app/_utils/youtubeApi';
+import Banner from '@app/_components/main/Banner';
 
 const MainScreen = () => {
     const navigation = useNavigation();
@@ -93,6 +94,8 @@ const MainScreen = () => {
                     </ScrollView>
                 </View>
             )}
+
+            <Banner title="오늘의 추천 영상" subtitle="오늘의 추천 영상을 확인해보세요." />
 
             <CategoryButtons onCategoryPress={handleCategoryPress} />
 
