@@ -1,21 +1,21 @@
 import { Stack } from 'expo-router';
-import PostDetailScreen from '@app/_screens/PostDetailScreen';
+import SearchScreen from '@app/_screens/SearchScreen';
 import { Header } from '@app/_components/common/Header';
 
-export default function PostDetail() {
+export default function Search() {
     return (
         <>
             <Stack.Screen
                 options={{
                     header: () => (
                         <Header
-                            title="게시글 상세"
+                            title="검색"
                             showBackButton={true}
                         />
                     ),
                 }}
             />
-            <PostDetailScreen />
+            <SearchScreen />
         </>
     );
 } 

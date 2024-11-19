@@ -1,21 +1,23 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { Header } from '@app/_components/common/Header';
 import ProfileScreen from '@app/_screens/ProfileScreen';
 
 export default function Profile() {
-  return (
-    <>
-      <Stack.Screen
-        options={{
-          header: () => (
-            <Header 
-              title="프로필" 
-              showBackButton={true}
+    const router = useRouter();
+    return (
+        <>
+            <Stack.Screen
+                options={{
+                    header: () => (
+                        <Header
+                            title="프로필"
+                            showBackButton={true}
+                            onPress={() => router.push('/(tabs)/home')}
+                        />
+                    ),
+                }}
             />
-          ),
-        }}
-      />
-      <ProfileScreen />
-    </>
-  );
+            <ProfileScreen />
+        </>
+    );
 } 

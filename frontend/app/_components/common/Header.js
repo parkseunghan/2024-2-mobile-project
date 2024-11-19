@@ -11,7 +11,7 @@ import { SearchContext } from '@app/_context/SearchContext';
 import { searchVideos } from '@app/_utils/youtubeApi';
 import { typography } from '@app/_styles/typography';
 
-export function Header({ title, showBackButton, hideSearchBar = false }) {
+export function Header({ title, showBackButton, hideSearchBar = false, isSearchPage = false }) {
     const router = useRouter();
     const { user } = useAuth();
     const [isMenuVisible, setIsMenuVisible] = useState(false);
@@ -21,12 +21,6 @@ export function Header({ title, showBackButton, hideSearchBar = false }) {
         setSearchResults,
         addToSearchHistory,
     } = useContext(SearchContext);
-
-    const isSearchScreen = router.pathname === '/(search)/search';
-
-    const handleProfilePress = () => {
-        router.push('/(profile)/profile');
-    };
 
     const handleBackPress = () => {
         router.back();
@@ -51,64 +45,68 @@ export function Header({ title, showBackButton, hideSearchBar = false }) {
         }
     };
 
-    const handleClearSearch = () => {
-        setSearchQuery('');
-    };
-
     return (
         <>
             <View style={styles.header}>
                 {showBackButton && (
-                    <Pressable onPress={handleBackPress} style={styles.backButton}>
-                        <FontAwesome5 name="arrow-left" size={24} color={colors.text.primary} />
+                    <Pressable 
+                        onPress={handleBackPress} 
+                        style={styles.backButton}
+                    >
+                        <FontAwesome5 
+                            name="arrow-left" 
+                            size={24} 
+                            color={colors.text.primary} 
+                        />
                     </Pressable>
                 )}
 
-                {!hideSearchBar && (
-                    <View style={styles.searchContainer}>
-                        {isSearchScreen ? (
-                            <SearchBar
-                                searchQuery={searchQuery}
-                                onSearchChange={setSearchQuery}
-                                onSubmit={handleSearch}
-                                onClear={handleClearSearch}
-                            />
-                        ) : (
-                            <Pressable
-                                onPress={() => router.push('/search')}
-                                style={styles.searchBarButton}
-                            >
-                                <View style={styles.searchBarPlaceholder}>
-                                    <FontAwesome5 
-                                        name="search" 
-                                        size={16} 
-                                        color={colors.text.secondary} 
-                                        style={styles.searchIcon}
-                                    />
-                                    <Text style={styles.searchPlaceholderText}>
-                                        검색어를 입력하세요
-                                    </Text>
-                                </View>
-                            </Pressable>
-                        )}
+                <View style={styles.searchContainer}>
+                    {isSearchPage ? (
+                        <SearchBar
+                            searchQuery={searchQuery}
+                            onSearchChange={setSearchQuery}
+                            onSubmit={handleSearch}
+                            onClear={() => setSearchQuery('')}
+                            autoFocus={true}
+                        />
+                    ) : (
+                        <Pressable
+                            onPress={() => router.push('/search')}
+                            style={styles.searchBarButton}
+                        >
+                            <View style={styles.searchBarPlaceholder}>
+                                <FontAwesome5 
+                                    name="search" 
+                                    size={16} 
+                                    color={colors.text.secondary} 
+                                    style={styles.searchIcon}
+                                />
+                                <Text style={styles.searchPlaceholderText}>
+                                    검색어를 입력하세요
+                                </Text>
+                            </View>
+                        </Pressable>
+                    )}
+                </View>
+
+                {!isSearchPage && (
+                    <View style={styles.rightContainer}>
+                        <Pressable onPress={() => router.push('/profile')} style={styles.iconButton}>
+                            {user ? (
+                                <FontAwesome5 name="user-circle" size={24} color={colors.primary} />
+                            ) : (
+                                <FontAwesome5 name="user" size={24} color={colors.text.secondary} />
+                            )}
+                        </Pressable>
+                        <Pressable
+                            onPress={() => setIsMenuVisible(true)}
+                            style={styles.iconButton}
+                        >
+                            <FontAwesome5 name="bars" size={24} color={colors.text.primary} />
+                        </Pressable>
                     </View>
                 )}
-
-                <View style={styles.rightContainer}>
-                    <Pressable onPress={handleProfilePress} style={styles.iconButton}>
-                        {user ? (
-                            <FontAwesome5 name="user-circle" size={24} color={colors.primary} />
-                        ) : (
-                            <FontAwesome5 name="user" size={24} color={colors.text.secondary} />
-                        )}
-                    </Pressable>
-                    <Pressable
-                        onPress={() => setIsMenuVisible(true)}
-                        style={styles.iconButton}
-                    >
-                        <FontAwesome5 name="bars" size={24} color={colors.text.primary} />
-                    </Pressable>
-                </View>
             </View>
 
             <Menu
@@ -132,7 +130,7 @@ const styles = StyleSheet.create({
     },
     searchContainer: {
         flex: 1,
-        marginHorizontal: spacing.sm,
+        marginRight: spacing.sm,
     },
     rightContainer: {
         flexDirection: 'row',
@@ -145,7 +143,7 @@ const styles = StyleSheet.create({
     },
     backButton: {
         padding: spacing.xs,
-        minWidth: 40,
+        marginRight: spacing.sm,
     },
     title: {
         ...typography.h2,
