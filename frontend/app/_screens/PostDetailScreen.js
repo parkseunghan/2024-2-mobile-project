@@ -1,209 +1,215 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import {
+    View,
+    Text,
+    Image,
+    FlatList,
+    TextInput,
+    TouchableOpacity,
+    StyleSheet,
+} from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { FontAwesome5 } from '@expo/vector-icons';
+import { colors } from '@app/_styles/colors';
+import { spacing } from '@app/_styles/spacing';
+import { typography } from '@app/_styles/typography';
+import { usePosts } from '@app/_context/PostContext';
 
-const PostDetailScreen = ({ route }) => {
-    const { post, toggleFavorite } = route.params;
-    const [likes, setLikes] = useState(post.likes || 0);
-    const [dislikes, setDislikes] = useState(post.dislikes || 0);
-    const [liked, setLiked] = useState(post.liked || false);
-    const [disliked, setDisliked] = useState(post.disliked || false);
-    const [favorited, setFavorited] = useState(post.favorited || false); // 즐겨찾기 상태
-    const [comments, setComments] = useState(post.comments || []);
+export default function PostDetailScreen() {
+    const router = useRouter();
+    const { id } = useLocalSearchParams();
+    const { getPost, toggleLike, toggleDislike, toggleFavorite, addComment } = usePosts();
+    const post = getPost(id);
     const [commentText, setCommentText] = useState('');
 
-    useEffect(() => {
-        // 업데이트된 상태를 부모 컴포넌트로 전달합니다.
-        toggleFavorite({ ...post, favorited });
-    }, [favorited]);
+    if (!post) {
+        return (
+            <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>게시글을 찾을 수 없습니다.</Text>
+            </View>
+        );
+    }
 
-    const toggleLike = () => {
-        if (!liked) {
-            setLikes(likes + 1);
-            setLiked(true);
-            if (disliked) {
-                setDislikes(dislikes - 1);
-                setDisliked(false);
-            }
-        } else {
-            setLikes(likes - 1);
-            setLiked(false);
-        }
-    };
-
-    const toggleDislike = () => {
-        if (!disliked) {
-            setDislikes(dislikes + 1);
-            setDisliked(true);
-            if (liked) {
-                setLikes(likes - 1);
-                setLiked(false);
-            }
-        } else {
-            setDislikes(dislikes - 1);
-            setDisliked(false);
-        }
-    };
-
-    const handleFavorite = () => {
-        setFavorited(!favorited);
-        toggleFavorite(post); // 즐겨찾기 상태 변경
-    };
-
-    const addComment = () => {
-        if (commentText.trim() !== '') {
-            const newComment = {
-                id: Date.now().toString(),
+    const handleAddComment = () => {
+        if (commentText.trim()) {
+            addComment(id, {
+                user: '익명',
                 text: commentText,
-                likes: 0,
-                dislikes: 0,
-                liked: false,
-                disliked: false,
-            };
-            setComments([...comments, newComment]);
+            });
             setCommentText('');
         }
     };
 
-    const toggleCommentLike = (commentId) => {
-        setComments((prevComments) =>
-            prevComments.map((comment) =>
-                comment.id === commentId
-                    ? {
-                        ...comment,
-                        likes: comment.liked ? comment.likes - 1 : comment.likes + 1,
-                        liked: !comment.liked,
-                        disliked: comment.liked ? comment.disliked : false, // 좋아요 선택 시 싫어요 초기화
-                        dislikes: comment.liked ? comment.dislikes : (comment.disliked ? comment.dislikes - 1 : comment.dislikes),
-                    }
-                    : comment
-            )
-        );
-    };
-
-    const toggleCommentDislike = (commentId) => {
-        setComments((prevComments) =>
-            prevComments.map((comment) =>
-                comment.id === commentId
-                    ? {
-                        ...comment,
-                        dislikes: comment.disliked ? comment.dislikes - 1 : comment.dislikes + 1,
-                        disliked: !comment.disliked,
-                        liked: comment.disliked ? comment.liked : false, // 싫어요 선택 시 좋아요 초기화
-                        likes: comment.disliked ? comment.likes : (comment.liked ? comment.likes - 1 : comment.likes),
-                    }
-                    : comment
-            )
-        );
-    };
-
     return (
         <View style={styles.container}>
-            <View style={styles.headerContainer}>
-                <Text style={styles.postText}>{post.text}</Text>
-                <TouchableOpacity onPress={handleFavorite} style={styles.favoriteIcon}>
-                    <FontAwesome name="star" size={24} color={favorited ? 'gold' : 'gray'} />
-                </TouchableOpacity>
-            </View>
-            <View style={styles.reactionsContainer}>
-                <TouchableOpacity onPress={toggleLike} style={styles.reactionButton}>
-                    <FontAwesome name="thumbs-up" size={20} color={liked ? 'blue' : 'gray'} />
-                    <Text style={styles.reactionText}>{likes}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={toggleDislike} style={styles.reactionButton}>
-                    <FontAwesome name="thumbs-down" size={20} color={disliked ? 'red' : 'gray'} />
-                    <Text style={styles.reactionText}>{dislikes}</Text>
-                </TouchableOpacity>
-            </View>
-
-            <View style={styles.commentInputContainer}>
-                <TextInput
-                    placeholder="댓글을 입력하세요..."
-                    value={commentText}
-                    onChangeText={setCommentText}
-                    style={styles.commentInput}
-                />
-                <Button title="댓글 달기" onPress={addComment} />
-            </View>
-
             <FlatList
-                data={comments}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <View style={styles.commentItem}>
-                        <Text style={styles.commentText}>{item.text}</Text>
-                        <View style={styles.reactionsContainer}>
-                            <TouchableOpacity onPress={() => toggleCommentLike(item.id)} style={styles.reactionButton}>
-                                <FontAwesome name="thumbs-up" size={16} color={item.liked ? 'blue' : 'gray'} />
-                                <Text style={styles.reactionText}>{item.likes}</Text>
+                data={post.comments}
+                ListHeaderComponent={() => (
+                    <View style={styles.postContent}>
+                        <Text style={styles.title}>{post.title}</Text>
+                        <Text style={styles.author}>{post.author} · {post.time}</Text>
+                        <Text style={styles.content}>{post.content}</Text>
+                        {post.media && (
+                            <Image source={{ uri: post.media }} style={styles.media} />
+                        )}
+                        <View style={styles.actions}>
+                            <TouchableOpacity onPress={() => toggleLike(id)} style={styles.actionButton}>
+                                <FontAwesome5
+                                    name="thumbs-up"
+                                    size={20}
+                                    color={post.liked ? colors.primary : colors.text.secondary}
+                                />
+                                <Text style={styles.actionText}>{post.likes}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => toggleCommentDislike(item.id)} style={styles.reactionButton}>
-                                <FontAwesome name="thumbs-down" size={16} color={item.disliked ? 'red' : 'gray'} />
-                                <Text style={styles.reactionText}>{item.dislikes}</Text>
+                            <TouchableOpacity onPress={() => toggleDislike(id)} style={styles.actionButton}>
+                                <FontAwesome5
+                                    name="thumbs-down"
+                                    size={20}
+                                    color={post.disliked ? colors.error : colors.text.secondary}
+                                />
+                                <Text style={styles.actionText}>{post.dislikes}</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => toggleFavorite(id)} style={styles.actionButton}>
+                                <FontAwesome5
+                                    name="star"
+                                    size={20}
+                                    color={post.favorited ? colors.warning : colors.text.secondary}
+                                />
                             </TouchableOpacity>
                         </View>
                     </View>
                 )}
+                renderItem={({ item }) => (
+                    <View style={styles.comment}>
+                        <Text style={styles.commentUser}>{item.user}</Text>
+                        <Text style={styles.commentText}>{item.text}</Text>
+                    </View>
+                )}
+                keyExtractor={item => item.id.toString()}
+                ListEmptyComponent={
+                    <Text style={styles.emptyComments}>첫 댓글을 남겨보세요!</Text>
+                }
             />
+
+            <View style={styles.commentInput}>
+                <TextInput
+                    style={styles.input}
+                    value={commentText}
+                    onChangeText={setCommentText}
+                    placeholder="댓글을 입력하세요"
+                    multiline
+                />
+                <TouchableOpacity 
+                    style={[
+                        styles.sendButton,
+                        !commentText.trim() && styles.sendButtonDisabled
+                    ]}
+                    onPress={handleAddComment}
+                    disabled={!commentText.trim()}
+                >
+                    <FontAwesome5 
+                        name="paper-plane" 
+                        size={20} 
+                        color={commentText.trim() ? colors.primary : colors.text.disabled} 
+                    />
+                </TouchableOpacity>
+            </View>
         </View>
     );
-};
+}
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f4f4f4',
-        padding: 16,
+        backgroundColor: colors.background,
     },
-    headerContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    postText: {
-        fontSize: 18,
-        fontWeight: '500',
-        color: '#333',
+    errorContainer: {
         flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: spacing.xl,
     },
-    favoriteIcon: {
-        marginLeft: 10,
+    errorText: {
+        ...typography.body,
+        color: colors.error,
     },
-    reactionsContainer: {
+    postContent: {
+        padding: spacing.md,
+    },
+    title: {
+        ...typography.h2,
+        marginBottom: spacing.sm,
+    },
+    author: {
+        ...typography.caption,
+        color: colors.text.secondary,
+        marginBottom: spacing.md,
+    },
+    content: {
+        ...typography.body,
+        marginBottom: spacing.lg,
+    },
+    media: {
+        width: '100%',
+        height: 200,
+        borderRadius: 8,
+        marginBottom: spacing.md,
+    },
+    actions: {
         flexDirection: 'row',
-        marginVertical: 8,
+        justifyContent: 'space-around',
+        paddingVertical: spacing.md,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
     },
-    reactionButton: {
+    actionButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginRight: 16,
+        gap: spacing.xs,
     },
-    reactionText: {
-        marginLeft: 5,
-        fontSize: 14,
-        color: '#333',
+    actionText: {
+        ...typography.caption,
+        color: colors.text.secondary,
     },
-    commentInputContainer: {
-        flexDirection: 'row',
-        marginTop: 20,
-        alignItems: 'center',
-    },
-    commentInput: {
-        flex: 1,
+    comment: {
+        padding: spacing.md,
         borderBottomWidth: 1,
-        borderBottomColor: '#ccc',
-        marginRight: 10,
-        paddingBottom: 4,
+        borderBottomColor: colors.border,
     },
-    commentItem: {
-        paddingVertical: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
+    commentUser: {
+        ...typography.caption,
+        fontWeight: 'bold',
+        marginBottom: spacing.xs,
     },
     commentText: {
-        fontSize: 14,
-        color: '#333',
+        ...typography.body,
+    },
+    emptyComments: {
+        ...typography.body,
+        color: colors.text.secondary,
+        textAlign: 'center',
+        padding: spacing.xl,
+    },
+    commentInput: {
+        flexDirection: 'row',
+        padding: spacing.md,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
+        alignItems: 'center',
+    },
+    input: {
+        flex: 1,
+        ...typography.body,
+        backgroundColor: colors.surface,
+        borderRadius: 20,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        marginRight: spacing.sm,
+    },
+    sendButton: {
+        padding: spacing.sm,
+    },
+    sendButtonDisabled: {
+        opacity: 0.5,
     },
 });
-
-export default PostDetailScreen;

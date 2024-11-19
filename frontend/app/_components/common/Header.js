@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { useRouter, useNavigation } from 'expo-router';
+import React, { useState, useContext } from 'react';
+import { View, StyleSheet, Pressable, Text } from 'react-native';
+import { useRouter } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
@@ -9,32 +9,27 @@ import { Menu } from './Menu';
 import { SearchBar } from '@app/_components/main/SearchBar';
 import { SearchContext } from '@app/_context/SearchContext';
 import { searchVideos } from '@app/_utils/youtubeApi';
+import { typography } from '@app/_styles/typography';
 
-export function Header({ title, showBackButton, onBackPress }) {
+export function Header({ title, showBackButton, hideSearchBar = false }) {
     const router = useRouter();
-    const navigation = useNavigation();
     const { user } = useAuth();
+    const [isMenuVisible, setIsMenuVisible] = useState(false);
     const {
         searchQuery,
         setSearchQuery,
         setSearchResults,
         addToSearchHistory,
-    } = React.useContext(SearchContext);
+    } = useContext(SearchContext);
 
-    const [isMenuVisible, setIsMenuVisible] = useState(false);
+    const isSearchScreen = router.pathname === '/(search)/search';
 
     const handleProfilePress = () => {
         router.push('/(profile)/profile');
     };
 
     const handleBackPress = () => {
-        if (onBackPress) {
-            onBackPress();
-        } else if (navigation.canGoBack()) {
-            navigation.goBack();
-        } else {
-            router.push('/(tabs)/home');
-        }
+        router.back();
     };
 
     const handleSearch = async () => {
@@ -69,14 +64,36 @@ export function Header({ title, showBackButton, onBackPress }) {
                     </Pressable>
                 )}
 
-                <View style={styles.searchContainer}>
-                    <SearchBar
-                        searchQuery={searchQuery}
-                        onSearchChange={setSearchQuery}
-                        onSubmit={handleSearch}
-                        onClear={handleClearSearch}
-                    />
-                </View>
+                {!hideSearchBar && (
+                    <View style={styles.searchContainer}>
+                        {isSearchScreen ? (
+                            <SearchBar
+                                searchQuery={searchQuery}
+                                onSearchChange={setSearchQuery}
+                                onSubmit={handleSearch}
+                                onClear={handleClearSearch}
+                            />
+                        ) : (
+                            <Pressable
+                                onPress={() => router.push('/search')}
+                                style={styles.searchBarButton}
+                            >
+                                <View style={styles.searchBarPlaceholder}>
+                                    <FontAwesome5 
+                                        name="search" 
+                                        size={16} 
+                                        color={colors.text.secondary} 
+                                        style={styles.searchIcon}
+                                    />
+                                    <Text style={styles.searchPlaceholderText}>
+                                        검색어를 입력하세요
+                                    </Text>
+                                </View>
+                            </Pressable>
+                        )}
+                    </View>
+                )}
+
                 <View style={styles.rightContainer}>
                     <Pressable onPress={handleProfilePress} style={styles.iconButton}>
                         {user ? (
@@ -117,13 +134,6 @@ const styles = StyleSheet.create({
         flex: 1,
         marginHorizontal: spacing.sm,
     },
-    searchBar: {
-        width: '100%',
-        height: 40, // SearchBar height 조정
-        paddingHorizontal: spacing.sm,
-        borderRadius: 8,
-        backgroundColor: colors.inputBackground,
-    },
     rightContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -136,5 +146,31 @@ const styles = StyleSheet.create({
     backButton: {
         padding: spacing.xs,
         minWidth: 40,
+    },
+    title: {
+        ...typography.h2,
+        flex: 1,
+        textAlign: 'center',
+    },
+    searchBarButton: {
+        flex: 1,
+        height: 40,
+        backgroundColor: colors.surface,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.border,
+        justifyContent: 'center',
+    },
+    searchBarPlaceholder: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: spacing.md,
+    },
+    searchIcon: {
+        marginRight: spacing.sm,
+    },
+    searchPlaceholderText: {
+        ...typography.body,
+        color: colors.text.secondary,
     },
 }); 

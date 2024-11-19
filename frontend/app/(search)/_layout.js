@@ -5,9 +5,9 @@ export default function ProfileLayout() {
   return (
     <Stack
       screenOptions={{
+        headerShown: false,
         header: ({ route }) => (
-            <Header 
-            />
+            <Header title="검색" />
           ),
         headerStyle: {
           backgroundColor: colors.background,

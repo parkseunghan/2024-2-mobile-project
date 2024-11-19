@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 const FavoritesScreen = ({ route }) => {
     const navigation = useNavigation();
     const favorites = route.params?.favorites || [];
+    const toggleFavorite = route.params?.toggleFavorite;
 
     return (
         <View style={styles.container}>
@@ -15,7 +16,7 @@ const FavoritesScreen = ({ route }) => {
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
                     <TouchableOpacity
-                        onPress={() => navigation.navigate('PostDetail', { post: item, toggleFavorite: route.params.toggleFavorite })}
+                        onPress={() => navigation.navigate('PostDetail', { post: item, toggleFavorite })}
                         style={styles.postItem}
                     >
                         <Text style={styles.postText}>{item.text}</Text>
