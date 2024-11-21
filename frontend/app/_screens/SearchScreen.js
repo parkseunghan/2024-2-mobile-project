@@ -73,41 +73,32 @@ const SearchScreen = ({ visible, onClose }) => {
         if (!user || !searchHistory?.length) return null;
 
         return (
-            <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>최근 검색어</Text>
-                    <Pressable onPress={clearAllSearchHistory}>
-                        <Text style={styles.clearButton}>전체 삭제</Text>
+            <View style={styles.historySection}>
+                <View style={styles.historyHeader}>
+                    <Text style={styles.historyTitle}>최근 검색어</Text>
+                    <Pressable
+                        style={styles.clearButton}
+                        onPress={clearAllSearchHistory}
+                    >
+                        <FontAwesome5 name="trash-alt" size={16} color={colors.text.secondary} />
+                        <Text style={styles.clearButtonText}>전체 삭제</Text>
                     </Pressable>
                 </View>
-                <View style={styles.historyContainer}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.historyScrollView}
+                >
                     {searchHistory.map((item, index) => (
-                        <View key={index} style={styles.historyItemContainer}>
-                            <Pressable
-                                style={styles.historyItem}
-                                onPress={() => handleSearchHistoryItemPress(item.query)}
-                            >
-                                <FontAwesome5 
-                                    name="history" 
-                                    size={14} 
-                                    color={colors.text.secondary}
-                                    style={styles.historyIcon}
-                                />
-                                <Text style={styles.historyText}>{item.query}</Text>
-                            </Pressable>
-                            <Pressable
-                                style={styles.deleteButton}
-                                onPress={() => handleDeleteHistoryItem(item.query)}
-                            >
-                                <FontAwesome5 
-                                    name="times" 
-                                    size={14} 
-                                    color={colors.text.secondary}
-                                />
-                            </Pressable>
-                        </View>
+                        <Pressable
+                            key={index}
+                            style={styles.historyItem}
+                            onPress={() => handleSearchHistoryItemPress(item.query)}
+                        >
+                            <Text style={styles.historyText}>{item.query}</Text>
+                        </Pressable>
                     ))}
-                </View>
+                </ScrollView>
             </View>
         );
     };
@@ -163,10 +154,7 @@ const SearchScreen = ({ visible, onClose }) => {
                     </View>
                 </View>
 
-                <ScrollView 
-                    style={styles.content}
-                    bounces={false}
-                >
+                <ScrollView style={styles.content}>
                     {renderSearchHistory()}
                     {renderRecommendedVideos()}
                 </ScrollView>
@@ -244,6 +232,57 @@ const styles = StyleSheet.create({
     videoCard: {
         width: 280,
         marginRight: spacing.md,
+    },
+    historySection: {
+        padding: spacing.md,
+    },
+    historyHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: spacing.sm,
+    },
+    historyTitle: {
+        ...typography.body,
+        color: colors.text.secondary,
+    },
+    clearButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.xs,
+    },
+    clearButtonText: {
+        ...typography.caption,
+        color: colors.text.secondary,
+        marginLeft: spacing.xs,
+    },
+    historyScrollView: {
+        flexGrow: 0,
+    },
+    historyItem: {
+        backgroundColor: colors.surface,
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        borderRadius: 16,
+        marginRight: spacing.sm,
+        ...Platform.select({
+            ios: {
+                shadowColor: colors.text.primary,
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.2,
+                shadowRadius: 2,
+            },
+            android: {
+                elevation: 2,
+            },
+            web: {
+                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.2)',
+            },
+        }),
+    },
+    historyText: {
+        ...typography.caption,
+        color: colors.text.primary,
     },
 });
 
