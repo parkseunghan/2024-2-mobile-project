@@ -6,9 +6,8 @@ import { ErrorState } from '@app/_components/common/ErrorState';
 import { VideoDetail } from '@app/_components/video/VideoDetail';
 import { getVideoDetails } from '@app/_utils/youtubeApi';
 import { colors } from '@app/_styles/colors';
-import { Platform } from 'react-native';
 
-const VideoDetailScreen = ({ videoId, onBack }) => {
+export default function VideoDetailScreen({ videoId }) {
     const router = useRouter();
     const [videoDetails, setVideoDetails] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -27,12 +26,7 @@ const VideoDetailScreen = ({ videoId, onBack }) => {
         try {
             setLoading(true);
             setError(null);
-            console.log('Loading video details for ID:', videoId); // 디버깅용
             const details = await getVideoDetails(videoId);
-            console.log('Received video details:', details); // 디버깅용
-            if (!details) {
-                throw new Error('비디오 정보를 찾을 수 없습니다.');
-            }
             setVideoDetails(details);
         } catch (err) {
             console.error('Video details error:', err);
@@ -44,19 +38,14 @@ const VideoDetailScreen = ({ videoId, onBack }) => {
 
     const onStateChange = useCallback((state) => {
         if (state === "ended") {
+            // 영상이 끝났을 때의 처리
         }
     }, []);
 
     const handleSourcePress = () => {
-        if (Platform.OS === 'web') {
+        if (videoId) {
             Linking.openURL(`https://www.youtube.com/watch?v=${videoId}`);
         }
-    }
-
-
-
-    const handleRetry = () => {
-        loadVideoDetails();
     };
 
     if (loading) {
@@ -64,21 +53,7 @@ const VideoDetailScreen = ({ videoId, onBack }) => {
     }
 
     if (error) {
-        return (
-            <ErrorState
-                message={error}
-                onRetry={handleRetry}
-            />
-        );
-    }
-
-    if (!videoDetails) {
-        return (
-            <ErrorState
-                message="비디오 정보를 찾을 수 없습니다."
-                onRetry={handleRetry}
-            />
-        );
+        return <ErrorState message={error} />;
     }
 
     return (
@@ -95,13 +70,11 @@ const VideoDetailScreen = ({ videoId, onBack }) => {
             />
         </ScrollView>
     );
-};
+}
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
     },
-});
-
-export default VideoDetailScreen; 
+}); 

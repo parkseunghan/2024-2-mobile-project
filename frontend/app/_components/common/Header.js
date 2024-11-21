@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useCallback, useRef } from 'react';
 import { View, StyleSheet, Pressable, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -10,11 +10,15 @@ import { SearchBar } from '@app/_components/main/SearchBar';
 import { SearchContext } from '@app/_context/SearchContext';
 import { searchVideos } from '@app/_utils/youtubeApi';
 import { typography } from '@app/_styles/typography';
+import SearchScreen from '@app/_screens/SearchScreen';
 
 export function Header({ title, showBackButton, hideSearchBar = false, isSearchPage = false }) {
     const router = useRouter();
     const { user } = useAuth();
     const [isMenuVisible, setIsMenuVisible] = useState(false);
+    const [isSearchVisible, setIsSearchVisible] = useState(false);
+    const isProcessingRef = useRef(false);
+    const modalTimeoutRef = useRef(null);
     const {
         searchQuery,
         setSearchQuery,
@@ -26,7 +30,7 @@ export function Header({ title, showBackButton, hideSearchBar = false, isSearchP
         router.back();
     };
 
-    const handleSearch = async () => {
+    const handleSearch = useCallback(async () => {
         if (!searchQuery.trim()) {
             setSearchResults([]);
             return;
@@ -43,51 +47,71 @@ export function Header({ title, showBackButton, hideSearchBar = false, isSearchP
             console.error('검색 에러:', error);
             setSearchResults([]);
         }
-    };
+    }, [searchQuery, user]);
+
+    // 컴포넌트 언마운트 시 타이머 정리
+    React.useEffect(() => {
+        return () => {
+            if (modalTimeoutRef.current) {
+                clearTimeout(modalTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    const handleSearchFocus = useCallback(() => {
+        if (isProcessingRef.current || isSearchVisible) return;
+        
+        isProcessingRef.current = true;
+        
+        // 이전 타이머가 있다면 제거
+        if (modalTimeoutRef.current) {
+            clearTimeout(modalTimeoutRef.current);
+        }
+
+        // 새로운 타이머 설정
+        modalTimeoutRef.current = setTimeout(() => {
+            setIsSearchVisible(true);
+            isProcessingRef.current = false;
+        }, 100);
+    }, [isSearchVisible]);
+
+    const handleSearchClose = useCallback(() => {
+        if (isProcessingRef.current) return;
+        
+        isProcessingRef.current = true;
+        setIsSearchVisible(false);
+        
+        // 약간의 지연 후 처리 플래그 초기화
+        setTimeout(() => {
+            isProcessingRef.current = false;
+        }, 100);
+    }, []);
 
     return (
         <>
             <View style={styles.header}>
                 {showBackButton && (
-                    <Pressable 
-                        onPress={handleBackPress} 
+                    <Pressable
+                        onPress={handleBackPress}
                         style={styles.backButton}
                     >
-                        <FontAwesome5 
-                            name="arrow-left" 
-                            size={24} 
-                            color={colors.text.primary} 
+                        <FontAwesome5
+                            name="arrow-left"
+                            size={24}
+                            color={colors.text.primary}
                         />
                     </Pressable>
                 )}
 
                 <View style={styles.searchContainer}>
-                    {isSearchPage ? (
-                        <SearchBar
-                            searchQuery={searchQuery}
-                            onSearchChange={setSearchQuery}
-                            onSubmit={handleSearch}
-                            onClear={() => setSearchQuery('')}
-                            autoFocus={true}
-                        />
-                    ) : (
-                        <Pressable
-                            onPress={() => router.push('/search')}
-                            style={styles.searchBarButton}
-                        >
-                            <View style={styles.searchBarPlaceholder}>
-                                <FontAwesome5 
-                                    name="search" 
-                                    size={16} 
-                                    color={colors.text.secondary} 
-                                    style={styles.searchIcon}
-                                />
-                                <Text style={styles.searchPlaceholderText}>
-                                    검색어를 입력하세요
-                                </Text>
-                            </View>
-                        </Pressable>
-                    )}
+                    <SearchBar
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        onSubmit={handleSearch}
+                        onClear={() => setSearchQuery('')}
+                        onFocus={handleSearchFocus}
+                        autoFocus={isSearchPage}
+                    />
                 </View>
 
                 {!isSearchPage && (
@@ -108,6 +132,13 @@ export function Header({ title, showBackButton, hideSearchBar = false, isSearchP
                     </View>
                 )}
             </View>
+
+            {isSearchVisible && (
+                <SearchScreen
+                    visible={isSearchVisible}
+                    onClose={handleSearchClose}
+                />
+            )}
 
             <Menu
                 isVisible={isMenuVisible}
@@ -170,5 +201,6 @@ const styles = StyleSheet.create({
     searchPlaceholderText: {
         ...typography.body,
         color: colors.text.secondary,
+        height: 30,
     },
 }); 

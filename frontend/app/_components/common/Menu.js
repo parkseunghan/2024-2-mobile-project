@@ -50,7 +50,7 @@ export function Menu({ isVisible, onClose }) {
       title: '프로필', 
       icon: 'user-circle', 
       onPress: () => {
-        router.push('/(profile)/profile');
+        router.push('/(tabs)/profile');
         onClose();
       }
     },

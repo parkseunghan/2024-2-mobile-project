@@ -99,12 +99,7 @@ const MainScreen = () => {
 
             <CategoryButtons onCategoryPress={handleCategoryPress} />
 
-            {searchResults && searchResults.length > 0 && (
-                <VideoList
-                    videos={searchResults}
-                    onVideoSelect={handleVideoSelect}
-                />
-            )}
+            
         </ScrollView>
     );
 };

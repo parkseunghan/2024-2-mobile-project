@@ -1,11 +1,24 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, TextInput, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 
-export const SearchBar = ({ searchQuery, onSearchChange, onSubmit, onClear }) => {
+export const SearchBar = memo(({ 
+    searchQuery, 
+    onSearchChange, 
+    onSubmit, 
+    onClear,
+    onFocus,
+    autoFocus = false 
+}) => {
+    const handleFocus = async () => {
+        if (onFocus) {
+            await onFocus();
+        }
+    };
+
     return (
         <View style={styles.container}>
             <View style={styles.searchContainer}>
@@ -20,9 +33,11 @@ export const SearchBar = ({ searchQuery, onSearchChange, onSubmit, onClear }) =>
                     value={searchQuery}
                     onChangeText={onSearchChange}
                     onSubmitEditing={onSubmit}
+                    onFocus={handleFocus}
                     placeholder="어떤 팁을 찾으시나요?"
                     placeholderTextColor={colors.text.secondary}
                     returnKeyType="search"
+                    autoFocus={autoFocus}
                 />
 
                 <Pressable
@@ -37,11 +52,12 @@ export const SearchBar = ({ searchQuery, onSearchChange, onSubmit, onClear }) =>
                         color={searchQuery.length ? colors.text.secondary : colors.text.disabled}
                     />
                 </Pressable>
-
             </View>
         </View>
     );
-};
+});
+
+SearchBar.displayName = 'SearchBar';
 
 const styles = StyleSheet.create({
     container: {

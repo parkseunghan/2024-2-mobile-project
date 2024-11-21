@@ -14,8 +14,9 @@ export default function RootLayout() {
                         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                         <Stack.Screen name="(auth)" options={{ headerShown: false }} />
                         <Stack.Screen name="post" options={{ headerShown: false }} />
-                        <Stack.Screen name="search" options={{ headerShown: false }} />
-                        <Stack.Screen name="profile" options={{ headerShown: false }} />
+                        <Stack.Screen name="search-results" options={{ headerShown: true }} />
+                        <Stack.Screen name="video-detail" options={{ headerShown: false }} />
+                        <Stack.Screen name="(admin)" options={{ headerShown: false }} />
                     </Stack>
                 </PostProvider>
             </SearchProvider>
