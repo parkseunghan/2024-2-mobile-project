@@ -12,6 +12,7 @@ import { SearchContext } from '@app/_context/SearchContext';
 import { useAuth } from '@app/_utils/hooks/useAuth';
 import { searchVideos } from '@app/_utils/youtubeApi';
 import Banner from '@app/_components/main/Banner';
+import { useRouter } from 'expo-router';
 
 const MainScreen = () => {
     const navigation = useNavigation();
@@ -25,9 +26,10 @@ const MainScreen = () => {
         addToSearchHistory
     } = useContext(SearchContext);
     const [selectedVideoId, setSelectedVideoId] = useState(null);
+    const router = useRouter();
 
     const handleCategoryPress = (categoryId) => {
-        console.log('선택된 카테고리:', categoryId);
+        router.push(`/category/${categoryId}`);
     };
 
     const handleVideoSelect = (videoId) => {

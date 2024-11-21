@@ -30,12 +30,48 @@ export const VIDEO = {
 
 // 카테고리 관련 상수
 export const CATEGORIES = [
-  { id: 'car', icon: 'car-sport', color: '#FF5733', title: '자동차 팁' },
-  { id: 'home', icon: 'home', color: '#4CAF50', title: '생활 팁' },
-  { id: 'travel', icon: 'airplane', color: '#FFC107', title: '여행 팁' },
-  { id: 'tech', icon: 'laptop', color: '#2196F3', title: '기술 팁' },
-  { id: 'food', icon: 'restaurant', color: '#9C27B0', title: '요리 팁' },
-  { id: 'fashion', icon: 'shirt', color: '#FF9800', title: '패션 팁' },
+  { 
+    id: 'car', 
+    icon: 'car-sport', 
+    color: '#FF5733', 
+    title: '자동차 팁',
+    searchKeywords: '자동차 꿀팁 정비 운전'
+  },
+  { 
+    id: 'home', 
+    icon: 'home', 
+    color: '#4CAF50', 
+    title: '생활 팁',
+    searchKeywords: '생활 꿀팁 청소 수납'
+  },
+  { 
+    id: 'travel', 
+    icon: 'airplane', 
+    color: '#FFC107', 
+    title: '여행 팁',
+    searchKeywords: '여행 꿀팁 배낭여행 해외여행'
+  },
+  { 
+    id: 'tech', 
+    icon: 'laptop', 
+    color: '#2196F3', 
+    title: '기술 팁',
+    searchKeywords: '전자기기 스마트폰 컴퓨터'
+  },
+  { 
+    id: 'food', 
+    icon: 'restaurant', 
+    color: '#9C27B0', 
+    title: '요리 팁',
+    searchKeywords: '요리 레시피 음식 맛집'
+  },
+  { 
+    id: 'fashion', 
+    icon: 'shirt', 
+    color: '#FF9800', 
+    title: '패션 팁',
+    searchKeywords: '패션 코디 옷 스타일'
+  },
 ];
 
 // 에러 메시지
