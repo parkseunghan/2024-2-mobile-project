@@ -10,13 +10,25 @@ export default function RootLayout() {
             <SearchProvider>
                 <PostProvider>
                     <StatusBar style="dark" />
-                    <Stack>
-                        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                        <Stack.Screen name="post" options={{ headerShown: false }} />
-                        <Stack.Screen name="search-results" options={{ headerShown: true }} />
-                        <Stack.Screen name="video-detail" options={{ headerShown: false }} />
-                        <Stack.Screen name="(admin)" options={{ headerShown: false }} />
+                    <Stack screenOptions={{ headerShown: false }}>
+                        <Stack.Screen name="(tabs)" />
+                        <Stack.Screen name="(auth)" />
+                        <Stack.Screen name="post" />
+                        <Stack.Screen name="category" />
+                        <Stack.Screen 
+                            name="search-results" 
+                            options={{ 
+                                headerShown: true,
+                            }} 
+                        />
+                        <Stack.Screen 
+                            name="video-detail" 
+                            options={{ 
+                                headerShown: true,
+                            }} 
+                        />
+                        <Stack.Screen name="(admin)" />
+                        <Stack.Screen name="index" />
                     </Stack>
                 </PostProvider>
             </SearchProvider>

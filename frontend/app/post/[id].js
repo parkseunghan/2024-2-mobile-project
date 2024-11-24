@@ -9,10 +9,12 @@ export default function PostDetail() {
                 options={{
                     header: () => (
                         <Header
-                            title="게시글 상세"
+                            title="게시글"
                             showBackButton={true}
+                            hideSearchBar={true}
                         />
                     ),
+                    headerShown: true
                 }}
             />
             <PostDetailScreen />

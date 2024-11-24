@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Input } from '@app/_components/common/Input';
 import { Button } from '@app/_components/common/Button';
@@ -53,11 +53,17 @@ export default function CreatePostScreen() {
         const match = /\.(\w+)$/.exec(fileName);
         const type = match ? `image/${match[1]}` : 'image/jpeg';
         
-        formData.append('media', {
-          uri: form.media,
-          name: fileName,
-          type
-        });
+        if (Platform.OS === 'web') {
+          const response = await fetch(form.media);
+          const blob = await response.blob();
+          formData.append('media', blob, fileName);
+        } else {
+          formData.append('media', {
+            uri: form.media,
+            type: type,
+            name: fileName
+          });
+        }
       }
 
       console.log('Sending form data:', {
@@ -68,8 +74,13 @@ export default function CreatePostScreen() {
       });
 
       const response = await communityApi.createPost(formData);
-      router.back();
-      Alert.alert('성공', '게시글이 작성되었습니다.');
+      
+      if (response.post) {
+        router.back();
+        Alert.alert('성공', '게시글이 작성되었습니다.');
+      } else {
+        throw new Error('게시글 생성 응답이 올바르지 않습니다.');
+      }
     } catch (error) {
       console.error('게시글 작성 에러:', error);
       Alert.alert('오류', error.response?.data?.message || '게시글 작성에 실패했습니다.');

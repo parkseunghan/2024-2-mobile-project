@@ -1,5 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { AuthContext } from '@app/_context/AuthContext';
+import React, { createContext, useState } from 'react';
 import api from '@app/_utils/api';
 
 // 추천 영상 더미 데이터
@@ -48,18 +47,17 @@ export function SearchProvider({ children }) {
     const [searchResults, setSearchResults] = useState([]);
     const [searchHistory, setSearchHistory] = useState([]);
     const [recommendedVideos, setRecommendedVideos] = useState(DUMMY_RECOMMENDED_VIDEOS);
-    const { user } = useContext(AuthContext);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    useEffect(() => {
-        if (user) {
-            loadSearchHistory();
-        } else {
-            setSearchHistory([]);
-            clearSearchResults();
+    const addToSearchHistory = async (query) => {
+        try {
+            await api.post('/search/history', { query });
+            await loadSearchHistory();
+        } catch (error) {
+            console.error('검색 기록 저장 실패:', error);
         }
-    }, [user]);
+    };
 
     const loadSearchHistory = async () => {
         try {
@@ -70,25 +68,12 @@ export function SearchProvider({ children }) {
         }
     };
 
-    const addToSearchHistory = async (query) => {
-        if (user) {
-            try {
-                await api.post('/search/history', { query });
-                await loadSearchHistory();
-            } catch (error) {
-                console.error('검색 기록 저장 실패:', error);
-            }
-        }
-    };
-
     const clearAllSearchHistory = async () => {
-        if (user) {
-            try {
-                await api.delete('/search/history');
-                setSearchHistory([]);
-            } catch (error) {
-                console.error('검색 기록 삭제 실패:', error);
-            }
+        try {
+            await api.delete('/search/history');
+            setSearchHistory([]);
+        } catch (error) {
+            console.error('검색 기록 삭제 실패:', error);
         }
     };
 
@@ -109,13 +94,11 @@ export function SearchProvider({ children }) {
     };
 
     const deleteSearchHistoryItem = async (query) => {
-        if (user) {
-            try {
-                await api.delete(`/search/history/${encodeURIComponent(query)}`);
-                await loadSearchHistory();
-            } catch (error) {
-                console.error('검색 기록 항목 삭제 실패:', error);
-            }
+        try {
+            await api.delete(`/search/history/${encodeURIComponent(query)}`);
+            await loadSearchHistory();
+        } catch (error) {
+            console.error('검색 기록 항목 삭제 실패:', error);
         }
     };
 

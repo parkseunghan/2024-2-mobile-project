@@ -97,7 +97,17 @@ exports.getUserComments = async (req, res) => {
     }
 
     const comments = await Comment.findByUserId(req.user.id);
-    res.json({ comments });
+    
+    const formattedComments = comments.map(comment => ({
+      id: comment.id,
+      content: comment.content,
+      post_id: comment.post_id,
+      created_at: comment.created_at,
+      post_title: comment.post_title,
+      author_name: comment.author_name
+    }));
+
+    res.json({ comments: formattedComments });
   } catch (error) {
     console.error('댓글 조회 에러:', error);
     res.status(500).json({ message: '댓글 조회에 실패했습니다.' });

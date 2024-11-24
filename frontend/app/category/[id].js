@@ -1,6 +1,5 @@
 import React from 'react';
-import { Stack } from 'expo-router';
-import { useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { Header } from '@app/_components/common/Header';
 import CategoryDetailScreen from '@app/_screens/CategoryDetailScreen';
 import { CATEGORIES } from '@app/_config/constants';
@@ -17,8 +16,10 @@ export default function CategoryDetail() {
                         <Header
                             title={category?.title}
                             showBackButton={true}
+                            hideSearchBar={true}
                         />
                     ),
+                    headerShown: true
                 }}
             />
             <CategoryDetailScreen categoryId={id} />

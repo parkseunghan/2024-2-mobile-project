@@ -60,7 +60,9 @@ exports.createPost = async (req, res) => {
             return res.status(401).json({ message: '로그인이 필요합니다.' });
         }
 
-        const { title, content, category } = req.body;
+        const title = req.body.title;
+        const content = req.body.content;
+        const category = req.body.category;
         
         if (!title || !title.trim()) {
             return res.status(400).json({ message: '제목을 입력해주세요.' });
@@ -82,7 +84,8 @@ exports.createPost = async (req, res) => {
             title,
             content,
             category,
-            mediaUrl
+            mediaUrl,
+            file: req.file
         });
 
         const postId = await Post.create(req.user.id, {

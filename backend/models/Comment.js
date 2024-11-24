@@ -35,6 +35,21 @@ class Comment {
         );
         return result.affectedRows > 0;
     }
+
+    static async findByUserId(userId) {
+        const [rows] = await db.query(`
+            SELECT 
+                c.*,
+                p.title as post_title,
+                u.username as author_name
+            FROM comments c
+            LEFT JOIN posts p ON c.post_id = p.id
+            LEFT JOIN users u ON c.user_id = u.id
+            WHERE c.user_id = ? AND p.is_deleted = false
+            ORDER BY c.created_at DESC
+        `, [userId]);
+        return rows;
+    }
 }
 
 module.exports = Comment; 

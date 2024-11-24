@@ -26,26 +26,13 @@ export const communityApi = {
 
     createPost: async (formData) => {
         try {
-            // FormData를 일반 객체로 변환
-            const postData = {
-                title: formData.get('title'),
-                content: formData.get('content'),
-                category: formData.get('category')
-            };
-
-            // 미디어 파일이 있는 경우에만 FormData 사용
-            if (formData.get('media')) {
-                const response = await api.post('/community/posts', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    }
-                });
-                return response.data;
-            } else {
-                // 미디어 파일이 없는 경우 일반 JSON으로 전송
-                const response = await api.post('/community/posts', postData);
-                return response.data;
-            }
+            // FormData 객체를 직접 전송
+            const response = await api.post('/community/posts', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return response.data;
         } catch (error) {
             console.error('게시글 작성 API 에러:', error.response?.data);
             throw error;
@@ -74,7 +61,6 @@ export const communityApi = {
         }
     },
 
-    // 좋아요 관련 API
     toggleLike: async (id) => {
         try {
             const response = await api.post(`/community/posts/${id}/like`);
@@ -85,7 +71,6 @@ export const communityApi = {
         }
     },
 
-    // 댓글 관련 API
     createComment: async (postId, content) => {
         try {
             const response = await api.post(`/community/posts/${postId}/comments`, { content });
@@ -96,7 +81,6 @@ export const communityApi = {
         }
     },
 
-    // 댓글 삭제 API
     deleteComment: async (postId, commentId) => {
         try {
             const response = await api.delete(`/community/posts/${postId}/comments/${commentId}`);
