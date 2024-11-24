@@ -47,16 +47,33 @@ const SearchScreen = ({ visible, onClose }) => {
     const handleSearchSubmit = async (event) => {
         try {
             const query = event.nativeEvent.text;
-            const results = await searchVideos(query);
-            setSearchResults(results || []);
-            if (query.trim()) {
-                await addToSearchHistory(query);
+            
+            if (!query.trim()) {
+                return;
             }
+
+            if (user) {
+                try {
+                    await addToSearchHistory(query);
+                } catch (error) {
+                    console.error('검색 기록 저장 실패:', error);
+                }
+            }
+
+            try {
+                const results = await searchVideos(query);
+                setSearchResults(results || []);
+            } catch (error) {
+                console.error('검색 에러:', error);
+                setSearchResults([]);
+            }
+
             onClose();
             router.push('/search-results');
         } catch (error) {
-            console.error('검색 에러:', error);
-            setSearchResults([]);
+            console.error('검색 처리 중 에러:', error);
+            onClose();
+            router.push('/search-results');
         }
     };
 
