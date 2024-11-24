@@ -106,13 +106,24 @@ export default function ProfileScreen() {
     const handleSaveProfile = async () => {
         try {
             const formData = new FormData();
-            formData.append('nickname', nickname);
-            formData.append('bio', bio);
+            
+            if (nickname !== user.username) {
+                formData.append('nickname', nickname);
+            }
+            
+            if (bio) {
+                formData.append('bio', bio);
+            }
+            
             if (avatar && !avatar.startsWith('http')) {
+                const filename = avatar.split('/').pop();
+                const match = /\.(\w+)$/.exec(filename);
+                const type = match ? `image/${match[1]}` : 'image/jpeg';
+                
                 formData.append('avatar', {
                     uri: avatar,
-                    type: 'image/jpeg',
-                    name: 'avatar.jpg'
+                    name: filename,
+                    type: type
                 });
             }
 

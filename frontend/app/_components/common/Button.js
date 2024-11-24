@@ -13,7 +13,24 @@ export const Button = ({
     icon,
     variant = 'primary',
     fullWidth = false,
+    subtitle,
 }) => {
+    const renderTitle = () => {
+        if (typeof title === 'string') {
+            return (
+                <Text style={[
+                    styles.text,
+                    styles[`${variant}Text`],
+                    textStyle,
+                    disabled && styles.disabledText
+                ]}>
+                    {title}
+                </Text>
+            );
+        }
+        return title;  // title이 React 엘리먼트인 경우 그대로 반환
+    };
+
     return (
         <Pressable
             onPress={onPress}
@@ -29,14 +46,14 @@ export const Button = ({
         >
             <View style={styles.content}>
                 {icon && <View style={styles.iconContainer}>{icon}</View>}
-                <Text style={[
-                    styles.text,
-                    styles[`${variant}Text`],
-                    textStyle,
-                    disabled && styles.disabledText
-                ]}>
-                    {title}
-                </Text>
+                <View>
+                    {renderTitle()}
+                    {subtitle && (
+                        <Text style={[styles.subtitle, textStyle]}>
+                            {subtitle}
+                        </Text>
+                    )}
+                </View>
             </View>
         </Pressable>
     );
@@ -94,5 +111,10 @@ const styles = StyleSheet.create({
     },
     text: {
         textAlign: 'center',
+    },
+    subtitle: {
+        ...typography.caption,
+        color: colors.text.secondary,
+        marginTop: spacing.xs,
     },
 }); 

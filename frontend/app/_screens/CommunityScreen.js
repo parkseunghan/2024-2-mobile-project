@@ -122,8 +122,23 @@ export default function CommunityScreen() {
                     selectedCategory={selectedCategory}
                     onSelect={setSelectedCategory}
                 />
-
                 <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>실시간 인기 게시물</Text>
+                    {filteredPosts.filter(post => post.like_count >= 2).map((post) => (
+                        <PostCard
+                            key={post.id}
+                            post={post}
+                            onPress={() => handlePostPress(post)}
+                        />
+                    ))}
+                    {filteredPosts.filter(post => post.like_count >= 10).length === 0 && !loading && (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>현재 인기 게시물이 없습니다.</Text>
+                        </View>
+                    )}
+                </View>
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>전체 게시글</Text>
                     {filteredPosts.map((post) => (
                         <PostCard
                             key={post.id}
@@ -133,7 +148,7 @@ export default function CommunityScreen() {
                     ))}
                     {filteredPosts.length === 0 && !loading && (
                         <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>게시글이 없습니다.</Text>
+                            <Text style={styles.emptyText}>현재 게시글이 없습니다.</Text>
                         </View>
                     )}
                 </View>
@@ -176,6 +191,14 @@ const styles = StyleSheet.create({
     section: {
         marginTop: spacing.lg,
         padding: spacing.md,
+    },
+    sectionTitle: {
+        ...typography.h2,
+        color: colors.primary,
+        marginBottom: spacing.md,
+        paddingBottom: spacing.sm,
+        borderBottomWidth: 2,
+        borderBottomColor: `${colors.primary}15`,
     },
     emptyContainer: {
         padding: spacing.xl,

@@ -101,6 +101,9 @@ export default function PostDetailScreen() {
         }
     };
 
+    // 사용자가 댓글을 작성했는지 확인
+    const hasUserComment = post?.comments?.some(comment => comment.author_id === user?.id);
+
     if (loading) {
         return <LoadingState />;
     }
@@ -143,23 +146,37 @@ export default function PostDetailScreen() {
                     <View style={styles.actions}>
                         <TouchableOpacity 
                             onPress={handleToggleLike} 
-                            style={styles.actionButton}
+                            style={[
+                                styles.actionButton,
+                                (post.isLiked || (user && post.likes?.includes(user.id))) && styles.likeButton
+                            ]}
                         >
                             <FontAwesome5
-                                name="thumbs-up"
+                                name="heart"
                                 size={20}
-                                color={post.isLiked ? colors.primary : colors.text.secondary}
-                                solid={post.isLiked}
+                                color={(post.isLiked || (user && post.likes?.includes(user.id))) ? '#FF3B5C' : colors.text.secondary}
+                                solid={post.isLiked || (user && post.likes?.includes(user.id))}
                             />
-                            <Text style={styles.actionText}>{post.like_count || 0}</Text>
+                            <Text style={[
+                                styles.actionText,
+                                (post.isLiked || (user && post.likes?.includes(user.id))) && styles.likeText
+                            ]}>
+                                {post.like_count || 0}
+                            </Text>
                         </TouchableOpacity>
-                        <View style={styles.actionButton}>
+                        <View style={[
+                            styles.actionButton,
+                            hasUserComment && styles.commentButton
+                        ]}>
                             <FontAwesome5
-                                name="comment"
+                                name="comment-alt"
                                 size={20}
-                                color={colors.text.secondary}
+                                color={hasUserComment ? '#4A90E2' : colors.text.secondary}
                             />
-                            <Text style={styles.actionText}>
+                            <Text style={[
+                                styles.actionText,
+                                hasUserComment && styles.commentText
+                            ]}>
                                 {post.comments?.length || 0}
                             </Text>
                         </View>
@@ -255,6 +272,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.xs,
+        paddingVertical: spacing.xs,
+        paddingHorizontal: spacing.md,
+        borderRadius: 20,
+        backgroundColor: `${colors.border}15`,
     },
     actionText: {
         ...typography.caption,
@@ -310,5 +331,17 @@ const styles = StyleSheet.create({
     },
     sendButtonDisabled: {
         opacity: 0.5,
+    },
+    likeButton: {
+        backgroundColor: '#FF3B5C15',
+    },
+    likeText: {
+        color: '#FF3B5C',
+    },
+    commentButton: {
+        backgroundColor: '#4A90E215',
+    },
+    commentText: {
+        color: '#4A90E2',
     },
 });

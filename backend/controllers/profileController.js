@@ -35,7 +35,7 @@ exports.updateProfile = async (req, res) => {
       return res.status(401).json({ message: '인증이 필요합니다.' });
     }
 
-    const { username } = req.body;
+    const { nickname, bio } = req.body;
     let avatarUrl = null;
 
     if (req.file) {
@@ -43,14 +43,15 @@ exports.updateProfile = async (req, res) => {
     }
 
     const updateData = {
-      ...(username && { username }),
+      ...(nickname && { username: nickname }),
+      ...(bio && { bio }),
       ...(avatarUrl && { avatar: avatarUrl })
     };
 
-    if (username) {
-      const existingUser = await User.findByUsername(username);
+    if (nickname) {
+      const existingUser = await User.findByUsername(nickname);
       if (existingUser && existingUser.id !== req.user.id) {
-        return res.status(400).json({ message: '이미 사용 중인 사용자 이름입니다.' });
+        return res.status(400).json({ message: '이미 사용 중인 닉네임입니다.' });
       }
     }
 
@@ -67,6 +68,8 @@ exports.updateProfile = async (req, res) => {
         username: updatedUser.username,
         email: updatedUser.email,
         role: updatedUser.role,
+        bio: updatedUser.bio,
+        avatar: updatedUser.avatar,
         createdAt: updatedUser.created_at
       }
     });
