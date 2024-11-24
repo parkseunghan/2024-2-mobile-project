@@ -40,14 +40,18 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      try {
-        await storage.removeItem('userToken');
-        delete api.defaults.headers.common['Authorization'];
-        
-        // expo-router를 사용하여 리다이렉트
-        router.replace('/(auth)/login');
-      } catch (e) {
-        console.error('Error handling 401:', e);
+      // 토큰이 만료되었거나 유효하지 않은 경우
+      await storage.removeItem('userToken');
+      delete api.defaults.headers.common['Authorization'];
+      
+      // 로그인이 필요한 페이지가 아니라면 에러를 무시
+      if (!error.config.requiresAuth) {
+        return Promise.resolve({ data: null });
+      }
+      
+      // 로그인 페이지로 리다이렉트
+      if (router) {
+        router.push('/login');
       }
     }
     return Promise.reject(error);

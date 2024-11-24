@@ -39,7 +39,12 @@ export default function PostDetailScreen() {
             setLoading(true);
             setError(null);
             const response = await communityApi.getPost(id);
-            setPost(response.data.post);
+            
+            if (response?.post) {
+                setPost(response.post);
+            } else {
+                throw new Error('게시글 데이터가 없습니다.');
+            }
         } catch (error) {
             console.error('게시글 로드 에러:', error);
             setError(error.response?.data?.message || '게시글을 불러오는데 실패했습니다.');

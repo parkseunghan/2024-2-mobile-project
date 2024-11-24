@@ -21,11 +21,12 @@ export default function CommunityScreen() {
     const [searchText, setSearchText] = useState('');
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
 
     const categories = ['전체', '상품 리뷰', '취미', '건강·운동', '맛집', '여행', '슈퍼전대'];
 
     useEffect(() => {
-        loadPosts();
+        loadPosts(true);
     }, [selectedCategory]);
 
     const loadPosts = async (refresh = false) => {
@@ -45,7 +46,7 @@ export default function CommunityScreen() {
                 refresh ? 1 : page
             );
 
-            const newPosts = response.data.posts;
+            const newPosts = response?.posts || [];
             setPosts(prev => refresh ? newPosts : [...prev, ...newPosts]);
             setHasMore(newPosts.length > 0);
             setPage(prev => refresh ? 2 : prev + 1);
@@ -130,6 +131,11 @@ export default function CommunityScreen() {
                             onPress={() => handlePostPress(post)}
                         />
                     ))}
+                    {filteredPosts.length === 0 && !loading && (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>게시글이 없습니다.</Text>
+                        </View>
+                    )}
                 </View>
             </ScrollView>
 
@@ -171,9 +177,13 @@ const styles = StyleSheet.create({
         marginTop: spacing.lg,
         padding: spacing.md,
     },
-    sectionTitle: {
-        ...typography.h3,
-        marginBottom: spacing.md,
+    emptyContainer: {
+        padding: spacing.xl,
+        alignItems: 'center',
+    },
+    emptyText: {
+        ...typography.body,
+        color: colors.text.secondary,
     },
     floatingButton: {
         position: 'absolute',
@@ -190,12 +200,5 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
-    },
-    popularPostContainer: {
-        width: 280,
-        marginRight: spacing.md,
-    },
-    popularPostsList: {
-        paddingHorizontal: spacing.xs,
     },
 });

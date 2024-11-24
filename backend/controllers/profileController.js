@@ -5,9 +5,13 @@ const { uploadToStorage } = require('../utils/storage');
 
 exports.getProfile = async (req, res) => {
   try {
+    if (!req.user) {
+      return res.json({ profile: null });
+    }
+
     const user = await User.findById(req.user.id);
     if (!user) {
-      return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+      return res.json({ profile: null });
     }
 
     res.json({
@@ -15,9 +19,7 @@ exports.getProfile = async (req, res) => {
         id: user.id,
         username: user.username,
         email: user.email,
-        nickname: user.nickname,
-        bio: user.bio,
-        avatar: user.avatar,
+        role: user.role,
         createdAt: user.created_at
       }
     });
@@ -29,7 +31,11 @@ exports.getProfile = async (req, res) => {
 
 exports.updateProfile = async (req, res) => {
   try {
-    const { nickname, bio } = req.body;
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: '인증이 필요합니다.' });
+    }
+
+    const { username } = req.body;
     let avatarUrl = null;
 
     if (req.file) {
@@ -37,10 +43,16 @@ exports.updateProfile = async (req, res) => {
     }
 
     const updateData = {
-      ...(nickname && { nickname }),
-      ...(bio && { bio }),
+      ...(username && { username }),
       ...(avatarUrl && { avatar: avatarUrl })
     };
+
+    if (username) {
+      const existingUser = await User.findByUsername(username);
+      if (existingUser && existingUser.id !== req.user.id) {
+        return res.status(400).json({ message: '이미 사용 중인 사용자 이름입니다.' });
+      }
+    }
 
     const success = await User.updateProfile(req.user.id, updateData);
     if (!success) {
@@ -54,9 +66,8 @@ exports.updateProfile = async (req, res) => {
         id: updatedUser.id,
         username: updatedUser.username,
         email: updatedUser.email,
-        nickname: updatedUser.nickname,
-        bio: updatedUser.bio,
-        avatar: updatedUser.avatar
+        role: updatedUser.role,
+        createdAt: updatedUser.created_at
       }
     });
   } catch (error) {
@@ -67,6 +78,10 @@ exports.updateProfile = async (req, res) => {
 
 exports.getUserPosts = async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: '인증이 필요합니다.' });
+    }
+
     const posts = await Post.findByUserId(req.user.id);
     res.json({ posts });
   } catch (error) {
@@ -77,6 +92,10 @@ exports.getUserPosts = async (req, res) => {
 
 exports.getUserComments = async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: '인증이 필요합니다.' });
+    }
+
     const comments = await Comment.findByUserId(req.user.id);
     res.json({ comments });
   } catch (error) {
@@ -87,6 +106,10 @@ exports.getUserComments = async (req, res) => {
 
 exports.getLikedPosts = async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: '인증이 필요합니다.' });
+    }
+
     const posts = await Post.findLikedByUserId(req.user.id);
     res.json({ posts });
   } catch (error) {

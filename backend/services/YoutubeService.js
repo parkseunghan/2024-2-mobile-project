@@ -16,12 +16,20 @@ class YoutubeService {
         throw new Error('검색어가 필요합니다.');
       }
 
+      console.log('YouTube API 요청:', {
+        query,
+        categoryId,
+        apiKey: this.apiKey ? '설정됨' : '미설정'
+      });
+
       const params = {
         part: 'snippet',
         maxResults: 25,
         q: query,
         type: 'video',
-        key: this.apiKey
+        key: this.apiKey,
+        regionCode: 'KR',  // 한국 결과 우선
+        relevanceLanguage: 'ko'  // 한국어 결과 우선
       };
 
       if (categoryId) {
@@ -31,12 +39,14 @@ class YoutubeService {
       const response = await axios.get(`${this.baseUrl}/search`, { 
         params,
         headers: {
-          'Referer': process.env.FRONTEND_URL || 'http://localhost:8081',
-          'Origin': process.env.FRONTEND_URL || 'http://localhost:8081'
+          'Accept': 'application/json'
         }
       });
+
+      console.log('YouTube API 응답 상태:', response.status);
       
       if (!response.data || !response.data.items) {
+        console.error('YouTube API 응답:', response.data);
         throw new Error('YouTube API로부터 유효한 응답을 받지 못했습니다.');
       }
 
@@ -48,11 +58,20 @@ class YoutubeService {
         channelTitle: item.snippet.channelTitle,
         publishedAt: item.snippet.publishedAt
       })).filter(item => item.id && item.thumbnail);
+
     } catch (error) {
-      console.error('YouTube API 검색 에러:', error.response?.data || error.message);
+      console.error('YouTube API 에러:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
       
       if (error.response?.status === 403) {
-        throw new Error('YouTube API 접근이 거부되었습니다. API 키를 확인해주세요.');
+        throw new Error('YouTube API 할당량이 초과되었습니다. 잠시 후 다시 시도해주세요.');
+      }
+      
+      if (error.response?.status === 400) {
+        throw new Error('잘못된 요청입니다. 검색어를 확인해주세요.');
       }
       
       throw new Error(
@@ -68,6 +87,8 @@ class YoutubeService {
         throw new Error('비디오 ID가 필요합니다.');
       }
 
+      console.log('비디오 상세 정보 요청:', videoId);
+
       const response = await axios.get(`${this.baseUrl}/videos`, {
         params: {
           part: 'snippet,statistics',
@@ -75,9 +96,7 @@ class YoutubeService {
           key: this.apiKey
         },
         headers: {
-          'Accept': 'application/json',
-          'Referer': process.env.FRONTEND_URL || 'http://localhost:8081',
-          'Origin': process.env.FRONTEND_URL || 'http://localhost:8081'
+          'Accept': 'application/json'
         }
       });
 
@@ -101,10 +120,14 @@ class YoutubeService {
         }
       };
     } catch (error) {
-      console.error('YouTube API 비디오 상세 정보 에러:', error.response?.data || error.message);
+      console.error('YouTube API 비디오 상세 정보 에러:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
       
       if (error.response?.status === 403) {
-        throw new Error('YouTube API 접근이 거부되었습니다. API 키를 확인해주세요.');
+        throw new Error('YouTube API 할당량이 초과되었습니다. 잠시 후 다시 시도해주세요.');
       }
       
       throw new Error('동영상 정보를 가져오는데 실패했습니다.');

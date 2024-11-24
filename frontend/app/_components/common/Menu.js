@@ -10,7 +10,6 @@ import { useAuth } from '@app/_utils/hooks/useAuth';
 export function Menu({ isVisible, onClose }) {
     const router = useRouter();
     const { user, logout } = useAuth();
-
     const [slideAnim] = useState(new Animated.Value(300));
 
     useEffect(() => {
@@ -74,9 +73,22 @@ export function Menu({ isVisible, onClose }) {
         router.replace('/login');
     };
 
-    const animatedStyle = Platform.OS === 'web'
-        ? { transform: [{ translateX: slideAnim }] }
-        : { transform: [{ translateX: slideAnim }] };
+    const animatedStyle = {
+        transform: [{ translateX: slideAnim }]
+    };
+
+    const renderMenuItem = (item, index) => (
+        <Pressable
+            key={index}
+            style={styles.menuItem}
+            onPress={item.onPress}
+        >
+            <View style={styles.menuItemContent}>
+                <FontAwesome5 name={item.icon} size={20} color={colors.primary} />
+                <Text style={styles.menuItemText}>{item.title}</Text>
+            </View>
+        </Pressable>
+    );
 
     return (
         <Modal
@@ -95,48 +107,40 @@ export function Menu({ isVisible, onClose }) {
                     </View>
 
                     <ScrollView style={styles.menuItems} showsVerticalScrollIndicator={false}>
-                        {menuItems.map((item, index) => (
-                            <Pressable
-                                key={index}
-                                style={styles.menuItem}
-                                onPress={item.onPress}
-                            >
-                                <FontAwesome5 name={item.icon} size={20} color={colors.primary} />
-                                <Text style={styles.menuItemText}>{item.title}</Text>
-                            </Pressable>
-                        ))}
+                        {menuItems.map(renderMenuItem)}
                     </ScrollView>
 
                     <View style={styles.footer}>
                         {user ? (
                             <Pressable style={styles.logoutButton} onPress={handleLogout}>
-                                <FontAwesome5 name="sign-out-alt" size={20} color={colors.error} />
-                                <Text style={[styles.menuItemText, { color: colors.error }]}>
-                                    로그아웃
-                                </Text>
+                                <View style={styles.menuItemContent}>
+                                    <FontAwesome5 name="sign-out-alt" size={20} color={colors.error} />
+                                    <Text style={[styles.menuItemText, { color: colors.error }]}>
+                                        로그아웃
+                                    </Text>
+                                </View>
                             </Pressable>
                         ) : (
                             <View style={styles.authButtons}>
-                                <Pressable
-                                    style={styles.authButton}
-                                    onPress={() => {
-                                        router.push('/login');
-                                        onClose();
-                                    }}
-                                >
-                                    <FontAwesome5 name="sign-in-alt" size={20} color={colors.primary} />
-                                    <Text style={styles.menuItemText}>로그인</Text>
-                                </Pressable>
-                                <Pressable
-                                    style={styles.authButton}
-                                    onPress={() => {
-                                        router.push('/signup');
-                                        onClose();
-                                    }}
-                                >
-                                    <FontAwesome5 name="user-plus" size={20} color={colors.primary} />
-                                    <Text style={styles.menuItemText}>회원가입</Text>
-                                </Pressable>
+                                {['로그인', '회원가입'].map((title, index) => (
+                                    <Pressable
+                                        key={index}
+                                        style={styles.authButton}
+                                        onPress={() => {
+                                            router.push(title === '로그인' ? '/login' : '/signup');
+                                            onClose();
+                                        }}
+                                    >
+                                        <View style={styles.menuItemContent}>
+                                            <FontAwesome5 
+                                                name={title === '로그인' ? 'sign-in-alt' : 'user-plus'} 
+                                                size={20} 
+                                                color={colors.primary} 
+                                            />
+                                            <Text style={styles.menuItemText}>{title}</Text>
+                                        </View>
+                                    </Pressable>
+                                ))}
                             </View>
                         )}
                     </View>
@@ -207,4 +211,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: spacing.lg,
     },
+    menuItemContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.md,
+    }
 }); 

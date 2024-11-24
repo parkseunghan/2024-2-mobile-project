@@ -17,8 +17,16 @@ class User {
     }
 
     static async findById(id) {
-        const [rows] = await db.query('SELECT * FROM users WHERE id = ? AND is_active = true', [id]);
-        return rows[0];
+        try {
+            const [rows] = await db.query(
+                'SELECT id, username, email, role, created_at FROM users WHERE id = ? AND is_active = true',
+                [id]
+            );
+            return rows[0];
+        } catch (error) {
+            console.error('사용자 조회 에러:', error);
+            throw new Error('사용자 조회에 실패했습니다.');
+        }
     }
 
     static async getAllUsers(page = 1, limit = 10) {
@@ -62,6 +70,14 @@ class User {
             console.error('프로필 업데이트 에러:', error);
             return false;
         }
+    }
+
+    static async findByUsername(username) {
+        const [rows] = await db.query(
+            'SELECT id, username, email, role FROM users WHERE username = ? AND is_active = true',
+            [username]
+        );
+        return rows[0];
     }
 }
 

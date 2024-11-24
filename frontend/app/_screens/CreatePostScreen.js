@@ -44,19 +44,30 @@ export default function CreatePostScreen() {
       setLoading(true);
       
       const formData = new FormData();
-      formData.append('title', form.title);
-      formData.append('content', form.content);
+      formData.append('title', form.title.trim());
+      formData.append('content', form.content.trim());
       formData.append('category', form.category);
       
       if (form.media) {
+        const fileName = form.media.split('/').pop();
+        const match = /\.(\w+)$/.exec(fileName);
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+        
         formData.append('media', {
           uri: form.media,
-          type: 'image/jpeg',
-          name: 'post-image.jpg'
+          name: fileName,
+          type
         });
       }
 
-      await communityApi.createPost(formData);
+      console.log('Sending form data:', {
+        title: form.title,
+        content: form.content,
+        category: form.category,
+        hasMedia: !!form.media
+      });
+
+      const response = await communityApi.createPost(formData);
       router.back();
       Alert.alert('성공', '게시글이 작성되었습니다.');
     } catch (error) {

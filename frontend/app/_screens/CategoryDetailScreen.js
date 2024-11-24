@@ -35,6 +35,7 @@ export default function CategoryDetailScreen({ categoryId }) {
         } catch (err) {
             console.error('Category content loading error:', err);
             setError(err.message);
+            setVideos([]);
         } finally {
             setLoading(false);
         }
@@ -64,51 +65,46 @@ export default function CategoryDetailScreen({ categoryId }) {
                 </View>
             ) : (
                 <>
-                    <CategoryVideos 
-                        videos={videos} 
-                        onVideoSelect={handleVideoSelect} 
-                    />
-                    <CategoryPosts 
-                        posts={categoryPosts} 
-                        onPostPress={handlePostPress} 
-                    />
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>관련 영상</Text>
+                        {error ? (
+                            <View style={styles.messageContainer}>
+                                <Text style={styles.errorText}>{error}</Text>
+                                <Text style={styles.subErrorText}>
+                                    현재 YouTube 영상을 불러올 수 없습니다.
+                                    잠시 후 다시 시도해주세요.
+                                </Text>
+                            </View>
+                        ) : videos.length > 0 ? (
+                            <VideoList
+                                videos={videos}
+                                onVideoSelect={handleVideoSelect}
+                            />
+                        ) : (
+                            <Text style={styles.emptyText}>관련 영상이 없습니다.</Text>
+                        )}
+                    </View>
+
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>관련 게시물</Text>
+                        {categoryPosts.length > 0 ? (
+                            categoryPosts.map(post => (
+                                <PostCard
+                                    key={post.id}
+                                    post={post}
+                                    onPress={() => handlePostPress(post)}
+                                    style={styles.postCard}
+                                />
+                            ))
+                        ) : (
+                            <Text style={styles.emptyText}>관련 게시물이 없습니다.</Text>
+                        )}
+                    </View>
                 </>
             )}
         </ScrollView>
     );
 }
-
-const CategoryVideos = ({ videos, onVideoSelect }) => (
-    <View style={styles.section}>
-        <Text style={styles.sectionTitle}>관련 영상</Text>
-        {videos.length > 0 ? (
-            <VideoList
-                videos={videos}
-                onVideoSelect={onVideoSelect}
-            />
-        ) : (
-            <Text style={styles.emptyText}>관련 영상이 없습니다.</Text>
-        )}
-    </View>
-);
-
-const CategoryPosts = ({ posts, onPostPress }) => (
-    <View style={styles.section}>
-        <Text style={styles.sectionTitle}>관련 게시물</Text>
-        {posts.length > 0 ? (
-            posts.map(post => (
-                <PostCard
-                    key={post.id}
-                    post={post}
-                    onPress={() => onPostPress(post)}
-                    style={styles.postCard}
-                />
-            ))
-        ) : (
-            <Text style={styles.emptyText}>관련 게시물이 없습니다.</Text>
-        )}
-    </View>
-);
 
 const styles = StyleSheet.create({
     container: {
@@ -134,9 +130,23 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: spacing.xl,
     },
+    messageContainer: {
+        padding: spacing.xl,
+        alignItems: 'center',
+        backgroundColor: colors.surface,
+        borderRadius: 8,
+        marginVertical: spacing.md,
+    },
     errorText: {
         ...typography.body,
         color: colors.error,
+        marginBottom: spacing.sm,
+        textAlign: 'center',
+    },
+    subErrorText: {
+        ...typography.caption,
+        color: colors.text.secondary,
+        textAlign: 'center',
     },
     emptyText: {
         ...typography.body,

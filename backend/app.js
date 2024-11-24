@@ -6,38 +6,39 @@ require('dotenv').config();
 
 const app = express();
 
-// 미들웨어 설정
+// CORS 설정
 app.use(cors({
     origin: process.env.FRONTEND_URL || 'http://localhost:8081',
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    exposedHeaders: ['Authorization']
 }));
-app.use(express.json());
+
+// 미들웨어 설정
 app.use(cookieParser());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// uploads 디렉토리 생성 및 static 파일 서빙 설정
-const uploadsDir = path.join(__dirname, 'uploads');
-const fs = require('fs');
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir);
-}
-app.use('/uploads', express.static(uploadsDir));
+// 정적 파일 제공
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// 라우터 설정
-const authRouter = require('./routes/auth');
-const youtubeRouter = require('./routes/youtube');
-const searchRouter = require('./routes/search');
-const adminRouter = require('./routes/admin');
-const communityRouter = require('./routes/community');
+// 라우트 설정
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/profile', require('./routes/profile'));
+app.use('/api/community', require('./routes/community'));
+app.use('/api/youtube', require('./routes/youtube'));
+app.use('/api/search', require('./routes/search'));
+app.use('/api/admin', require('./routes/admin'));
 
-app.use('/api/auth', authRouter);
-app.use('/api/youtube', youtubeRouter);
-app.use('/api/search', searchRouter);
-app.use('/api/admin', adminRouter);
-app.use('/api/community', communityRouter);
+// 기본 라우트
+app.get('/', (req, res) => {
+    res.json({ message: '서버가 정상적으로 실행 중입니다.' });
+});
 
 // 에러 핸들링 미들웨어
 app.use((err, req, res, next) => {
-    console.error(err.stack);
+    console.error('Server error:', err);
     res.status(500).json({ 
         message: '서버 에러가 발생했습니다.',
         error: process.env.NODE_ENV === 'development' ? err.message : undefined

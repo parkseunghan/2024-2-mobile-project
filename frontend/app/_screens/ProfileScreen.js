@@ -25,6 +25,33 @@ export default function ProfileScreen() {
   const [comments, setComments] = useState([]);
   const [likedPosts, setLikedPosts] = useState([]);
 
+  const loadProfileData = async () => {
+    try {
+      setLoading(true);
+      const [profileRes, postsRes, commentsRes, likedPostsRes] = await Promise.allSettled([
+        profileApi.getProfile(),
+        profileApi.getUserPosts(),
+        profileApi.getUserComments(),
+        profileApi.getLikedPosts()
+      ]);
+
+      if (profileRes.status === 'fulfilled' && profileRes.value.data.profile) {
+        setNickname(profileRes.value.data.profile.nickname || user.username);
+        setBio(profileRes.value.data.profile.bio || '');
+        setAvatar(profileRes.value.data.profile.avatar);
+      }
+
+      setPosts(postsRes.status === 'fulfilled' ? postsRes.value.data.posts : []);
+      setComments(commentsRes.status === 'fulfilled' ? commentsRes.value.data.comments : []);
+      setLikedPosts(likedPostsRes.status === 'fulfilled' ? likedPostsRes.value.data.posts : []);
+    } catch (error) {
+      console.error('프로필 데이터 로드 에러:', error);
+      setError(error.response?.data?.message || '프로필 정보를 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       setNickname(user.username || '');
@@ -60,30 +87,6 @@ export default function ProfileScreen() {
   if (error) {
     return <ErrorState message={error} />;
   }
-
-  const loadProfileData = async () => {
-    try {
-      setLoading(true);
-      const [profileRes, postsRes, commentsRes, likedPostsRes] = await Promise.all([
-        profileApi.getProfile(),
-        profileApi.getUserPosts(),
-        profileApi.getUserComments(),
-        profileApi.getLikedPosts()
-      ]);
-
-      setNickname(profileRes.data.profile.nickname || user.username);
-      setBio(profileRes.data.profile.bio || '');
-      setAvatar(profileRes.data.profile.avatar);
-      setPosts(postsRes.data.posts);
-      setComments(commentsRes.data.comments);
-      setLikedPosts(likedPostsRes.data.posts);
-    } catch (error) {
-      console.error('프로필 데이터 로드 에러:', error);
-      setError(error.response?.data?.message || '프로필 정보를 불러오는데 실패했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleProfileButtonPress = () => {
     setIsEditingProfile(true);

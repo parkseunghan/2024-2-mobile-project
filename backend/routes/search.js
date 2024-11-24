@@ -22,11 +22,17 @@ router.post('/history', authenticateToken, async (req, res) => {
 // 검색 기록 조회
 router.get('/history', authenticateToken, async (req, res) => {
   try {
+    // 사용자가 없는 경우 빈 배열 반환
+    if (!req.user) {
+      return res.json({ history: [] });
+    }
+    
     const history = await SearchHistory.getByUserId(req.user.id);
     res.json({ history });
   } catch (error) {
     console.error('검색 기록 조회 에러:', error);
-    res.status(500).json({ message: '검색 기록 조회에 실패했습니다.' });
+    // 500 에러 대신 빈 배열 반환
+    res.json({ history: [] });
   }
 });
 

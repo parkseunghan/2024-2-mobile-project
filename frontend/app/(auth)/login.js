@@ -91,19 +91,19 @@ export default function LoginScreen() {
           onPress={handleLogin}
           disabled={loading}
           fullWidth
-          style={styles.buttonStyle}
+          variant="primary"
         />
         <Button
           title="계정이 없으신가요? 회원가입"
           onPress={() => router.push('/signup')}
           fullWidth
-          style={styles.buttonStyle}
+          variant="secondary"
         />
         <Button
           title="비회원으로 이용하기"
           onPress={() => router.replace('/(tabs)/home')}
           fullWidth
-          style={styles.buttonStyle}
+          variant="secondary"
         />
       </View>
     </ScrollView>
@@ -137,6 +137,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   buttonStyle: {
-    backgroundColor: "red",
+    backgroundColor: "blue",
   },
 });

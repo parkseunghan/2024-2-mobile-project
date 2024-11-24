@@ -11,9 +11,9 @@ export const PostCard = ({ post, onPress, style }) => {
             style={[styles.container, style]}
             onPress={onPress}
         >
-            {post.media ? (
+            {post.media_url ? (
                 <Image 
-                    source={{ uri: post.media }} 
+                    source={{ uri: post.media_url }} 
                     style={styles.thumbnail}
                     resizeMode="cover"
                 />
@@ -34,15 +34,15 @@ export const PostCard = ({ post, onPress, style }) => {
                 >
                     {post.title}
                 </Text>
-                <Text style={styles.channelTitle}>{post.author}</Text>
+                <Text style={styles.channelTitle}>{post.author_name}</Text>
                 <View style={styles.statsContainer}>
                     <View style={styles.stat}>
                         <FontAwesome5 
                             name="heart" 
                             size={12} 
-                            color={post.liked ? colors.primary : colors.text.secondary} 
+                            color={post.isLiked ? colors.primary : colors.text.secondary} 
                         />
-                        <Text style={styles.statText}>{post.likes}</Text>
+                        <Text style={styles.statText}>{post.like_count || 0}</Text>
                     </View>
                     <View style={styles.stat}>
                         <FontAwesome5 
@@ -50,7 +50,7 @@ export const PostCard = ({ post, onPress, style }) => {
                             size={12} 
                             color={colors.text.secondary} 
                         />
-                        <Text style={styles.statText}>{post.comments?.length || 0}</Text>
+                        <Text style={styles.statText}>{post.comment_count || 0}</Text>
                     </View>
                 </View>
             </View>
