@@ -1,26 +1,108 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
     Image,
-    FlatList,
+    ScrollView,
     TextInput,
     TouchableOpacity,
     StyleSheet,
+    Alert,
+    RefreshControl,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
-import { usePosts } from '@app/_context/PostContext';
+import { useAuth } from '@app/_utils/hooks/useAuth';
+import { communityApi } from '@app/_utils/api/community';
+import { LoadingState } from '@app/_components/common/LoadingState';
+import { ErrorState } from '@app/_components/common/ErrorState';
 
 export default function PostDetailScreen() {
     const router = useRouter();
     const { id } = useLocalSearchParams();
-    const { getPost, toggleLike, toggleDislike, toggleFavorite, addComment } = usePosts();
-    const post = getPost(id);
+    const { user } = useAuth();
+    const [post, setPost] = useState(null);
     const [commentText, setCommentText] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [refreshing, setRefreshing] = useState(false);
+
+    useEffect(() => {
+        loadPost();
+    }, [id]);
+
+    const loadPost = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const response = await communityApi.getPost(id);
+            setPost(response.data.post);
+        } catch (error) {
+            console.error('게시글 로드 에러:', error);
+            setError(error.response?.data?.message || '게시글을 불러오는데 실패했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        await loadPost();
+        setRefreshing(false);
+    };
+
+    const handleAddComment = async () => {
+        if (!user) {
+            Alert.alert('알림', '댓글을 작성하려면 로그인이 필요합니다.', [
+                { text: '취소', style: 'cancel' },
+                { text: '로그인', onPress: () => router.push('/login') }
+            ]);
+            return;
+        }
+
+        if (!commentText.trim()) {
+            Alert.alert('알림', '댓글 내용을 입력해주세요.');
+            return;
+        }
+
+        try {
+            await communityApi.createComment(id, commentText);
+            setCommentText('');
+            loadPost(); // 댓글 목록 새로고침
+        } catch (error) {
+            console.error('댓글 작성 에러:', error);
+            Alert.alert('오류', error.response?.data?.message || '댓글 작성에 실패했습니다.');
+        }
+    };
+
+    const handleToggleLike = async () => {
+        if (!user) {
+            Alert.alert('알림', '좋아요를 하려면 로그인이 필요합니다.', [
+                { text: '취소', style: 'cancel' },
+                { text: '로그인', onPress: () => router.push('/login') }
+            ]);
+            return;
+        }
+
+        try {
+            await communityApi.toggleLike(id);
+            loadPost(); // 게시글 정보 새로고침
+        } catch (error) {
+            console.error('좋아요 토글 에러:', error);
+            Alert.alert('오류', error.response?.data?.message || '좋아요 처리에 실패했습니다.');
+        }
+    };
+
+    if (loading) {
+        return <LoadingState />;
+    }
+
+    if (error) {
+        return <ErrorState message={error} />;
+    }
 
     if (!post) {
         return (
@@ -30,66 +112,68 @@ export default function PostDetailScreen() {
         );
     }
 
-    const handleAddComment = () => {
-        if (commentText.trim()) {
-            addComment(id, {
-                user: '익명',
-                text: commentText,
-            });
-            setCommentText('');
-        }
-    };
-
     return (
         <View style={styles.container}>
-            <FlatList
-                data={post.comments}
-                ListHeaderComponent={() => (
-                    <View style={styles.postContent}>
-                        <Text style={styles.title}>{post.title}</Text>
-                        <Text style={styles.author}>{post.author} · {post.time}</Text>
-                        <Text style={styles.content}>{post.content}</Text>
-                        {post.media && (
-                            <Image source={{ uri: post.media }} style={styles.media} />
-                        )}
-                        <View style={styles.actions}>
-                            <TouchableOpacity onPress={() => toggleLike(id)} style={styles.actionButton}>
-                                <FontAwesome5
-                                    name="thumbs-up"
-                                    size={20}
-                                    color={post.liked ? colors.primary : colors.text.secondary}
-                                />
-                                <Text style={styles.actionText}>{post.likes}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => toggleDislike(id)} style={styles.actionButton}>
-                                <FontAwesome5
-                                    name="thumbs-down"
-                                    size={20}
-                                    color={post.disliked ? colors.error : colors.text.secondary}
-                                />
-                                <Text style={styles.actionText}>{post.dislikes}</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={() => toggleFavorite(id)} style={styles.actionButton}>
-                                <FontAwesome5
-                                    name="star"
-                                    size={20}
-                                    color={post.favorited ? colors.warning : colors.text.secondary}
-                                />
-                            </TouchableOpacity>
+            <ScrollView
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                    />
+                }
+            >
+                <View style={styles.postContent}>
+                    <Text style={styles.title}>{post.title}</Text>
+                    <Text style={styles.author}>
+                        {post.author_name} · {new Date(post.created_at).toLocaleDateString()}
+                    </Text>
+                    <Text style={styles.content}>{post.content}</Text>
+                    {post.media_url && (
+                        <Image 
+                            source={{ uri: post.media_url }} 
+                            style={styles.media}
+                            resizeMode="contain"
+                        />
+                    )}
+                    <View style={styles.actions}>
+                        <TouchableOpacity 
+                            onPress={handleToggleLike} 
+                            style={styles.actionButton}
+                        >
+                            <FontAwesome5
+                                name="thumbs-up"
+                                size={20}
+                                color={post.isLiked ? colors.primary : colors.text.secondary}
+                                solid={post.isLiked}
+                            />
+                            <Text style={styles.actionText}>{post.like_count || 0}</Text>
+                        </TouchableOpacity>
+                        <View style={styles.actionButton}>
+                            <FontAwesome5
+                                name="comment"
+                                size={20}
+                                color={colors.text.secondary}
+                            />
+                            <Text style={styles.actionText}>
+                                {post.comments?.length || 0}
+                            </Text>
                         </View>
                     </View>
-                )}
-                renderItem={({ item }) => (
-                    <View style={styles.comment}>
-                        <Text style={styles.commentUser}>{item.user}</Text>
-                        <Text style={styles.commentText}>{item.text}</Text>
-                    </View>
-                )}
-                keyExtractor={item => item.id.toString()}
-                ListEmptyComponent={
-                    <Text style={styles.emptyComments}>첫 댓글을 남겨보세요!</Text>
-                }
-            />
+                </View>
+
+                <View style={styles.commentsSection}>
+                    <Text style={styles.commentsTitle}>댓글</Text>
+                    {post.comments?.map((comment) => (
+                        <View key={comment.id} style={styles.comment}>
+                            <Text style={styles.commentUser}>{comment.author_name}</Text>
+                            <Text style={styles.commentText}>{comment.content}</Text>
+                            <Text style={styles.commentTime}>
+                                {new Date(comment.created_at).toLocaleDateString()}
+                            </Text>
+                        </View>
+                    ))}
+                </View>
+            </ScrollView>
 
             <View style={styles.commentInput}>
                 <TextInput
@@ -171,6 +255,15 @@ const styles = StyleSheet.create({
         ...typography.caption,
         color: colors.text.secondary,
     },
+    commentsSection: {
+        padding: spacing.md,
+        borderTopWidth: 8,
+        borderTopColor: colors.border,
+    },
+    commentsTitle: {
+        ...typography.h3,
+        marginBottom: spacing.md,
+    },
     comment: {
         padding: spacing.md,
         borderBottomWidth: 1,
@@ -183,12 +276,11 @@ const styles = StyleSheet.create({
     },
     commentText: {
         ...typography.body,
+        marginBottom: spacing.xs,
     },
-    emptyComments: {
-        ...typography.body,
+    commentTime: {
+        ...typography.caption,
         color: colors.text.secondary,
-        textAlign: 'center',
-        padding: spacing.xl,
     },
     commentInput: {
         flexDirection: 'row',
@@ -196,6 +288,7 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: colors.border,
         alignItems: 'center',
+        backgroundColor: colors.background,
     },
     input: {
         flex: 1,
@@ -205,6 +298,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.sm,
         marginRight: spacing.sm,
+        maxHeight: 100,
     },
     sendButton: {
         padding: spacing.sm,

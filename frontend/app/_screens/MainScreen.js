@@ -66,42 +66,15 @@ const MainScreen = () => {
             style={styles.container}
             contentContainerStyle={styles.content}
         >
-            {/* 검색 기록 섹션 */}
-            {user && searchHistory.length > 0 && (
-                <View style={styles.historySection}>
-                    <View style={styles.historyHeader}>
-                        <Text style={styles.historyTitle}>최근 검색어</Text>
-                        <Pressable
-                            style={styles.clearButton}
-                            onPress={clearAllSearchHistory}
-                        >
-                            <FontAwesome5 name="trash-alt" size={16} color={colors.text.secondary} />
-                            <Text style={styles.clearButtonText}>전체 삭제</Text>
-                        </Pressable>
-                    </View>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={styles.historyScrollView}
-                    >
-                        {searchHistory.map((item, index) => (
-                            <Pressable
-                                key={index}
-                                style={styles.historyItem}
-                                onPress={() => handleSearchHistoryPress(item.query)}
-                            >
-                                <Text style={styles.historyText}>{item.query}</Text>
-                            </Pressable>
-                        ))}
-                    </ScrollView>
-                </View>
+            {user ? (
+                <Banner title="오늘의 추천 영상" subtitle="오늘의 추천 영상을 확인해보세요." />
+            ) : (
+                <Banner title="현재 비회원으로 이용 중입니다." subtitle="추가 서비스를 이용하시려면 로그인이 필요합니다." />
             )}
-
-            <Banner title="오늘의 추천 영상" subtitle="오늘의 추천 영상을 확인해보세요." />
 
             <CategoryButtons onCategoryPress={handleCategoryPress} />
 
-            
+
         </ScrollView>
     );
 };

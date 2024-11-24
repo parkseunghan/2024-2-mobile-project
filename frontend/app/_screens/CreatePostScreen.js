@@ -7,12 +7,14 @@ import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import * as ImagePicker from 'expo-image-picker';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { communityApi } from '@app/_utils/api/community';
 
 export default function CreatePostScreen() {
   const router = useRouter();
   const [form, setForm] = useState({
     title: '',
     content: '',
+    category: '일반',
     media: null,
   });
   const [loading, setLoading] = useState(false);
@@ -40,10 +42,26 @@ export default function CreatePostScreen() {
 
     try {
       setLoading(true);
-      // API 호출 로직 추가
+      
+      const formData = new FormData();
+      formData.append('title', form.title);
+      formData.append('content', form.content);
+      formData.append('category', form.category);
+      
+      if (form.media) {
+        formData.append('media', {
+          uri: form.media,
+          type: 'image/jpeg',
+          name: 'post-image.jpg'
+        });
+      }
+
+      await communityApi.createPost(formData);
       router.back();
+      Alert.alert('성공', '게시글이 작성되었습니다.');
     } catch (error) {
-      Alert.alert('오류', '게시글 작성에 실패했습니다.');
+      console.error('게시글 작성 에러:', error);
+      Alert.alert('오류', error.response?.data?.message || '게시글 작성에 실패했습니다.');
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TextInput, Image, Platform, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@app/_utils/hooks/useAuth';
@@ -7,25 +7,39 @@ import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 import { Button } from '@app/_components/common/Button';
+import { profileApi } from '@app/_utils/api/profile';
+import { LoadingState } from '@app/_components/common/LoadingState';
+import { ErrorState } from '@app/_components/common/ErrorState';
 
 export default function ProfileScreen() {
   const { user } = useAuth();
   const router = useRouter();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [nickname, setNickname] = useState(user?.username || '');
+  const [nickname, setNickname] = useState('');
   const [bio, setBio] = useState('');
   const [avatar, setAvatar] = useState(null);
   const [activeTab, setActiveTab] = useState('posts');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [posts, setPosts] = useState([]);
+  const [comments, setComments] = useState([]);
+  const [likedPosts, setLikedPosts] = useState([]);
+
+  useEffect(() => {
+    if (user) {
+      setNickname(user.username || '');
+      loadProfileData();
+    }
+  }, [user]);
 
   if (!user) {
     return (
       <View style={styles.container}>
         <View style={styles.messageContainer}>
-          <Text style={styles.title}>현재 비회원으로 이용 중입니다.</Text>
+          <Text style={styles.title}>로그인이 필요합니다</Text>
           <Text style={styles.subtitle}>
-            추가 서비스를 이용하시려면 로그인이 필요합니다.
+            프로필을 보려면 로그인이 필요합니다.
           </Text>
-          
           <View style={styles.buttonContainer}>
             <Button
               title="로그인"
@@ -39,13 +53,62 @@ export default function ProfileScreen() {
     );
   }
 
+  if (loading) {
+    return <LoadingState />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} />;
+  }
+
+  const loadProfileData = async () => {
+    try {
+      setLoading(true);
+      const [profileRes, postsRes, commentsRes, likedPostsRes] = await Promise.all([
+        profileApi.getProfile(),
+        profileApi.getUserPosts(),
+        profileApi.getUserComments(),
+        profileApi.getLikedPosts()
+      ]);
+
+      setNickname(profileRes.data.profile.nickname || user.username);
+      setBio(profileRes.data.profile.bio || '');
+      setAvatar(profileRes.data.profile.avatar);
+      setPosts(postsRes.data.posts);
+      setComments(commentsRes.data.comments);
+      setLikedPosts(likedPostsRes.data.posts);
+    } catch (error) {
+      console.error('프로필 데이터 로드 에러:', error);
+      setError(error.response?.data?.message || '프로필 정보를 불러오는데 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleProfileButtonPress = () => {
     setIsEditingProfile(true);
   };
 
-  const handleSaveProfile = () => {
-    setIsEditingProfile(false);
-    // TODO: API 호출하여 프로필 업데이트
+  const handleSaveProfile = async () => {
+    try {
+      const formData = new FormData();
+      formData.append('nickname', nickname);
+      formData.append('bio', bio);
+      if (avatar && !avatar.startsWith('http')) {
+        formData.append('avatar', {
+          uri: avatar,
+          type: 'image/jpeg',
+          name: 'avatar.jpg'
+        });
+      }
+
+      await profileApi.updateProfile(formData);
+      setIsEditingProfile(false);
+      loadProfileData();
+    } catch (error) {
+      console.error('프로필 업데이트 에러:', error);
+      Alert.alert('오류', error.response?.data?.message || '프로필 업데이트에 실패했습니다.');
+    }
   };
 
   const pickImage = async () => {
@@ -68,10 +131,6 @@ export default function ProfileScreen() {
       setAvatar(result.assets[0].uri);
     }
   };
-
-  const posts = [];
-  const comments = [];
-  const likedPosts = [];
 
   const renderContent = () => {
     switch (activeTab) {

@@ -50,6 +50,19 @@ class User {
         const [rows] = await db.query(sql, params);
         return rows;
     }
+
+    static async updateProfile(userId, updateData) {
+        try {
+            const [result] = await db.query(
+                'UPDATE users SET ? WHERE id = ?',
+                [updateData, userId]
+            );
+            return result.affectedRows > 0;
+        } catch (error) {
+            console.error('프로필 업데이트 에러:', error);
+            return false;
+        }
+    }
 }
 
 module.exports = User;

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { colors } from '@app/_styles/colors';
@@ -7,29 +7,55 @@ import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 import { PostCard } from '@app/_components/community/PostCard';
 import { CategoryFilter } from '@app/_components/community/CategoryFilter';
-import { usePosts } from '@app/_context/PostContext';
+import { LoadingState } from '@app/_components/common/LoadingState';
+import { ErrorState } from '@app/_components/common/ErrorState';
+import { communityApi } from '@app/_utils/api/community';
 
 export default function CommunityScreen() {
     const router = useRouter();
-    const { posts, addPost } = usePosts();
+    const [posts, setPosts] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('전체');
-    const categories = ['전체', '상품 리뷰', '취미', '건강·운동', '맛집', '여행', '슈퍼전대'];
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [searchVisible, setSearchVisible] = useState(false);
     const [searchText, setSearchText] = useState('');
+    const [page, setPage] = useState(1);
+    const [hasMore, setHasMore] = useState(true);
 
-    const filteredPosts = posts.filter((post) => {
-        const matchesCategory =
-            selectedCategory === '전체' || post.category === selectedCategory;
-        const matchesSearchText = post.title
-            .toLowerCase()
-            .includes(searchText.toLowerCase());
-        return matchesCategory && matchesSearchText;
-    });
+    const categories = ['전체', '상품 리뷰', '취미', '건강·운동', '맛집', '여행', '슈퍼전대'];
 
-    const popularPosts = posts
-        .filter((post) => post.likes >= 10)
-        .sort((a, b) => b.likes - a.likes)
-        .slice(0, 5);
+    useEffect(() => {
+        loadPosts();
+    }, [selectedCategory]);
+
+    const loadPosts = async (refresh = false) => {
+        try {
+            if (refresh) {
+                setPage(1);
+                setHasMore(true);
+            }
+            
+            if (!hasMore && !refresh) return;
+
+            setLoading(true);
+            setError(null);
+
+            const response = await communityApi.getPosts(
+                selectedCategory === '전체' ? null : selectedCategory,
+                refresh ? 1 : page
+            );
+
+            const newPosts = response.data.posts;
+            setPosts(prev => refresh ? newPosts : [...prev, ...newPosts]);
+            setHasMore(newPosts.length > 0);
+            setPage(prev => refresh ? 2 : prev + 1);
+        } catch (error) {
+            console.error('게시글 로드 에러:', error);
+            setError(error.response?.data?.message || '게시글을 불러오는데 실패했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handlePostPress = (post) => {
         router.push(`/post/${post.id}`);
@@ -39,9 +65,33 @@ export default function CommunityScreen() {
         router.push('/post/create');
     };
 
+    const handleRefresh = () => {
+        loadPosts(true);
+    };
+
+    const filteredPosts = posts.filter(post => 
+        post.title.toLowerCase().includes(searchText.toLowerCase())
+    );
+
+    if (error) {
+        return <ErrorState message={error} />;
+    }
+
     return (
         <View style={styles.container}>
-            <ScrollView>
+            <ScrollView
+                onScrollEndDrag={({ nativeEvent }) => {
+                    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+                    const paddingToBottom = 20;
+                    if (layoutMeasurement.height + contentOffset.y >=
+                        contentSize.height - paddingToBottom) {
+                        loadPosts();
+                    }
+                }}
+                refreshControl={
+                    <RefreshControl refreshing={loading} onRefresh={handleRefresh} />
+                }
+            >
                 <View style={styles.header}>
                     <Text style={styles.headerTitle}>게시판</Text>
                     <TouchableOpacity
@@ -73,25 +123,6 @@ export default function CommunityScreen() {
                 />
 
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>실시간 인기 글</Text>
-                    <ScrollView 
-                        horizontal 
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.popularPostsList}
-                    >
-                        {popularPosts.map((post) => (
-                            <View key={post.id} style={styles.popularPostContainer}>
-                                <PostCard
-                                    post={post}
-                                    onPress={() => handlePostPress(post)}
-                                />
-                            </View>
-                        ))}
-                    </ScrollView>
-                </View>
-
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>모든 게시물</Text>
                     {filteredPosts.map((post) => (
                         <PostCard
                             key={post.id}
