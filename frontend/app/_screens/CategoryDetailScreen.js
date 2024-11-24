@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
 import { VideoList } from '@app/_components/main/VideoList';
 import { PostCard } from '@app/_components/community/PostCard';
 import { colors } from '@app/_styles/colors';
@@ -12,15 +11,14 @@ import { LoadingState } from '@app/_components/common/LoadingState';
 import { useRouter } from 'expo-router';
 import { usePosts } from '@app/_context/PostContext';
 
-export default function CategoryDetail() {
-    const { id } = useLocalSearchParams();
+export default function CategoryDetailScreen({ categoryId }) {
     const router = useRouter();
     const { posts } = usePosts();
     const [loading, setLoading] = useState(true);
     const [videos, setVideos] = useState([]);
     const [error, setError] = useState(null);
 
-    const category = CATEGORIES.find(cat => cat.id === id);
+    const category = CATEGORIES.find(cat => cat.id === categoryId);
     const categoryPosts = posts.filter(post => post.category === category?.title);
 
     useEffect(() => {
@@ -50,10 +48,6 @@ export default function CategoryDetail() {
         router.push(`/post/${post.id}`);
     };
 
-    if (loading) {
-        return <LoadingState />;
-    }
-
     if (!category) {
         return (
             <View style={styles.errorContainer}>
@@ -64,56 +58,68 @@ export default function CategoryDetail() {
 
     return (
         <ScrollView style={styles.container}>
-            <View style={styles.header}>
-                <Text style={styles.title}>{category.title}</Text>
-            </View>
-
-            {/* 영상 섹션 */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>관련 영상</Text>
-                {videos.length > 0 ? (
-                    <VideoList
-                        videos={videos}
-                        onVideoSelect={handleVideoSelect}
+            {loading ? (
+                <View style={styles.loadingContainer}>
+                    <LoadingState />
+                </View>
+            ) : (
+                <>
+                    <CategoryVideos 
+                        videos={videos} 
+                        onVideoSelect={handleVideoSelect} 
                     />
-                ) : (
-                    <Text style={styles.emptyText}>관련 영상이 없습니다.</Text>
-                )}
-            </View>
-
-            {/* 게시물 섹션 */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>관련 게시물</Text>
-                {categoryPosts.length > 0 ? (
-                    categoryPosts.map(post => (
-                        <PostCard
-                            key={post.id}
-                            post={post}
-                            onPress={() => handlePostPress(post)}
-                            style={styles.postCard}
-                        />
-                    ))
-                ) : (
-                    <Text style={styles.emptyText}>관련 게시물이 없습니다.</Text>
-                )}
-            </View>
+                    <CategoryPosts 
+                        posts={categoryPosts} 
+                        onPostPress={handlePostPress} 
+                    />
+                </>
+            )}
         </ScrollView>
     );
 }
+
+const CategoryVideos = ({ videos, onVideoSelect }) => (
+    <View style={styles.section}>
+        <Text style={styles.sectionTitle}>관련 영상</Text>
+        {videos.length > 0 ? (
+            <VideoList
+                videos={videos}
+                onVideoSelect={onVideoSelect}
+            />
+        ) : (
+            <Text style={styles.emptyText}>관련 영상이 없습니다.</Text>
+        )}
+    </View>
+);
+
+const CategoryPosts = ({ posts, onPostPress }) => (
+    <View style={styles.section}>
+        <Text style={styles.sectionTitle}>관련 게시물</Text>
+        {posts.length > 0 ? (
+            posts.map(post => (
+                <PostCard
+                    key={post.id}
+                    post={post}
+                    onPress={() => onPostPress(post)}
+                    style={styles.postCard}
+                />
+            ))
+        ) : (
+            <Text style={styles.emptyText}>관련 게시물이 없습니다.</Text>
+        )}
+    </View>
+);
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
     },
-    header: {
-        padding: spacing.lg,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-    },
-    title: {
-        ...typography.h1,
-        color: colors.text.primary,
+    loadingContainer: {
+        flex: 1,
+        minHeight: 400,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     section: {
         padding: spacing.lg,
