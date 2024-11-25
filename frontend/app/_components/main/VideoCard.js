@@ -22,11 +22,16 @@ export const VideoCard = ({ video, style, onPress }) => {
 
   // YouTube API 응답 구조에 맞게 수정
   const thumbnailUrl = 
+    video.snippet?.thumbnails?.medium?.url ||
     video.thumbnail ||
-    'https://via.placeholder.com/320x180.png?text=No+Thumbnail';
+    'https://i.ytimg.com/vi/default/mqdefault.jpg';
 
-  const decodedTitle = decodeHTMLEntities(video.title);
-  const decodedChannelTitle = decodeHTMLEntities(video.channelTitle);
+  // API 응답 구조에 맞게 제목과 채널명 가져오기
+  const title = video.snippet?.title || video.title || '제목 없음';
+  const channelTitle = video.snippet?.channelTitle || video.channelTitle || '채널 정보 없음';
+
+  const decodedTitle = decodeHTMLEntities(title);
+  const decodedChannelTitle = decodeHTMLEntities(channelTitle);
 
   return (
     <Pressable 
@@ -44,13 +49,13 @@ export const VideoCard = ({ video, style, onPress }) => {
           numberOfLines={2}
           ellipsizeMode="tail"
         >
-          {decodedTitle || '제목 없음'}
+          {decodedTitle}
         </Text>
         <Text 
           style={styles.channelTitle}
           numberOfLines={1}
         >
-          {decodedChannelTitle || '채널 정보 없음'}
+          {decodedChannelTitle}
         </Text>
       </View>
     </Pressable>
