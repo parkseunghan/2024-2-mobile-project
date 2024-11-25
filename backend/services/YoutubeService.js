@@ -1,4 +1,5 @@
 const axios = require('axios');
+const NodeCache = require('node-cache');
 require('dotenv').config();
 
 class YoutubeService {
@@ -8,13 +9,22 @@ class YoutubeService {
     }
     this.apiKey = process.env.YOUTUBE_API_KEY;
     this.baseUrl = 'https://www.googleapis.com/youtube/v3';
+    this.cache = new NodeCache({ stdTTL: 3600 });
   }
 
   async searchVideos(query, categoryId = null) {
     try {
+      const cacheKey = `search:${query}:${categoryId || 'null'}`;
+      
+      const cachedResult = this.cache.get(cacheKey);
+      if (cachedResult) {
+        console.log('캐시된 검색 결과 반환:', query);
+        return cachedResult;
+      }
+
       const params = {
         part: 'snippet',
-        maxResults: 25,
+        maxResults: 10,
         q: query,
         type: 'video',
         key: this.apiKey,
@@ -41,6 +51,9 @@ class YoutubeService {
         throw new Error('YouTube API로부터 유효한 응답을 받지 못했습니다.');
       }
 
+      this.cache.set(cacheKey, response.data.items);
+      console.log('검색 결과 캐시 저장:', query);
+
       return response.data.items;
 
     } catch (error) {
@@ -59,6 +72,14 @@ class YoutubeService {
 
   async getVideoDetails(videoId) {
     try {
+      const cacheKey = `video:${videoId}`;
+      
+      const cachedResult = this.cache.get(cacheKey);
+      if (cachedResult) {
+        console.log('캐시된 비디오 상세 정보 반환:', videoId);
+        return cachedResult;
+      }
+
       const headers = {
         'Accept': 'application/json',
         'Referer': process.env.FRONTEND_URL || 'http://localhost:8081',
@@ -78,11 +99,31 @@ class YoutubeService {
         throw new Error('비디오를 찾을 수 없습니다.');
       }
 
+      this.cache.set(cacheKey, response.data.items[0]);
+      console.log('비디오 상세 정보 캐시 저장:', videoId);
+
       return response.data.items[0];
     } catch (error) {
       console.error('YouTube API 비디오 상세 정보 에러:', error.response?.data || error.message);
       throw error;
     }
+  }
+
+  clearCache() {
+    this.cache.flushAll();
+    console.log('캐시 전체 삭제됨');
+  }
+
+  clearSearchCache(query) {
+    const cacheKey = `search:${query}:null`;
+    this.cache.del(cacheKey);
+    console.log('검색 캐시 삭제됨:', query);
+  }
+
+  clearVideoCache(videoId) {
+    const cacheKey = `video:${videoId}`;
+    this.cache.del(cacheKey);
+    console.log('비디오 캐시 삭제됨:', videoId);
   }
 }
 
