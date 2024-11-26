@@ -69,7 +69,7 @@ const MainScreen = () => {
             {user ? (
                 <Banner title="오늘의 추천 영상" subtitle="오늘의 추천 영상을 확인해보세요." />
             ) : (
-                <Banner title="현재 비회원으로 이용 중입니다." subtitle="추가 서비스를 이용하시려면 로그인이 필요합니다." />
+                <Banner title="현재 비회���으로 이용 중입니다." subtitle="추가 서비스를 이용하시려면 로그인이 필요합니다." />
             )}
 
             <CategoryButtons onCategoryPress={handleCategoryPress} />
@@ -85,6 +85,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background,
     },
     content: {
+        flexGrow: 1,
         paddingVertical: spacing.md,
     },
     historySection: {
