@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { VideoList } from '@app/_components/main/VideoList';
 import { PostCard } from '@app/_components/community/PostCard';
 import { colors } from '@app/_styles/colors';
@@ -17,6 +17,7 @@ export default function CategoryDetailScreen({ categoryId }) {
     const [loading, setLoading] = useState(true);
     const [videos, setVideos] = useState([]);
     const [error, setError] = useState(null);
+    const [activeTab, setActiveTab] = useState('videos'); // 'videos' 또는 'posts'
 
     const category = CATEGORIES.find(cat => cat.id === categoryId);
     const categoryPosts = posts.filter(post => post.category === category?.title);
@@ -57,16 +58,39 @@ export default function CategoryDetailScreen({ categoryId }) {
         );
     }
 
+    if (loading) {
+        return <LoadingState />;
+    }
+
     return (
-        <ScrollView style={styles.container}>
-            {loading ? (
-                <View style={styles.loadingContainer}>
-                    <LoadingState />
-                </View>
-            ) : (
-                <>
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>관련 영상</Text>
+        <View style={styles.container}>
+            <View style={styles.header}>
+                <Text style={styles.title}>{category.title}</Text>
+            </View>
+
+            <View style={styles.tabContainer}>
+                <Pressable
+                    style={[styles.tab, activeTab === 'videos' && styles.activeTab]}
+                    onPress={() => setActiveTab('videos')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'videos' && styles.activeTabText]}>
+                        영상 ({videos.length})
+                    </Text>
+                </Pressable>
+                <Pressable
+                    style={[styles.tab, activeTab === 'posts' && styles.activeTab]}
+                    onPress={() => setActiveTab('posts')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>
+                        게시물 ({categoryPosts.length})
+                    </Text>
+                </Pressable>
+            </View>
+
+            <ScrollView style={styles.content}>
+                {activeTab === 'videos' ? (
+                    // 영상 탭 내용
+                    <View style={styles.videoContainer}>
                         {error ? (
                             <View style={styles.messageContainer}>
                                 <Text style={styles.errorText}>{error}</Text>
@@ -76,19 +100,24 @@ export default function CategoryDetailScreen({ categoryId }) {
                                 </Text>
                             </View>
                         ) : videos.length > 0 ? (
-                            <VideoList
-                                videos={videos}
-                                onVideoSelect={handleVideoSelect}
-                            />
+                            videos.map((video) => (
+                                <VideoList
+                                    key={video.id}
+                                    videos={[video]}
+                                    onVideoSelect={handleVideoSelect}
+                                />
+                            ))
                         ) : (
-                            <Text style={styles.emptyText}>관련 영상이 없습니다.</Text>
+                            <View style={styles.emptyContainer}>
+                                <Text style={styles.emptyText}>관련 영상이 없습니다.</Text>
+                            </View>
                         )}
                     </View>
-
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>관련 게시물</Text>
+                ) : (
+                    // 게시물 탭 내용
+                    <View style={styles.postsContainer}>
                         {categoryPosts.length > 0 ? (
-                            categoryPosts.map(post => (
+                            categoryPosts.map((post) => (
                                 <PostCard
                                     key={post.id}
                                     post={post}
@@ -97,12 +126,14 @@ export default function CategoryDetailScreen({ categoryId }) {
                                 />
                             ))
                         ) : (
-                            <Text style={styles.emptyText}>관련 게시물이 없습니다.</Text>
+                            <View style={styles.emptyContainer}>
+                                <Text style={styles.emptyText}>관련 게시물이 없습니다.</Text>
+                            </View>
                         )}
                     </View>
-                </>
-            )}
-        </ScrollView>
+                )}
+            </ScrollView>
+        </View>
     );
 }
 
@@ -111,24 +142,68 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.background,
     },
-    loadingContainer: {
-        flex: 1,
-        minHeight: 400,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    section: {
+    header: {
         padding: spacing.lg,
     },
-    sectionTitle: {
+    title: {
         ...typography.h2,
+        marginBottom: spacing.sm,
+    },
+    tabContainer: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    tab: {
+        flex: 1,
+        paddingVertical: spacing.md,
+        alignItems: 'center',
+    },
+    activeTab: {
+        borderBottomWidth: 2,
+        borderBottomColor: colors.primary,
+    },
+    tabText: {
+        ...typography.body,
+        color: colors.text.secondary,
+    },
+    activeTabText: {
+        color: colors.primary,
+        fontWeight: '600',
+    },
+    content: {
+        flex: 1,
+    },
+    videoContainer: {
+        padding: spacing.md,
+    },
+    postsContainer: {
+        padding: spacing.md,
+    },
+    postCard: {
         marginBottom: spacing.md,
+    },
+    emptyContainer: {
+        padding: spacing.xl,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyText: {
+        ...typography.body,
+        color: colors.text.secondary,
+        textAlign: 'center',
     },
     errorContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: spacing.xl,
+    },
+    errorText: {
+        ...typography.body,
+        color: colors.error,
+        marginBottom: spacing.sm,
+        textAlign: 'center',
     },
     messageContainer: {
         padding: spacing.xl,
@@ -137,24 +212,9 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginVertical: spacing.md,
     },
-    errorText: {
-        ...typography.body,
-        color: colors.error,
-        marginBottom: spacing.sm,
-        textAlign: 'center',
-    },
     subErrorText: {
         ...typography.caption,
         color: colors.text.secondary,
         textAlign: 'center',
-    },
-    emptyText: {
-        ...typography.body,
-        color: colors.text.secondary,
-        textAlign: 'center',
-        padding: spacing.lg,
-    },
-    postCard: {
-        marginBottom: spacing.md,
     },
 }); 

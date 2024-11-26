@@ -21,9 +21,11 @@ export const CategoryButtons = () => {
     >
       <View style={styles.buttonContent}>
         <View style={[styles.iconContainer, { backgroundColor: `${category.color}15` }]}>
-          <Ionicons name={category.icon} size={24} color={category.color} />
+          <Ionicons name={category.icon} size={28} color={category.color} />
         </View>
-        <Text style={styles.buttonText}>{category.title}</Text>
+        <Text style={styles.buttonText} numberOfLines={1}>
+          {category.title}
+        </Text>
       </View>
     </Pressable>
   );
@@ -48,44 +50,43 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 800,
     alignSelf: 'center',
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.xs,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     width: '100%',
   },
   button: {
-    width: '31%',
-    height: 100,
-    borderRadius: 24,
+    flex: 1,
+    marginHorizontal: 4,
+    height: 90,
+    minWidth: 95,
+    borderRadius: 20,
     backgroundColor: 'white',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3.5,
-    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xs,
   },
   buttonContent: {
-    flex: 1,
+    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.sm,
   },
   iconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: 6,
   },
   buttonText: {
     color: '#2D3436',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     textAlign: 'center',
+    width: '100%',
   },
 });

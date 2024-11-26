@@ -39,19 +39,21 @@ export const SearchBar = memo(({
                     returnKeyType="search"
                     autoFocus={autoFocus}
                 />
-
-                <Pressable
-                    onPress={onClear}
-                    style={[styles.clearButton, { opacity: searchQuery.length ? 1 : 0.5 }]}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                    disabled={!searchQuery.length}
-                >
-                    <Ionicons
-                        name="close-circle"
-                        size={20}
-                        color={searchQuery.length ? colors.text.secondary : colors.text.disabled}
-                    />
-                </Pressable>
+                {searchQuery.length > 0 && (
+                    <View style={styles.clearButtonContainer}>
+                        <Pressable
+                            onPress={onClear}
+                            style={styles.clearButton}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        >
+                            <Ionicons
+                                name="close-circle"
+                                size={20}
+                                color={colors.text.secondary}
+                            />
+                        </Pressable>
+                    </View>
+                )}
             </View>
         </View>
     );
@@ -67,11 +69,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.surface,
-        borderRadius: 8,
-        paddingHorizontal: spacing.md,
-        height: 40,
+        borderRadius: 20,
+        paddingLeft: spacing.md,
+        paddingRight: spacing.xl,
+        height: 44,
         borderWidth: 1,
         borderColor: colors.border,
+        position: 'relative',
     },
     searchIcon: {
         marginRight: spacing.sm,
@@ -80,10 +84,20 @@ const styles = StyleSheet.create({
         flex: 1,
         ...typography.body,
         color: colors.text.primary,
-        paddingVertical: spacing.xs,
+        height: '100%',
+        paddingVertical: 0,
+    },
+    clearButtonContainer: {
+        position: 'absolute',
+        right: spacing.sm,
+        top: 0,
+        bottom: 0,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     clearButton: {
         padding: spacing.xs,
-        marginLeft: spacing.xs,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 }); 
