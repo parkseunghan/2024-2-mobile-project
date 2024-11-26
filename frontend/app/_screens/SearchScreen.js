@@ -17,7 +17,7 @@ const SearchScreen = ({ visible, onClose }) => {
     const [slideAnim] = useState(new Animated.Value(SCREEN_HEIGHT));
     const router = useRouter();
     const { user } = useAuth();
-    const { 
+    const {
         searchQuery,
         setSearchQuery,
         searchHistory,
@@ -52,6 +52,12 @@ const SearchScreen = ({ visible, onClose }) => {
                 return;
             }
 
+            const searchQueries = [
+                `${query.trim()} 팁`,
+                `${query.trim()} 꿀팁`,
+                `${query.trim()} tip`,
+            ];
+
             if (user) {
                 try {
                     await addToSearchHistory(query);
@@ -61,8 +67,14 @@ const SearchScreen = ({ visible, onClose }) => {
             }
 
             try {
-                const results = await searchVideos(query);
-                setSearchResults(results || []);
+                const searchPromises = searchQueries.map(q => searchVideos(q));
+                const searchResults = await Promise.all(searchPromises);
+                
+                const combinedResults = searchResults.flat().filter((video, index, self) =>
+                    index === self.findIndex((v) => v.id === video.id)
+                );
+
+                setSearchResults(combinedResults || []);
             } catch (error) {
                 console.error('검색 에러:', error);
                 setSearchResults([]);
@@ -150,7 +162,7 @@ const SearchScreen = ({ visible, onClose }) => {
             animationType="none"
             onRequestClose={onClose}
         >
-            <Animated.View 
+            <Animated.View
                 style={[
                     styles.modalContainer,
                     { transform: [{ translateY: slideAnim }] }
