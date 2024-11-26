@@ -1,13 +1,11 @@
-// API 통신을 위한 axios 인스턴스 설정 및 관리
-// - baseURL 설정 (기본 API 엔드포인트)
-// - 인터셉터를 통한 요청/응답 처리
-// - 토큰 자동 주입
-// - 에러 핸들링
-
+/**
+ * API 통신을 위한 axios 인스턴스 설정 및 관리
+ */
 import axios from 'axios';
 import storage from './storage';
 import { router } from 'expo-router';
 
+// axios 인스턴스 생성
 const api = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api',
   headers: {
@@ -16,7 +14,10 @@ const api = axios.create({
   withCredentials: true
 });
 
-// 요청 인터셉터
+/**
+ * 요청 인터셉터
+ * - 토큰이 있는 경우 Authorization 헤더에 추가
+ */
 api.interceptors.request.use(
   async (config) => {
     try {
@@ -35,21 +36,22 @@ api.interceptors.request.use(
   }
 );
 
-// 응답 인터셉터
+/**
+ * 응답 인터셉터
+ * - 401 에러 처리 (인증 실패)
+ * - 토큰 만료 시 로그인 페이지로 리다이렉트
+ */
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     if (error.response?.status === 401) {
-      // 토큰이 만료되었거나 유효하지 않은 경우
       await storage.removeItem('userToken');
       delete api.defaults.headers.common['Authorization'];
       
-      // 로그인이 필요한 페이지가 아니라면 에러를 무시
       if (!error.config.requiresAuth) {
         return Promise.resolve({ data: null });
       }
       
-      // 로그인 페이지로 리다이렉트
       if (router) {
         router.push('/login');
       }
@@ -58,7 +60,10 @@ api.interceptors.response.use(
   }
 );
 
-// 토큰 설정 헬퍼 함수
+/**
+ * 토큰 설정 헬퍼 함수
+ * @param {string} token - JWT 토큰
+ */
 api.setToken = (token) => {
   if (token) {
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`;

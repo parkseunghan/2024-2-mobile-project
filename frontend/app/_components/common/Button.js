@@ -4,6 +4,18 @@ import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 
+/**
+ * 공통 버튼 컴포넌트
+ * @param {string|ReactElement} title - 버튼 텍스트 또는 커스텀 컴포넌트
+ * @param {Function} onPress - 클릭 이벤트 핸들러
+ * @param {boolean} disabled - 비활성화 여부
+ * @param {Object} style - 추가 스타일
+ * @param {Object} textStyle - 텍스트 추가 스타일
+ * @param {ReactElement} icon - 버튼 아이콘
+ * @param {'primary'|'secondary'|'danger'} variant - 버튼 스타일 변형
+ * @param {boolean} fullWidth - 전체 너비 사용 여부
+ * @param {string} subtitle - 부제목 (선택적)
+ */
 export const Button = ({
     title,
     onPress,
@@ -15,6 +27,7 @@ export const Button = ({
     fullWidth = false,
     subtitle,
 }) => {
+    // 제목이 문자열인 경우 Text 컴포넌트로 렌더링
     const renderTitle = () => {
         if (typeof title === 'string') {
             return (
@@ -28,7 +41,7 @@ export const Button = ({
                 </Text>
             );
         }
-        return title;  // title이 React 엘리먼트인 경우 그대로 반환
+        return title;  // React 엘리먼트인 경우 그대로 반환
     };
 
     return (

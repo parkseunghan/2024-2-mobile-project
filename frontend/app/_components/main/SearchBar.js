@@ -5,6 +5,18 @@ import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 
+/**
+ * 검색바 컴포넌트
+ * - 검색어 입력 및 검색 기능 제공
+ * - 검색어 초기화 기능 포함
+ * 
+ * @param {string} searchQuery - 검색어
+ * @param {Function} onSearchChange - 검색어 변경 핸들러
+ * @param {Function} onSubmit - 검색 제출 핸들러
+ * @param {Function} onClear - 검색어 초기화 핸들러
+ * @param {Function} onFocus - 포커스 이벤트 핸들러
+ * @param {boolean} autoFocus - 자동 포커스 여부
+ */
 export const SearchBar = memo(({ 
     searchQuery, 
     onSearchChange, 

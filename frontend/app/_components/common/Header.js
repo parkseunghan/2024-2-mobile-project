@@ -12,6 +12,16 @@ import { searchVideos } from '@app/_utils/youtubeApi';
 import { typography } from '@app/_styles/typography';
 import SearchScreen from '@app/_screens/SearchScreen';
 
+/**
+ * 공통 헤더 컴포넌트
+ * - 검색바, 프로필 버튼, 메뉴 버튼 포함
+ * - 뒤로가기 버튼 옵션 지원
+ * 
+ * @param {string} title - 헤더 제목
+ * @param {boolean} showBackButton - 뒤로가기 버튼 표시 여부
+ * @param {boolean} hideSearchBar - 검색바 숨김 여부
+ * @param {boolean} isSearchPage - 검색 페이지 여부
+ */
 export function Header({ title, showBackButton, hideSearchBar = false, isSearchPage = false }) {
     const router = useRouter();
     const { user } = useAuth();
@@ -26,10 +36,16 @@ export function Header({ title, showBackButton, hideSearchBar = false, isSearchP
         addToSearchHistory,
     } = useContext(SearchContext);
 
+    /**
+     * 뒤로가기 버튼 클릭 핸들러
+     */
     const handleBackPress = () => {
         router.back();
     };
 
+    /**
+     * 검색 제출 핸들러
+     */
     const handleSearch = useCallback(async () => {
         if (!searchQuery.trim()) {
             setSearchResults([]);
@@ -58,30 +74,33 @@ export function Header({ title, showBackButton, hideSearchBar = false, isSearchP
         };
     }, []);
 
+    /**
+     * 검색바 포커스 핸들러
+     */
     const handleSearchFocus = useCallback(() => {
         if (isProcessingRef.current || isSearchVisible) return;
         
         isProcessingRef.current = true;
         
-        // 이전 타이머가 있다면 제거
         if (modalTimeoutRef.current) {
             clearTimeout(modalTimeoutRef.current);
         }
 
-        // 새로운 타이머 설정
         modalTimeoutRef.current = setTimeout(() => {
             setIsSearchVisible(true);
             isProcessingRef.current = false;
         }, 100);
     }, [isSearchVisible]);
 
+    /**
+     * 검색 모달 닫기 핸들러
+     */
     const handleSearchClose = useCallback(() => {
         if (isProcessingRef.current) return;
         
         isProcessingRef.current = true;
         setIsSearchVisible(false);
         
-        // 약간의 지연 후 처리 플래그 초기화
         setTimeout(() => {
             isProcessingRef.current = false;
         }, 100);

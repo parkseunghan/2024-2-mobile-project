@@ -6,13 +6,26 @@ import { spacing } from '@app/_styles/spacing';
 import { useRouter } from 'expo-router';
 import { CATEGORIES } from '@app/_config/constants';
 
+/**
+ * 카테고리 버튼 목록 컴포넌트
+ * - 메인 화면에 표시되는 카테고리 버튼들
+ * - 각 버튼은 아이콘과 제목으로 구성
+ */
 export const CategoryButtons = () => {
   const router = useRouter();
 
+  /**
+   * 카테고리 버튼 클릭 핸들러
+   * @param {string} categoryId - 카테고리 ID
+   */
   const handleCategoryPress = (categoryId) => {
     router.push(`/category/${categoryId}`);
   };
 
+  /**
+   * 개별 카테고리 버튼 렌더링
+   * @param {Object} category - 카테고리 정보
+   */
   const renderCategoryButton = (category) => (
     <Pressable
       key={category.id}
@@ -46,47 +59,47 @@ export const CategoryButtons = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    width: '100%',
-    maxWidth: 800,
-    alignSelf: 'center',
-    paddingHorizontal: spacing.xs,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-    width: '100%',
-  },
-  button: {
-    flex: 1,
-    marginHorizontal: 4,
-    height: 90,
-    minWidth: 95,
-    borderRadius: 20,
-    backgroundColor: 'white',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: spacing.xs,
-  },
-  buttonContent: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 6,
-  },
-  buttonText: {
-    color: '#2D3436',
-    fontSize: 13,
-    fontWeight: '600',
-    textAlign: 'center',
-    width: '100%',
-  },
+    container: {
+        width: '100%',
+        maxWidth: 800,
+        alignSelf: 'center',
+        paddingHorizontal: spacing.xs,
+    },
+    row: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: spacing.md,
+        width: '100%',
+    },
+    button: {
+        flex: 1,
+        marginHorizontal: 4,
+        height: 90,
+        minWidth: 95,
+        borderRadius: 20,
+        backgroundColor: 'white',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: spacing.xs,
+    },
+    buttonContent: {
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    iconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 6,
+    },
+    buttonText: {
+        color: '#2D3436',
+        fontSize: 13,
+        fontWeight: '600',
+        textAlign: 'center',
+        width: '100%',
+    },
 });

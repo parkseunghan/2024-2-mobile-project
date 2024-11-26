@@ -4,6 +4,15 @@ import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 
+/**
+ * 공통 입력 필드 컴포넌트
+ * @param {string} label - 입력 필드 레이블
+ * @param {string} error - 에러 메시지
+ * @param {boolean} touched - 필드 터치 여부
+ * @param {Object} style - 추가 스타일
+ * @param {Object} containerStyle - 컨테이너 추가 스타일
+ * @param {Object} props - 기타 TextInput props
+ */
 export const Input = ({
   label,
   error,

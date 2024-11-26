@@ -1,6 +1,6 @@
 /**
  * 앱 상수 정의
- * 전역적으로 사용되는 상수값 관리
+ * - 전역적으로 사용되는 상수값 관리
  */
 
 // API 관련 상수
@@ -28,7 +28,14 @@ export const VIDEO = {
   MAX_DESCRIPTION_LENGTH: 500,
 };
 
-// 카테고리 관련 상수
+/**
+ * 카테고리 정의
+ * - id: 카테고리 식별자
+ * - icon: 아이콘 이름 (Ionicons)
+ * - color: 카테고리 색상
+ * - title: 카테고리 제목
+ * - searchKeywords: 검색에 사용될 키워드
+ */
 export const CATEGORIES = [
   { 
     id: 'car', 

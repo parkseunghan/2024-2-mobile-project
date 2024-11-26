@@ -1,9 +1,17 @@
 // Banner.js
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { colors } from '@app/_styles/colors'; // Import your custom colors
+import { View, Text, StyleSheet } from 'react-native';
+import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 
+/**
+ * 배너 컴포넌트
+ * - 메인 화면 상단에 표시되는 배너
+ * - 제목과 부제목을 표시
+ * 
+ * @param {string} title - 배너 제목
+ * @param {string} subtitle - 배너 부제목 (선택적)
+ */
 const Banner = ({ title, subtitle }) => (
     <View style={styles.bannerContainer}>
         <Text style={styles.bannerTitle}>{title}</Text>
@@ -13,26 +21,26 @@ const Banner = ({ title, subtitle }) => (
 
 const styles = StyleSheet.create({
     bannerContainer: {
-        backgroundColor: "white", // Change to a new color for the background
+        backgroundColor: "white",
         padding: spacing.lg,
-        paddingHorizontal: spacing.xl, // Increase horizontal padding
-        borderRadius: 12, // Slightly increase the border radius
+        paddingHorizontal: spacing.xl,
+        borderRadius: 12,
         margin: spacing.md,
-        width: '95%', // Increase the width
+        width: '95%',
         alignSelf: 'center',
         height: 100,
     },
     bannerTitle: {
-        color: colors.white, // White text for the title
-        fontSize: 24, // Increase font size for the title
+        color: colors.text.primary,
+        fontSize: 24,
         fontWeight: 'bold',
         textAlign: 'center',
     },
     bannerSubtitle: {
-        color: colors.lightText, // Use a lighter color for the subtitle
-        fontSize: 16, // Increase font size for the subtitle
+        color: colors.text.secondary,
+        fontSize: 16,
         textAlign: 'center',
-        marginTop: spacing.sm, // Increase top margin
+        marginTop: spacing.sm,
     },
 });
 

@@ -5,7 +5,19 @@ import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { Platform, View, Text } from 'react-native';
 
+/**
+ * 탭 네비게이션 레이아웃 컴포넌트
+ * - 하단 탭 바 구성
+ * - 각 탭의 아이콘과 레이블 설정
+ */
 export default function TabsLayout() {
+    /**
+     * 탭 바 아이콘 렌더링 함수
+     * @param {string} name - 아이콘 이름
+     * @param {string} color - 아이콘 색상
+     * @param {string} label - 탭 레이블
+     * @param {boolean} focused - 탭 활성화 여부
+     */
     const renderTabBarIcon = (name, color, label, focused) => (
         <View style={{
             alignItems: 'center',

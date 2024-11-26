@@ -5,6 +5,14 @@ import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 
+/**
+ * 비디오 정보 컴포넌트
+ * - 비디오 제목, 채널명, 조회수 등 표시
+ * - 출처 보기 버튼 포함
+ * 
+ * @param {Object} videoDetails - 비디오 상세 정보
+ * @param {Function} onSourcePress - 출처 보기 버튼 클릭 핸들러
+ */
 export const VideoInfo = ({ videoDetails, onSourcePress }) => {
     const { snippet, statistics } = videoDetails;
 

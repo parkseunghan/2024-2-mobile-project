@@ -4,8 +4,17 @@ import api from '@app/_utils/api';
 import storage from '@app/_utils/storage';
 import { SearchContext } from './SearchContext';
 
+/**
+ * 인증 관련 Context
+ * - 사용자 인증 상태 관리
+ * - 로그인/로그아웃/회원가입 기능 제공
+ */
 export const AuthContext = createContext({});
 
+/**
+ * 인증 Provider 컴포넌트
+ * @param {ReactNode} children - 자식 컴포넌트
+ */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -13,10 +22,15 @@ export function AuthProvider({ children }) {
   const router = useRouter();
   const searchContext = useContext(SearchContext);
 
+  // 초기 인증 상태 확인
   useEffect(() => {
     checkAuth();
   }, []);
 
+  /**
+   * 인증 상태 확인
+   * - 저장된 토큰으로 사용자 정보 조회
+   */
   const checkAuth = async () => {
     try {
       setIsLoading(true);
@@ -54,6 +68,11 @@ export function AuthProvider({ children }) {
     }
   };
 
+  /**
+   * 로그인 함수
+   * @param {string} email - 이메일
+   * @param {string} password - 비밀번호
+   */
   const login = async (email, password) => {
     try {
       const response = await api.post('/auth/login', { email, password });
@@ -74,6 +93,9 @@ export function AuthProvider({ children }) {
     }
   };
 
+  /**
+   * 로그아웃 함수
+   */
   const logout = async () => {
     try {
       await api.post('/auth/logout');
@@ -89,6 +111,12 @@ export function AuthProvider({ children }) {
     }
   };
 
+  /**
+   * 회원가입 함수
+   * @param {string} username - 사용자명
+   * @param {string} email - 이메일
+   * @param {string} password - 비밀번호
+   */
   const signup = async (username, email, password) => {
     try {
       const response = await api.post('/auth/signup', {

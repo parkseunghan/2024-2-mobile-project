@@ -1,5 +1,15 @@
 import api from './api';
 
+/**
+ * YouTube API 관련 유틸리티 함수들
+ */
+
+/**
+ * 비디오 검색 함수
+ * @param {string} query - 검색어
+ * @param {string} categoryId - 카테고리 ID (선택적)
+ * @returns {Promise<Array>} 검색된 비디오 목록
+ */
 export const searchVideos = async (query, categoryId = null) => {
   try {
     const params = { query };
@@ -18,6 +28,11 @@ export const searchVideos = async (query, categoryId = null) => {
   }
 };
 
+/**
+ * 비디오 상세 정보 조회 함수
+ * @param {string} videoId - YouTube 비디오 ID
+ * @returns {Promise<Object>} 비디오 상세 정보
+ */
 export const getVideoDetails = async (videoId) => {
   try {
     if (!videoId) {
