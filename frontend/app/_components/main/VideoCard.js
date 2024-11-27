@@ -18,6 +18,52 @@ const decodeHTMLEntities = (text) => {
     .replace(/&apos;/g, "'");
 };
 
+const formatSummaryText = (text) => {
+  if (text.startsWith('📝 요약') || text.startsWith('🔑 주요 키워드')) {
+    return text;
+  }
+
+  const boldTexts = text.match(/\*\*(.*?)\*\*/g) || [];
+  const cleanBoldTexts = boldTexts
+    .map(t => t.replace(/\*\*/g, ''))
+    .filter(t => t.length >= 2);
+
+  const keywordsSection = cleanBoldTexts.length > 0 
+    ? `🔑 주요 키워드\n${cleanBoldTexts.map(k => `#${k}`).join('  ')}\n\n` 
+    : '';
+
+  let mainText = text
+    .replace(/\*\*/g, '')
+    .replace(/\n\s*\n/g, '\n')
+    .trim();
+
+  const sentences = mainText.split(/(?<=\. )/g);
+  const paragraphs = [];
+  let currentParagraph = [];
+
+  sentences.forEach(sentence => {
+    currentParagraph.push(sentence.trim());
+    
+    if (currentParagraph.length >= 2 || sentence.endsWith('.')) {
+      paragraphs.push(currentParagraph.join(' '));
+      currentParagraph = [];
+    }
+  });
+
+  if (currentParagraph.length > 0) {
+    paragraphs.push(currentParagraph.join(' '));
+  }
+
+  const formattedParagraphs = paragraphs
+    .map((p, i) => `  ${i === 0 ? '💡' : '•'} ${p}`)
+    .join('\n\n');
+
+  const summaryTitle = '📝 요약';
+  const separator = '━━━━━━━━━━━━━━━';
+
+  return `${summaryTitle}\n${separator}\n\n${keywordsSection}${formattedParagraphs}`;
+};
+
 export const VideoCard = ({ video, style, onPress }) => {
   const { user } = useAuth();
   const [showSummary, setShowSummary] = useState(false);
@@ -41,7 +87,8 @@ export const VideoCard = ({ video, style, onPress }) => {
         console.log('Summary response:', response.data);
         
         if (response.data?.summary) {
-          setSummaryText(response.data.summary);
+          const formattedSummary = formatSummaryText(response.data.summary);
+          setSummaryText(formattedSummary);
           setFromCache(true);
           setCreator(response.data.creator);
           setHasSummary(true);
@@ -101,7 +148,8 @@ export const VideoCard = ({ video, style, onPress }) => {
         const response = await api.post('/youtube/summarize', { videoUrl });
         
         if (response.data.summary) {
-          setSummaryText(response.data.summary);
+          const formattedSummary = formatSummaryText(response.data.summary);
+          setSummaryText(formattedSummary);
           setFromCache(response.data.fromCache);
           setCreator(response.data.creator);
           setHasSummary(true);
