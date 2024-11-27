@@ -1,8 +1,22 @@
+/**
+ * 통계 관련 데이터베이스 작업을 처리하는 Repository 클래스
+ */
 class StatisticsRepository {
+  /**
+   * StatisticsRepository 생성자
+   * @param {Object} db - 데이터베이스 연결 객체
+   */
   constructor(db) {
     this.db = db;
   }
 
+  /**
+   * 기본 통계 정보를 조회합니다.
+   * - 전체 사용자 수
+   * - 오늘 새로 가입한 사용자 수
+   * - 활성 사용자 수
+   * @returns {Promise<Object>} 기본 통계 정보
+   */
   async getBasicStats() {
     const [rows] = await this.db.query(`
       SELECT 
@@ -14,6 +28,11 @@ class StatisticsRepository {
     return rows[0];
   }
 
+  /**
+   * 사용자 증가 통계를 조회합니다.
+   * @param {number} days - 조회할 기간(일)
+   * @returns {Promise<Array>} 일별 신규 사용자 수
+   */
   async getGrowthStats(days = 30) {
     const [rows] = await this.db.query(`
       SELECT 
@@ -27,6 +46,10 @@ class StatisticsRepository {
     return rows;
   }
 
+  /**
+   * 사용자 역할별 분포를 조회합니다.
+   * @returns {Promise<Array>} 역할별 사용자 수
+   */
   async getRoleDistribution() {
     const [rows] = await this.db.query(`
       SELECT 
@@ -39,6 +62,10 @@ class StatisticsRepository {
     return rows;
   }
 
+  /**
+   * 활성/비활성 사용자 통계를 조회합니다.
+   * @returns {Promise<Array>} 활성 상태별 사용자 수
+   */
   async getActivityStats() {
     const [rows] = await this.db.query(`
       SELECT 
@@ -50,6 +77,11 @@ class StatisticsRepository {
     return rows;
   }
 
+  /**
+   * 시간대별 회원가입 통계를 조회합니다.
+   * @param {number} days - 조회할 기간(일)
+   * @returns {Promise<Array>} 시간대별 가입자 수
+   */
   async getHourlySignups(days = 7) {
     const [rows] = await this.db.query(`
       SELECT 
