@@ -130,9 +130,10 @@ export const VideoCard = ({ video, style, onPress }) => {
                 if (section.startsWith('🔑 주요 키워드')) {
                   const keywords = section.replace('🔑 주요 키워드\n', '').split(' • ');
                   return (
-                    <View key={`section-${index}`}>
+                    <View key={`section-${index}`} style={styles.summarySection}>
                       <Text style={styles.summaryTitle}>
-                        🔑 주요 키워드
+                        <Text style={styles.sectionIcon}>🔑</Text>
+                        주요 키워드
                       </Text>
                       <View style={styles.keywordSection}>
                         {keywords.map((keyword, kidx) => (
@@ -146,15 +147,26 @@ export const VideoCard = ({ video, style, onPress }) => {
                 } else if (section.startsWith('📝 요약')) {
                   const paragraphs = section.replace('📝 요약\n', '').split('\n');
                   return (
-                    <View key={`section-${index}`}>
+                    <View key={`section-${index}`} style={styles.summarySection}>
                       <Text style={styles.summaryTitle}>
-                        📝 요약
+                        <Text style={styles.sectionIcon}>📝</Text>
+                        요약
                       </Text>
-                      {paragraphs.map((paragraph, pidx) => (
-                        <Text key={`paragraph-${pidx}`} style={styles.summaryParagraph}>
-                          {paragraph.trim()}
-                        </Text>
-                      ))}
+                      {paragraphs.map((paragraph, pidx) => {
+                        const words = paragraph.trim().split(' ');
+                        return (
+                          <Text key={`paragraph-${pidx}`} style={styles.summaryParagraph}>
+                            {words.map((word, widx) => (
+                              <Text key={`word-${widx}`} style={
+                                word.length >= 2 && /[가-힣]+/.test(word) ? 
+                                styles.highlightText : null
+                              }>
+                                {word}{' '}
+                              </Text>
+                            ))}
+                          </Text>
+                        );
+                      })}
                     </View>
                   );
                 }
@@ -166,12 +178,12 @@ export const VideoCard = ({ video, style, onPress }) => {
           )}
           {creator && fromCache && (
             <Text style={styles.summaryInfo}>
-              {creator}님이 생성한 요약입니다.
+              ✍️ {creator}님이 생성한 요약입니다
             </Text>
           )}
           {!user && (
             <Text style={styles.loginPrompt}>
-              더 많은 영상 요약을 보려면 로그인하세요.
+              🔒 더 많은 영상 요약을 보려면 로그인하세요
             </Text>
           )}
         </View>
@@ -210,15 +222,16 @@ const styles = StyleSheet.create({
   },
   title: {
     ...typography.body,
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.text.primary,
     marginBottom: spacing.xs,
   },
   channelTitle: {
     ...typography.caption,
+    fontSize: 13,
     color: colors.text.secondary,
-    fontSize: 12,
+    fontWeight: '500',
   },
   summaryButton: {
     flexDirection: 'column',
@@ -232,8 +245,8 @@ const styles = StyleSheet.create({
     right: spacing.sm,
     top: '50%',
     transform: [{ translateY: -25 }],
-    width: 45,
-    height: 50,
+    width: 48,
+    height: 52,
     gap: 2,
   },
   summaryButtonActive: {
@@ -252,7 +265,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderTopWidth: 1,
     borderTopColor: `${colors.border}50`,
-    backgroundColor: `${colors.primary}05`,
+    backgroundColor: colors.background,
   },
   summaryContent: {
     ...typography.body,
@@ -264,49 +277,89 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.xs,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
+    backgroundColor: `${colors.primary}08`,
+    padding: spacing.md,
+    borderRadius: 12,
   },
   keyword: {
-    backgroundColor: `${colors.primary}15`,
+    backgroundColor: colors.primary,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
-    borderRadius: 12,
+    borderRadius: 20,
+    elevation: 2,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   keywordText: {
     ...typography.caption,
-    color: colors.primary,
-    fontWeight: '600',
+    fontSize: 13,
+    color: colors.background,
+    fontWeight: '700',
   },
   summaryTitle: {
-    ...typography.body,
-    fontWeight: '600',
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
+    ...typography.h2,
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.primary,
+    marginBottom: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
   },
   summaryParagraph: {
     ...typography.body,
-    fontSize: 13,
-    color: colors.text.secondary,
-    lineHeight: 20,
-    marginBottom: spacing.sm,
+    fontSize: 15,
+    color: colors.text.primary,
+    lineHeight: 24,
+    marginBottom: spacing.md,
     paddingLeft: spacing.sm,
+    fontWeight: '400',
   },
   summaryInfo: {
     ...typography.caption,
+    fontSize: 13,
     color: colors.text.secondary,
-    marginTop: spacing.sm,
+    marginTop: spacing.lg,
     fontStyle: 'italic',
     borderTopWidth: 1,
     borderTopColor: `${colors.border}30`,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.md,
+    textAlign: 'center',
+    fontWeight: '500',
   },
   loginPrompt: {
-    ...typography.caption,
+    ...typography.body,
+    fontSize: 14,
     color: colors.primary,
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
     textAlign: 'center',
+    backgroundColor: `${colors.primary}10`,
+    padding: spacing.md,
+    borderRadius: 8,
+    overflow: 'hidden',
+    fontWeight: '600',
+  },
+  summarySection: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    elevation: 1,
+    shadowColor: colors.text.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  sectionIcon: {
+    marginRight: spacing.xs,
+    fontSize: 20,
+  },
+  highlightText: {
+    color: colors.primary,
+    fontWeight: '700',
+    fontSize: 15,
   },
 }); 

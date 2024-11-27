@@ -2,28 +2,58 @@ const db = require('../config/database');
 
 class VideoSummary {
     static formatSummaryText(text) {
-        // 볼드 처리된 텍스트를 분리
+        // 이미 포맷팅된 텍스트인지 확인
+        if (text.startsWith('📝 요약') || text.startsWith('🔑 주요 키워드')) {
+            return text;
+        }
+
+        // 볼드 처리된 텍스트를 분리하고 정리
         const boldTexts = text.match(/\*\*(.*?)\*\*/g) || [];
-        const cleanBoldTexts = boldTexts.map(t => t.replace(/\*\*/g, ''));
+        const cleanBoldTexts = boldTexts
+            .map(t => t.replace(/\*\*/g, ''))
+            .filter(t => t.length >= 2);  // 2글자 이상만 키워드로 선정
 
         // 주요 키워드 섹션 생성
         const keywordsSection = cleanBoldTexts.length > 0 
-            ? `🔑 주요 키워드\n${cleanBoldTexts.join(' • ')}\n\n` 
+            ? `🔑 주요 키워드\n${cleanBoldTexts.map(k => `#${k}`).join('  ')}\n\n` 
             : '';
 
         // 본문 텍스트 정리
         let mainText = text
-            .replace(/\*\*/g, '') // 볼드 마크다운 제거
+            .replace(/\*\*/g, '')  // 볼드 마크다운 제거
+            .replace(/\n\s*\n/g, '\n')  // 빈 줄 정리
             .trim();
 
-        // 문단 나누기 및 들여쓰기 추가
-        const paragraphs = mainText.split(/(?<=\. )/g);
-        mainText = paragraphs
-            .map(p => `  ${p.trim()}`)
-            .join('\n');
+        // 문장 단위로 분리하고 정리
+        const sentences = mainText.split(/(?<=\. )/g);
+        const paragraphs = [];
+        let currentParagraph = [];
+
+        sentences.forEach(sentence => {
+            currentParagraph.push(sentence.trim());
+            
+            // 2-3문장마다 또는 마침표로 끝나는 경우 단락 구분
+            if (currentParagraph.length >= 2 || sentence.endsWith('.')) {
+                paragraphs.push(currentParagraph.join(' '));
+                currentParagraph = [];
+            }
+        });
+
+        // 남은 문장이 있다면 마지막 단락에 추가
+        if (currentParagraph.length > 0) {
+            paragraphs.push(currentParagraph.join(' '));
+        }
+
+        // 단락에 들여쓰기와 이모지 추가
+        const formattedParagraphs = paragraphs
+            .map((p, i) => `  ${i === 0 ? '💡' : '•'} ${p}`)
+            .join('\n\n');
 
         // 최종 포맷팅된 텍스트
-        return `📝 요약\n${keywordsSection}${mainText}`;
+        const summaryTitle = '📝 요약';
+        const separator = '━━━━━━━━━━━━━━━';
+
+        return `${summaryTitle}\n${separator}\n\n${keywordsSection}${formattedParagraphs}`;
     }
 
     static async create(videoId, summary, userId) {
@@ -51,6 +81,12 @@ class VideoSummary {
                 WHERE vs.video_id = ?`,
                 [videoId]
             );
+
+            if (rows[0]) {
+                // 저장된 요약 텍스트에 포맷팅 적용
+                rows[0].summary_text = this.formatSummaryText(rows[0].summary_text);
+            }
+
             return rows[0];
         } catch (error) {
             console.error('요약 조회 에러:', error);
@@ -68,7 +104,12 @@ class VideoSummary {
                 LIMIT ?`,
                 [limit]
             );
-            return rows;
+
+            // 각 요약 텍스트에 포맷팅 적용
+            return rows.map(row => ({
+                ...row,
+                summary_text: this.formatSummaryText(row.summary_text)
+            }));
         } catch (error) {
             console.error('최근 요약 조회 에러:', error);
             throw error;
