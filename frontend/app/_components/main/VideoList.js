@@ -27,7 +27,7 @@ export const VideoList = ({ videos, error, onVideoSelect }) => {
     return (
       <View style={styles.messageContainer}>
         <Text style={styles.emptyText}>
-          {error || '검색 결과가 없습니다. 다른 검색어를 시도해보세요.'}
+          검색 결과가 없습니다. 다른 검색어를 시도해보세요.
         </Text>
       </View>
     );
@@ -37,16 +37,33 @@ export const VideoList = ({ videos, error, onVideoSelect }) => {
     onVideoSelect?.(videoId);
   };
 
+  // 중복 제거된 비디오 목록 생성
+  const uniqueVideos = videos.reduce((acc, video) => {
+    const videoId = video.id?.videoId || video.id;
+    if (!videoId || acc.some(v => (v.id?.videoId || v.id) === videoId)) {
+      return acc;
+    }
+    return [...acc, video];
+  }, []);
+
   return (
     <View style={styles.container}>
-      {videos.map((video) => (
-        <VideoCard
-          key={video.id?.videoId || video.id || Math.random().toString()}
-          video={video}
-          style={styles.videoCard}
-          onPress={() => handleVideoPress(video.id?.videoId || video.id)}
-        />
-      ))}
+      {uniqueVideos.map((video) => {
+        const videoId = video.id?.videoId || video.id;
+        if (!videoId) {
+          console.warn('Video without ID:', video);
+          return null;
+        }
+        
+        return (
+          <VideoCard
+            key={videoId}
+            video={video}
+            style={styles.videoCard}
+            onPress={() => handleVideoPress(videoId)}
+          />
+        );
+      })}
     </View>
   );
 };

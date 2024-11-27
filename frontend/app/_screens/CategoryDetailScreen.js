@@ -100,13 +100,11 @@ export default function CategoryDetailScreen({ categoryId }) {
                                 </Text>
                             </View>
                         ) : videos.length > 0 ? (
-                            videos.map((video) => (
-                                <VideoList
-                                    key={video.id}
-                                    videos={[video]}
-                                    onVideoSelect={handleVideoSelect}
-                                />
-                            ))
+                            <VideoList
+                                videos={videos}
+                                onVideoSelect={handleVideoSelect}
+                                key="video-list"
+                            />
                         ) : (
                             <View style={styles.emptyContainer}>
                                 <Text style={styles.emptyText}>관련 영상이 없습니다.</Text>

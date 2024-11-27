@@ -36,7 +36,7 @@ export default function ProfileScreen() {
             ]);
 
             if (profileRes.status === 'fulfilled' && profileRes.value.data.profile) {
-                setNickname(profileRes.value.data.profile.nickname || user.username);
+                setNickname(profileRes.value.data.profile.nickname || user?.username || '');
                 setBio(profileRes.value.data.profile.bio || '');
                 setAvatar(profileRes.value.data.profile.avatar);
             }
@@ -140,7 +140,7 @@ export default function ProfileScreen() {
         if (Platform.OS !== 'web') {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
-                alert('이미지를 선택하기 위해서는 갤러리 접근 권한이 필요합니다.');
+                Alert.alert('알림', '이미지를 선택하기 위해서는 갤러리 접근 권한이 필요합니다.');
                 return;
             }
         }
@@ -162,9 +162,9 @@ export default function ProfileScreen() {
             case 'posts':
                 return posts.length > 0 ? (
                     <View>
-                        {posts.map((post, index) => (
+                        {posts.map((post) => (
                             <Button
-                                key={index}
+                                key={post.id}
                                 title={post.title}
                                 onPress={() => router.push(`/post/${post.id}`)}
                                 variant="secondary"
@@ -174,14 +174,16 @@ export default function ProfileScreen() {
                         ))}
                     </View>
                 ) : (
-                    <Text style={styles.emptyText}>작성한 게시물이 없습니다.</Text>
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>작성한 게시물이 없습니다.</Text>
+                    </View>
                 );
             case 'comments':
                 return comments.length > 0 ? (
                     <View>
-                        {comments.map((comment, index) => (
+                        {comments.map((comment) => (
                             <Button
-                                key={comment.id || index}
+                                key={comment.id}
                                 title={comment.text}
                                 subtitle={comment.createdAt}
                                 onPress={() => router.push(`/post/${comment.postId}`)}
@@ -192,14 +194,16 @@ export default function ProfileScreen() {
                         ))}
                     </View>
                 ) : (
-                    <Text style={styles.emptyText}>작성한 댓글이 없습니다.</Text>
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>작성한 댓글이 없습니다.</Text>
+                    </View>
                 );
             case 'likedPosts':
                 return likedPosts.length > 0 ? (
                     <View>
-                        {likedPosts.map((post, index) => (
+                        {likedPosts.map((post) => (
                             <Button
-                                key={index}
+                                key={post.id}
                                 title={post.title}
                                 onPress={() => router.push(`/post/${post.id}`)}
                                 variant="secondary"
@@ -209,7 +213,9 @@ export default function ProfileScreen() {
                         ))}
                     </View>
                 ) : (
-                    <Text style={styles.emptyText}>좋아요를 누른 게시물이 없습니다.</Text>
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>좋아요를 누른 게시물이 없습니다.</Text>
+                    </View>
                 );
             default:
                 return null;
@@ -234,7 +240,7 @@ export default function ProfileScreen() {
                                 <Image source={{ uri: avatar }} style={styles.avatarImage} />
                             ) : (
                                 <View style={styles.avatarPlaceholder}>
-                                    <Text style={styles.avatarText}>{nickname[0] || user.username[0]}</Text>
+                                    <Text style={styles.avatarText}>{nickname?.[0] || user?.username?.[0]}</Text>
                                 </View>
                             )}
                             <Button
@@ -280,7 +286,7 @@ export default function ProfileScreen() {
                                     <Image source={{ uri: avatar }} style={styles.avatarImage} />
                                 ) : (
                                     <View style={styles.avatarPlaceholder}>
-                                        <Text style={styles.avatarText}>{nickname[0] || user.username[0]}</Text>
+                                        <Text style={styles.avatarText}>{nickname?.[0] || user?.username?.[0]}</Text>
                                     </View>
                                 )}
                             </View>
@@ -299,10 +305,10 @@ export default function ProfileScreen() {
                         <View style={styles.statsContainer}>
                             <Button
                                 title={
-                                    <Text style={styles.statText}>
-                                        <Text>작성글{'\n'}</Text>
-                                        <Text>{posts.length}</Text>
-                                    </Text>
+                                    <View>
+                                        <Text style={styles.statText}>작성글</Text>
+                                        <Text style={styles.statCount}>{posts.length}</Text>
+                                    </View>
                                 }
                                 onPress={() => setActiveTab('posts')}
                                 variant={activeTab === 'posts' ? 'primary' : 'secondary'}
@@ -310,10 +316,10 @@ export default function ProfileScreen() {
                             />
                             <Button
                                 title={
-                                    <Text style={styles.statText}>
-                                        <Text>작성댓글{'\n'}</Text>
-                                        <Text>{comments.length}</Text>
-                                    </Text>
+                                    <View>
+                                        <Text style={styles.statText}>작성댓글</Text>
+                                        <Text style={styles.statCount}>{comments.length}</Text>
+                                    </View>
                                 }
                                 onPress={() => setActiveTab('comments')}
                                 variant={activeTab === 'comments' ? 'primary' : 'secondary'}
@@ -321,10 +327,10 @@ export default function ProfileScreen() {
                             />
                             <Button
                                 title={
-                                    <Text style={styles.statText}>
-                                        <Text>좋아요한 글{'\n'}</Text>
-                                        <Text>{likedPosts.length}</Text>
-                                    </Text>
+                                    <View>
+                                        <Text style={styles.statText}>좋아요한 글</Text>
+                                        <Text style={styles.statCount}>{likedPosts.length}</Text>
+                                    </View>
                                 }
                                 onPress={() => setActiveTab('likedPosts')}
                                 variant={activeTab === 'likedPosts' ? 'primary' : 'secondary'}
@@ -453,6 +459,11 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         color: colors.text.secondary,
     },
+    statCount: {
+        ...typography.h3,
+        textAlign: 'center',
+        color: colors.text.primary,
+    },
     contentContainer: {
         flex: 1,
     },
@@ -464,11 +475,15 @@ const styles = StyleSheet.create({
         ...typography.body,
         marginBottom: spacing.xs,
     },
+    emptyContainer: {
+        padding: spacing.xl,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     emptyText: {
         ...typography.body,
         color: colors.text.secondary,
         textAlign: 'center',
-        padding: spacing.xl,
     },
     editProfileContainer: {
         flex: 1,

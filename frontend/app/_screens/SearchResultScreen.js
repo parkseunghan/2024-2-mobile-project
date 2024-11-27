@@ -31,6 +31,16 @@ export default function SearchResultScreen() {
         return <ErrorState message={error} />;
     }
 
+    // 검색 결과에서 중복된 비디오 제거
+    const uniqueResults = searchResults.reduce((acc, current) => {
+        const x = acc.find(item => item.id.videoId === current.id.videoId);
+        if (!x) {
+            return acc.concat([current]);
+        } else {
+            return acc;
+        }
+    }, []);
+
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -38,9 +48,9 @@ export default function SearchResultScreen() {
             </View>
 
             <ScrollView style={styles.content}>
-                {searchResults.length > 0 ? (
+                {uniqueResults.length > 0 ? (
                     <VideoList
-                        videos={searchResults}
+                        videos={uniqueResults}
                         onVideoSelect={handleVideoSelect}
                     />
                 ) : (
