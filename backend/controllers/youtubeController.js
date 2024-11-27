@@ -222,4 +222,36 @@ exports.updateAllSummaryFormats = async (req, res) => {
     }
 };
 
+exports.getVideoSummary = async (req, res) => {
+  try {
+    const { videoId } = req.params;
+    
+    if (!videoId) {
+      return res.status(400).json({ 
+        error: '비디오 ID가 필요합니다.' 
+      });
+    }
+
+    const summary = await VideoSummary.findByVideoId(videoId);
+    
+    if (!summary) {
+      return res.status(404).json({ 
+        error: '요약을 찾을 수 없습니다.' 
+      });
+    }
+
+    res.json({
+      summary: summary.summary_text,
+      creator: summary.creator_name,
+      fromCache: true
+    });
+  } catch (error) {
+    console.error('요약 조회 에러:', error);
+    res.status(500).json({ 
+      error: '요약을 불러오는데 실패했습니다.',
+      details: error.message 
+    });
+  }
+};
+
 

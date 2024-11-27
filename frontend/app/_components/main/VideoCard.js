@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
@@ -23,10 +23,50 @@ export const VideoCard = ({ video, style, onPress }) => {
   const [showSummary, setShowSummary] = useState(false);
   const [summaryText, setSummaryText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [fromCache, setFromCache] = useState(false);
   const [creator, setCreator] = useState(null);
+  const [hasSummary, setHasSummary] = useState(false);
   
-  if (!video) {
+  useEffect(() => {
+    const checkSummary = async () => {
+      if (!video) return;
+
+      try {
+        setInitialLoading(true);
+        const videoId = video.id?.videoId || video.id;
+        console.log('Checking summary for video:', videoId);
+        
+        const response = await api.get(`/youtube/summary/${videoId}`);
+        console.log('Summary response:', response.data);
+        
+        if (response.data?.summary) {
+          setSummaryText(response.data.summary);
+          setFromCache(true);
+          setCreator(response.data.creator);
+          setHasSummary(true);
+          console.log('Summary found, setting hasSummary to true');
+        } else {
+          setSummaryText('');
+          setHasSummary(false);
+          console.log('No summary found, setting hasSummary to false');
+        }
+      } catch (error) {
+        console.log('Summary check error:', error.response?.status);
+        if (error.response?.status !== 404) {
+          console.error('요약 확인 에러:', error);
+        }
+        setSummaryText('');
+        setHasSummary(false);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+    
+    checkSummary();
+  }, [video]);
+
+  if (initialLoading) {
     return null;
   }
 
@@ -50,7 +90,7 @@ export const VideoCard = ({ video, style, onPress }) => {
       return;
     }
     
-    if (!showSummary) {
+    if (!showSummary && !hasSummary) {
       try {
         setLoading(true);
         setSummaryText('요약 중...');
@@ -64,12 +104,15 @@ export const VideoCard = ({ video, style, onPress }) => {
           setSummaryText(response.data.summary);
           setFromCache(response.data.fromCache);
           setCreator(response.data.creator);
+          setHasSummary(true);
         } else {
           setSummaryText('요약 생성에 실패했습니다.');
+          setHasSummary(false);
         }
       } catch (error) {
         console.error('요약 에러:', error);
         setSummaryText(error.response?.data?.error || '요약을 가져오는데 실패했습니다.');
+        setHasSummary(false);
       } finally {
         setLoading(false);
       }
@@ -77,6 +120,34 @@ export const VideoCard = ({ video, style, onPress }) => {
     
     setShowSummary(!showSummary);
   };
+
+  const renderSummaryButton = () => (
+    <Pressable 
+      style={[
+        styles.summaryButton,
+        showSummary && styles.summaryButtonActive,
+        loading && styles.summaryButtonLoading
+      ]}
+      onPress={handleSummaryPress}
+      disabled={loading || initialLoading}
+    >
+      <View style={styles.summaryTextContainer}>
+        <Text style={styles.summaryTextTop}>요약</Text>
+        {loading ? (
+          <Text style={styles.summaryTextBottom}>중</Text>
+        ) : (
+          <Text style={styles.summaryTextBottom}>
+            {hasSummary ? '보기' : '하기'}
+          </Text>
+        )}
+      </View>
+      <Ionicons 
+        name={showSummary ? "chevron-up" : "chevron-down"} 
+        size={16} 
+        color={colors.primary}
+      />
+    </Pressable>
+  );
 
   return (
     <Pressable 
@@ -104,22 +175,7 @@ export const VideoCard = ({ video, style, onPress }) => {
             {decodedChannelTitle}
           </Text>
         </View>
-        <Pressable 
-          style={[
-            styles.summaryButton,
-            showSummary && styles.summaryButtonActive,
-            loading && styles.summaryButtonLoading
-          ]}
-          onPress={handleSummaryPress}
-          disabled={loading}
-        >
-          <Text style={styles.summaryText}>{loading ? '요약중' : '요약'}</Text>
-          <Ionicons 
-            name={showSummary ? "chevron-up" : "chevron-down"} 
-            size={16} 
-            color={colors.primary} 
-          />
-        </Pressable>
+        {renderSummaryButton()}
       </View>
       
       {showSummary && (
@@ -234,32 +290,57 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   summaryButton: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderRadius: 8,
-    backgroundColor: `${colors.primary}10`,
     position: 'absolute',
     right: spacing.sm,
     top: '50%',
-    transform: [{ translateY: -25 }],
-    width: 48,
-    height: 52,
-    gap: 2,
+    transform: [{ translateY: -28 }],
+    width: 56,
+    height: 56,
+    borderRadius: 12,
+    backgroundColor: `${colors.primary}08`,
+    borderWidth: 1,
+    borderColor: `${colors.primary}20`,
+    elevation: 2,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    padding: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   summaryButtonActive: {
-    backgroundColor: `${colors.primary}20`,
+    backgroundColor: `${colors.primary}15`,
+    borderColor: colors.primary,
   },
   summaryButtonLoading: {
     opacity: 0.7,
   },
-  summaryText: {
+  summaryTextContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xs,
+  },
+  summaryTextTop: {
     ...typography.caption,
     color: colors.primary,
     fontWeight: '600',
     fontSize: 12,
+    lineHeight: 14,
+    textAlign: 'center',
+  },
+  summaryTextBottom: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '600',
+    fontSize: 12,
+    lineHeight: 14,
+    textAlign: 'center',
+    marginTop: 2,
+  },
+  summaryIcon: {
+    marginTop: 2,
   },
   summaryContainer: {
     padding: spacing.md,
