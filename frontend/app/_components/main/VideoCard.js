@@ -173,4 +173,19 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: spacing.sm,
   },
+  iconContainer: {
+    width: 52,
+    height: 52,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  buttonText: {
+    color: '#2D3436',
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: spacing.xs,
+    textAlign: 'center',
+  },
 }); 

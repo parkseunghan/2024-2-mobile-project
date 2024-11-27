@@ -47,13 +47,4 @@ exports.getVideoDetails = async (req, res) => {
   }
 }; 
 
-exports.getSummary = async (req, res) => {
-  try {
-    const { videoId } = req.params;
-    const summary = await VideoSummaryService.getSummary(videoId);
-    res.json({ summary });
-  } catch (error) {
-    console.error('요약 에러:', error);
-    res.status(500).json({ error: '요약 생성 중 오류가 발생했습니다.' });
-  }
-};
+
