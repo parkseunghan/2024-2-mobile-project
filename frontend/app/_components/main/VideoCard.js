@@ -4,6 +4,7 @@ import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 import { Ionicons } from '@expo/vector-icons';
+import api from '@app/_utils/api';
 
 const decodeHTMLEntities = (text) => {
   if (!text) return '';
@@ -18,6 +19,8 @@ const decodeHTMLEntities = (text) => {
 
 export const VideoCard = ({ video, style, onPress }) => {
   const [showSummary, setShowSummary] = useState(false);
+  const [summaryText, setSummaryText] = useState('');
+  const [loading, setLoading] = useState(false);
   
   if (!video) {
     return null;
@@ -34,11 +37,59 @@ export const VideoCard = ({ video, style, onPress }) => {
   const decodedTitle = decodeHTMLEntities(title);
   const decodedChannelTitle = decodeHTMLEntities(channelTitle);
 
-  // 임시 요약 텍스트 (실제로는 API에서 받아와야 함)
-  const summaryText = "이 영상은 실용적인 생활 팁을 다루고 있습니다. 주요 내용으로는 시간 절약 방법, 효율적인 정리 방법, 그리고 비용 절감 팁을 포함하고 있습니다.";
-
-  const handleSummaryPress = (e) => {
-    e.stopPropagation(); // 부모 컴포넌트로의 이벤트 전파 방지
+  const handleSummaryPress = async (e) => {
+    e.stopPropagation();
+    
+    if (!showSummary) {
+        try {
+            setLoading(true);
+            setSummaryText('요약 중...');
+            
+            const videoId = video.id?.videoId || video.id;
+            const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+            
+            console.log('Requesting summary for:', videoUrl);
+            
+            const response = await api.post('/youtube/summarize', 
+                { videoUrl },
+                {
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+            
+            console.log('Summary response:', response.data);
+            
+            if (response.data.requestId) {
+                while (true) {
+                    const summaryResponse = await api.get(`/youtube/summary/${response.data.requestId}`);
+                    console.log('Summary status response:', summaryResponse.data);
+                    
+                    if (summaryResponse.data.status === 'done' && 
+                        summaryResponse.data.data?.type === 'shortSummary') {
+                        setSummaryText(summaryResponse.data.data.data.summary);
+                        break;
+                    }
+                    
+                    if (summaryResponse.data.status === 'error') {
+                        setSummaryText('요약 생성에 실패했습니다.');
+                        break;
+                    }
+                    
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                }
+            } else {
+                setSummaryText('요약 요청에 실패했습니다.');
+            }
+        } catch (error) {
+            console.error('요약 에러:', error);
+            setSummaryText('요약을 가져오는데 실패했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }
+    
     setShowSummary(!showSummary);
   };
 
@@ -71,11 +122,13 @@ export const VideoCard = ({ video, style, onPress }) => {
         <Pressable 
           style={[
             styles.summaryButton,
-            showSummary && styles.summaryButtonActive
+            showSummary && styles.summaryButtonActive,
+            loading && styles.summaryButtonLoading
           ]}
           onPress={handleSummaryPress}
+          disabled={loading}
         >
-          <Text style={styles.summaryText}>요약</Text>
+          <Text style={styles.summaryText}>{loading ? '요약중' : '요약'}</Text>
           <Ionicons 
             name={showSummary ? "chevron-up" : "chevron-down"} 
             size={16} 
@@ -153,6 +206,9 @@ const styles = StyleSheet.create({
   },
   summaryButtonActive: {
     backgroundColor: `${colors.primary}20`,
+  },
+  summaryButtonLoading: {
+    opacity: 0.7,
   },
   summaryText: {
     ...typography.caption,
