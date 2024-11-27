@@ -3,7 +3,6 @@
  */
 import axios from 'axios';
 import storage from './storage';
-import { router } from 'expo-router';
 
 // axios 인스턴스 생성
 const api = axios.create({

@@ -5,6 +5,7 @@ import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 import { Ionicons } from '@expo/vector-icons';
 import api from '@app/_utils/api';
+import { useAuth } from '@app/_utils/hooks/useAuth';
 
 const decodeHTMLEntities = (text) => {
   if (!text) return '';
@@ -18,9 +19,12 @@ const decodeHTMLEntities = (text) => {
 };
 
 export const VideoCard = ({ video, style, onPress }) => {
+  const { user } = useAuth();
   const [showSummary, setShowSummary] = useState(false);
   const [summaryText, setSummaryText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fromCache, setFromCache] = useState(false);
+  const [creator, setCreator] = useState(null);
   
   if (!video) {
     return null;
@@ -40,54 +44,35 @@ export const VideoCard = ({ video, style, onPress }) => {
   const handleSummaryPress = async (e) => {
     e.stopPropagation();
     
+    if (!user) {
+      setSummaryText('로그인이 필요한 기능입니다.');
+      setShowSummary(true);
+      return;
+    }
+    
     if (!showSummary) {
-        try {
-            setLoading(true);
-            setSummaryText('요약 중...');
-            
-            const videoId = video.id?.videoId || video.id;
-            const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-            
-            console.log('Requesting summary for:', videoUrl);
-            
-            const response = await api.post('/youtube/summarize', 
-                { videoUrl },
-                {
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-            
-            console.log('Summary response:', response.data);
-            
-            if (response.data.requestId) {
-                while (true) {
-                    const summaryResponse = await api.get(`/youtube/summary/${response.data.requestId}`);
-                    console.log('Summary status response:', summaryResponse.data);
-                    
-                    if (summaryResponse.data.status === 'done' && 
-                        summaryResponse.data.data?.type === 'shortSummary') {
-                        setSummaryText(summaryResponse.data.data.data.summary);
-                        break;
-                    }
-                    
-                    if (summaryResponse.data.status === 'error') {
-                        setSummaryText('요약 생성에 실패했습니다.');
-                        break;
-                    }
-                    
-                    await new Promise(resolve => setTimeout(resolve, 3000));
-                }
-            } else {
-                setSummaryText('요약 요청에 실패했습니다.');
-            }
-        } catch (error) {
-            console.error('요약 에러:', error);
-            setSummaryText('요약을 가져오는데 실패했습니다.');
-        } finally {
-            setLoading(false);
+      try {
+        setLoading(true);
+        setSummaryText('요약 중...');
+        
+        const videoId = video.id?.videoId || video.id;
+        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        
+        const response = await api.post('/youtube/summarize', { videoUrl });
+        
+        if (response.data.summary) {
+          setSummaryText(response.data.summary);
+          setFromCache(response.data.fromCache);
+          setCreator(response.data.creator);
+        } else {
+          setSummaryText('요약 생성에 실패했습니다.');
         }
+      } catch (error) {
+        console.error('요약 에러:', error);
+        setSummaryText(error.response?.data?.error || '요약을 가져오는데 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
     }
     
     setShowSummary(!showSummary);
@@ -139,9 +124,56 @@ export const VideoCard = ({ video, style, onPress }) => {
       
       {showSummary && (
         <View style={styles.summaryContainer}>
-          <Text style={styles.summaryContent}>
-            {summaryText}
-          </Text>
+          {summaryText.startsWith('🔑') ? (
+            <>
+              {summaryText.split('\n\n').map((section, index) => {
+                if (section.startsWith('🔑 주요 키워드')) {
+                  const keywords = section.replace('🔑 주요 키워드\n', '').split(' • ');
+                  return (
+                    <View key={`section-${index}`}>
+                      <Text style={styles.summaryTitle}>
+                        🔑 주요 키워드
+                      </Text>
+                      <View style={styles.keywordSection}>
+                        {keywords.map((keyword, kidx) => (
+                          <View key={`keyword-${kidx}`} style={styles.keyword}>
+                            <Text style={styles.keywordText}>{keyword}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  );
+                } else if (section.startsWith('📝 요약')) {
+                  const paragraphs = section.replace('📝 요약\n', '').split('\n');
+                  return (
+                    <View key={`section-${index}`}>
+                      <Text style={styles.summaryTitle}>
+                        📝 요약
+                      </Text>
+                      {paragraphs.map((paragraph, pidx) => (
+                        <Text key={`paragraph-${pidx}`} style={styles.summaryParagraph}>
+                          {paragraph.trim()}
+                        </Text>
+                      ))}
+                    </View>
+                  );
+                }
+                return null;
+              })}
+            </>
+          ) : (
+            <Text style={styles.summaryContent}>{summaryText}</Text>
+          )}
+          {creator && fromCache && (
+            <Text style={styles.summaryInfo}>
+              {creator}님이 생성한 요약입니다.
+            </Text>
+          )}
+          {!user && (
+            <Text style={styles.loginPrompt}>
+              더 많은 영상 요약을 보려면 로그인하세요.
+            </Text>
+          )}
         </View>
       )}
     </Pressable>
@@ -227,21 +259,54 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.text.secondary,
     lineHeight: 20,
-    marginBottom: spacing.sm,
   },
-  iconContainer: {
-    width: 52,
-    height: 52,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs,
+  keywordSection: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
   },
-  buttonText: {
-    color: '#2D3436',
-    fontSize: 14,
+  keyword: {
+    backgroundColor: `${colors.primary}15`,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 12,
+  },
+  keywordText: {
+    ...typography.caption,
+    color: colors.primary,
     fontWeight: '600',
-    marginTop: spacing.xs,
+  },
+  summaryTitle: {
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  summaryParagraph: {
+    ...typography.body,
+    fontSize: 13,
+    color: colors.text.secondary,
+    lineHeight: 20,
+    marginBottom: spacing.sm,
+    paddingLeft: spacing.sm,
+  },
+  summaryInfo: {
+    ...typography.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.sm,
+    fontStyle: 'italic',
+    borderTopWidth: 1,
+    borderTopColor: `${colors.border}30`,
+    paddingTop: spacing.sm,
+  },
+  loginPrompt: {
+    ...typography.caption,
+    color: colors.primary,
+    marginTop: spacing.sm,
     textAlign: 'center',
   },
 }); 
