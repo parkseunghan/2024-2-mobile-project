@@ -26,7 +26,14 @@ const SearchScreen = ({ visible, onClose }) => {
         recommendedVideos,
         setSearchResults,
         addToSearchHistory,
+        loadSearchHistory,
     } = useContext(SearchContext);
+
+    useEffect(() => {
+        if (visible && user) {
+            loadSearchHistory();
+        }
+    }, [visible, user]);
 
     useEffect(() => {
         if (visible) {

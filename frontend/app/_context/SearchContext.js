@@ -29,10 +29,16 @@ export function SearchProvider({ children }) {
     // 검색 기록 로드
     const loadSearchHistory = async () => {
         try {
+            setLoading(true);
             const response = await api.get('/search/history');
-            setSearchHistory(response.data.history);
+            if (response.data?.history) {
+                setSearchHistory(response.data.history);
+            }
         } catch (error) {
             console.error('검색 기록 로드 실패:', error);
+            setError('검색 기록을 불러오는데 실패했습니다.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -57,6 +63,7 @@ export function SearchProvider({ children }) {
         setSearchQuery('');
         setSearchResults([]);
         setSearchHistory([]);
+        setError(null);
     };
 
     // 검색 기록 항목 삭제
@@ -78,6 +85,7 @@ export function SearchProvider({ children }) {
             searchHistory,
             setSearchHistory,
             addToSearchHistory,
+            loadSearchHistory,
             clearSearchResults,
             clearAllSearchHistory,
             clearAll,
