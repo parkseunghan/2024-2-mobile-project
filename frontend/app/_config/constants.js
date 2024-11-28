@@ -42,21 +42,21 @@ export const CATEGORIES = [
     icon: 'car-sport', 
     color: '#FF5733', 
     title: '자동차 팁',
-    searchKeywords: '자동차 꿀팁 정비 운전'
+    searchKeywords: '자동차 정비방법 차량관리 운전방법 자동차설명'
   },
   { 
     id: 'home', 
     icon: 'home', 
     color: '#4CAF50', 
     title: '생활 팁',
-    searchKeywords: '생활 꿀팁 청소 수납'
+    searchKeywords: '집안정리방법 청소방법 수납정리 공간활용'
   },
   { 
     id: 'travel', 
     icon: 'airplane', 
     color: '#FFC107', 
     title: '여행 팁',
-    searchKeywords: '여행 꿀팁 배낭여행 해외여행'
+    searchKeywords: '여행준비방법 여행계획 여행경비 숙소예약'
   },
   { 
     id: 'tech', 

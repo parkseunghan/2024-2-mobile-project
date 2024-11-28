@@ -83,7 +83,7 @@ exports.summarizeVideo = async (req, res) => {
             sourceUrl: videoUrl
           },
           resultLanguage: "ko",
-          modelType: "gpt-3.5"
+          modelType: "gpt-4" // gpt-3.5 / gpt-4
         }, {
           headers: {
             'Content-Type': 'application/json',
