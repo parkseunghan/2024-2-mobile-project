@@ -15,21 +15,45 @@ class Post {
    * @returns {Promise<number>} 생성된 게시글의 ID
    */
   static async create(userId, { title, content, category, mediaUrl }) {
+    const connection = await db.getConnection();
     try {
-      console.log('Creating post in database:', { userId, title, content, category, mediaUrl });
+      await connection.beginTransaction();
 
-      const [result] = await db.query(
+      // 게시글 생성
+      const [result] = await connection.query(
         `INSERT INTO posts 
         (user_id, title, content, category, media_url) 
         VALUES (?, ?, ?, ?, ?)`,
         [userId, title, content, category, mediaUrl]
       );
 
-      console.log('Post created with ID:', result.insertId);
+      // user_scores 테이블에 레코드가 없으면 생성
+      await connection.query(
+        `INSERT INTO user_scores (user_id, total_posts)
+         SELECT ?, 1
+         FROM dual
+         WHERE NOT EXISTS (
+             SELECT 1 FROM user_scores WHERE user_id = ?
+         )`,
+        [userId, userId]
+      );
+
+      // 이미 레코드가 있으면 업데이트
+      await connection.query(
+        `UPDATE user_scores 
+         SET total_posts = total_posts + 1
+         WHERE user_id = ?`,
+        [userId]
+      );
+
+      await connection.commit();
       return result.insertId;
     } catch (error) {
-      console.error('Post creation error:', error);
+      await connection.rollback();
+      console.error('게시글 생성 에러:', error);
       throw new Error('게시글 생성에 실패했습니다.');
+    } finally {
+      connection.release();
     }
   }
 
@@ -66,7 +90,7 @@ class Post {
    * @param {number} limit - 페이지당 항목 수
    * @returns {Promise<Array>} 게시글 목록
    */
-  static async findAll(category = null, page = 1, limit = 10) {
+  static async findAll(category = null, page = 1, limit = 10, userId = null) {
     try {
       const offset = (page - 1) * limit;
       let query = `
@@ -76,7 +100,12 @@ class Post {
           u.avatar as author_avatar,
           COUNT(DISTINCT pl.id) as like_count,
           COUNT(DISTINCT c.id) as comment_count,
-          COUNT(DISTINCT pb.id) as bookmark_count,
+          COUNT(DISTINCT pb.id) as bookmark_count
+      `;
+
+      // 로그인한 사용자가 있는 경우에만 좋아요/북마크 여부 확인
+      if (userId) {
+        query += `,
           EXISTS(
             SELECT 1 FROM post_likes pl2 
             WHERE pl2.post_id = p.id AND pl2.user_id = ?
@@ -85,6 +114,15 @@ class Post {
             SELECT 1 FROM post_bookmarks pb2 
             WHERE pb2.post_id = p.id AND pb2.user_id = ?
           ) as is_bookmarked
+        `;
+      } else {
+        query += `,
+          FALSE as is_liked,
+          FALSE as is_bookmarked
+        `;
+      }
+
+      query += `
         FROM posts p
         LEFT JOIN users u ON p.user_id = u.id
         LEFT JOIN post_likes pl ON p.id = pl.post_id
@@ -93,7 +131,7 @@ class Post {
         WHERE p.is_deleted = false AND p.is_hidden = false
       `;
       
-      const params = [userId, userId];  // 현재 로그인한 사용자 ID
+      const params = userId ? [userId, userId] : [];
       
       if (category) {
         query += ' AND p.category = ?';
@@ -251,7 +289,7 @@ class Post {
   /**
    * 사용자의 게시글 좋아요 여부를 확인합니다.
    * @param {number} postId - 게시글 ID
-   * @param {number} userId - 사용자 ID
+   * @param {number} userId - 사용��� ID
    * @returns {Promise<boolean>} 좋아요 여부
    */
   static async isLikedByUser(postId, userId) {

@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert, RefreshControl, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
-import { typography } from '@app/_styles/typography';
 import { PostCard } from '@app/_components/community/PostCard';
 import { CategoryFilter } from '@app/_components/community/CategoryFilter';
 import { LoadingState } from '@app/_components/common/LoadingState';
 import { ErrorState } from '@app/_components/common/ErrorState';
 import { communityApi } from '@app/_utils/api/community';
 import { useAuth } from '@app/_utils/hooks/useAuth';
+import { typography } from '@app/_styles/typography';
 
 export default function CommunityScreen() {
     const router = useRouter();
@@ -19,31 +19,17 @@ export default function CommunityScreen() {
     const [selectedCategory, setSelectedCategory] = useState('전체');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [searchVisible, setSearchVisible] = useState(false);
-    const [searchText, setSearchText] = useState('');
+    const [refreshing, setRefreshing] = useState(false);
     const [page, setPage] = useState(1);
     const [hasMore, setHasMore] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [likedPosts, setLikedPosts] = useState([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeTab, setActiveTab] = useState('all'); // 'all' | 'liked'
+    const [allPosts, setAllPosts] = useState([]); // 전체 게시글 저장
+    const [filteredPosts, setFilteredPosts] = useState([]); // 필터링된 게시글
 
     const categories = ['전체', '상품 리뷰', '취미', '건강·운동', '맛집', '여행', '슈퍼전대'];
 
-    useEffect(() => {
-        loadPosts(true);
-        if (user) {
-            loadLikedPosts();
-        }
-    }, [selectedCategory, user]);
-
-    const loadLikedPosts = async () => {
-        try {
-            const response = await communityApi.getLikedPosts();
-            setLikedPosts(response.posts || []);
-        } catch (error) {
-            console.error('좋아요 게시글 로드 에러:', error);
-        }
-    };
-
+    // 게시글 목록 로드
     const loadPosts = async (refresh = false) => {
         try {
             if (refresh) {
@@ -56,21 +42,26 @@ export default function CommunityScreen() {
             setLoading(true);
             setError(null);
 
-            const response = await communityApi.getPosts(
-                selectedCategory === '전체' ? null : selectedCategory,
-                refresh ? 1 : page
-            );
+            let response;
+            if (activeTab === 'liked') {
+                response = await communityApi.getLikedPosts();
+            } else {
+                response = await communityApi.getPosts(
+                    selectedCategory === '전체' ? null : selectedCategory,
+                    refresh ? 1 : page
+                );
+            }
 
             const newPosts = response?.posts || [];
             
-            const sortedPosts = newPosts.sort((a, b) => {
-                if (a.is_notice !== b.is_notice) {
-                    return b.is_notice - a.is_notice;
-                }
-                return new Date(b.created_at) - new Date(a.created_at);
-            });
-
-            setPosts(prev => refresh ? sortedPosts : [...prev, ...sortedPosts]);
+            if (refresh) {
+                setAllPosts(newPosts);
+                setFilteredPosts(newPosts);
+            } else {
+                setAllPosts(prev => [...prev, ...newPosts]);
+                setFilteredPosts(prev => [...prev, ...newPosts]);
+            }
+            
             setHasMore(newPosts.length === 10);
             setPage(prev => refresh ? 2 : prev + 1);
         } catch (error) {
@@ -78,65 +69,77 @@ export default function CommunityScreen() {
             setError(error.response?.data?.message || '게시글을 불러오는데 실패했습니다.');
         } finally {
             setLoading(false);
+            setRefreshing(false);
         }
     };
 
-    const handlePostPress = (post) => {
-        router.push(`/post/${post.id}`);
+    // 초기 로드 및 카테고리/탭 변경 시 로드
+    useEffect(() => {
+        loadPosts(true);
+    }, [selectedCategory, activeTab]);
+
+    // 검색어 변경 시 필터링
+    const handleSearchChange = (text) => {
+        setSearchQuery(text);
+        
+        // 카테고리와 검색어로 필터링
+        const filtered = allPosts.filter(post => {
+            const matchesCategory = selectedCategory === '전체' || post.category === selectedCategory;
+            const matchesSearch = text.trim() === '' || 
+                post.title.toLowerCase().includes(text.toLowerCase()) ||
+                post.content.toLowerCase().includes(text.toLowerCase()) ||
+                post.author?.username.toLowerCase().includes(text.toLowerCase());
+            
+            return matchesCategory && matchesSearch;
+        });
+
+        setFilteredPosts(filtered);
     };
 
+    // 카테고리 변경 핸들러
+    const handleCategoryChange = (category) => {
+        setSelectedCategory(category);
+        
+        // 카테고리와 현재 검색어로 필터링
+        const filtered = allPosts.filter(post => {
+            const matchesCategory = category === '전체' || post.category === category;
+            const matchesSearch = searchQuery.trim() === '' || 
+                post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                post.author?.username.toLowerCase().includes(searchQuery.toLowerCase());
+            
+            return matchesCategory && matchesSearch;
+        });
+
+        setFilteredPosts(filtered);
+    };
+
+    // 게시글 클릭 핸들러
+    const handlePostPress = (post) => {
+        router.push({
+            pathname: `/post/${post.id}`,
+            params: { id: post.id }
+        });
+    };
+
+    // 새 게시글 작성 핸들러
     const handleCreatePost = () => {
+        if (!user) {
+            Alert.alert('알림', '로그인이 필요한 기능입니다.');
+            return;
+        }
         router.push('/post/create');
     };
 
+    // 새로고침 핸들러
     const handleRefresh = () => {
+        setRefreshing(true);
         loadPosts(true);
     };
 
-    const filteredPosts = posts.filter(post => 
-        post.title.toLowerCase().includes(searchText.toLowerCase())
-    );
-
-    // 인기글 TOP3 계산
-    const popularPosts = posts
-        .filter(post => post.like_count >= 10)
-        .sort((a, b) => b.like_count - a.like_count)
-        .slice(0, 3);
-
-    const renderPopularPost = (post) => (
-        <Pressable
-            key={post.id}
-            style={styles.popularPostContainer}
-            onPress={() => handlePostPress(post)}
-        >
-            {post.media_url && (
-                <Image 
-                    source={{ uri: post.media_url }} 
-                    style={styles.popularPostImage}
-                />
-            )}
-            <View style={styles.popularPostContent}>
-                <Text style={styles.popularPostTitle}>{post.title}</Text>
-                <View style={styles.popularPostStats}>
-                    <Text style={styles.popularPostAuthor}>
-                        {post.author_name} · {calculateTier(post.author_score)}
-                    </Text>
-                    <View style={styles.statsContainer}>
-                        <FontAwesome5 name="heart" size={12} color={colors.primary} />
-                        <Text style={styles.statText}>{post.like_count}</Text>
-                    </View>
-                </View>
-            </View>
-        </Pressable>
-    );
-
-    // 사용자 티어 계산
-    const calculateTier = (score) => {
-        if (score >= 1000) return 'Platinum';
-        if (score >= 500) return 'Gold';
-        if (score >= 100) return 'Silver';
-        return 'Bronze';
-    };
+    if (loading && !refreshing) {
+        return <LoadingState />;
+    }
 
     if (error) {
         return <ErrorState message={error} />;
@@ -144,85 +147,106 @@ export default function CommunityScreen() {
 
     return (
         <View style={styles.container}>
-            <ScrollView
-                onScrollEndDrag={({ nativeEvent }) => {
-                    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
-                    const paddingToBottom = 20;
-                    if (layoutMeasurement.height + contentOffset.y >=
-                        contentSize.height - paddingToBottom) {
-                        loadPosts();
-                    }
-                }}
-                refreshControl={
-                    <RefreshControl refreshing={loading} onRefresh={handleRefresh} />
-                }
-            >
-                <View style={styles.header}>
-                    <Text style={styles.headerTitle}>커뮤니티</Text>
-                    <View style={styles.headerButtons}>
-                        <Pressable
-                            style={styles.iconButton}
-                            onPress={() => router.push('/liked-posts')}
-                        >
-                            <FontAwesome5 name="heart" size={20} color={colors.primary} />
-                        </Pressable>
-                        <Pressable
-                            style={styles.iconButton}
-                            onPress={() => setSearchVisible(!searchVisible)}
-                        >
-                            <FontAwesome5 name="search" size={20} color={colors.text.primary} />
-                        </Pressable>
-                    </View>
-                </View>
+            {/* 탭 버튼 */}
+            <View style={styles.tabContainer}>
+                <Pressable
+                    style={[styles.tabButton, activeTab === 'all' && styles.activeTab]}
+                    onPress={() => setActiveTab('all')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
+                        전체 게시글
+                    </Text>
+                </Pressable>
+                <Pressable
+                    style={[styles.tabButton, activeTab === 'liked' && styles.activeTab]}
+                    onPress={() => {
+                        if (!user) {
+                            Alert.alert('알림', '로그인이 필요한 기능입니다.');
+                            return;
+                        }
+                        setActiveTab('liked');
+                    }}
+                >
+                    <Text style={[styles.tabText, activeTab === 'liked' && styles.activeTabText]}>
+                        좋아요 모음
+                    </Text>
+                </Pressable>
+            </View>
 
-                {searchVisible && (
-                    <View style={styles.searchContainer}>
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="검색"
-                            value={searchText}
-                            onChangeText={setSearchText}
-                        />
-                    </View>
+            {/* 검색바 */}
+            <View style={styles.searchContainer}>
+                <TextInput
+                    style={styles.searchInput}
+                    value={searchQuery}
+                    onChangeText={handleSearchChange}
+                    placeholder="제목, 내용, 작성자로 검색..."
+                />
+                {searchQuery ? (
+                    <Pressable 
+                        style={styles.clearButton} 
+                        onPress={() => handleSearchChange('')}
+                    >
+                        <FontAwesome5 name="times" size={16} color={colors.text.secondary} />
+                    </Pressable>
+                ) : (
+                    <FontAwesome5 
+                        name="search" 
+                        size={16} 
+                        color={colors.text.secondary}
+                        style={styles.searchIcon}
+                    />
                 )}
+            </View>
 
-                {/* 인기글 TOP3 섹션 */}
-                {popularPosts.length > 0 && (
-                    <View style={styles.popularSection}>
-                        <Text style={styles.sectionTitle}>🔥 실시간 인기</Text>
-                        {popularPosts.map(renderPopularPost)}
-                    </View>
-                )}
-
+            {activeTab === 'all' && (
                 <CategoryFilter
                     categories={categories}
                     selectedCategory={selectedCategory}
-                    onSelect={setSelectedCategory}
+                    onSelect={handleCategoryChange}
                 />
+            )}
 
-                {/* 전체 게시글 섹션 */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>전체 게시글</Text>
-                    {filteredPosts.map((post) => (
-                        <PostCard
-                            key={post.id}
-                            post={post}
-                            onPress={() => handlePostPress(post)}
-                        />
-                    ))}
-                    {filteredPosts.length === 0 && !loading && (
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>현재 게시글이 없습니다.</Text>
-                        </View>
-                    )}
-                </View>
+            <ScrollView
+                style={styles.content}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                    />
+                }
+                onScroll={({ nativeEvent }) => {
+                    const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+                    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
+                    
+                    if (isCloseToBottom && !loading && hasMore && !searchQuery) {
+                        loadPosts();
+                    }
+                }}
+                scrollEventThrottle={400}
+            >
+                {filteredPosts.map((post) => (
+                    <PostCard
+                        key={post.id}
+                        post={post}
+                        onPress={() => handlePostPress(post)}
+                    />
+                ))}
+                {filteredPosts.length === 0 && (
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>
+                            {searchQuery 
+                                ? '검색 결과가 없습니다.' 
+                                : '게시글이 없습니다.'}
+                        </Text>
+                    </View>
+                )}
             </ScrollView>
 
             <Pressable
                 style={styles.floatingButton}
                 onPress={handleCreatePost}
             >
-                <FontAwesome5 name="pen" size={24} color={colors.background} />
+                <FontAwesome5 name="plus" size={24} color={colors.background} />
             </Pressable>
         </View>
     );
@@ -233,44 +257,53 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.background,
     },
-    header: {
+    tabContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: spacing.md,
-    },
-    headerTitle: {
-        ...typography.h2,
-    },
-    searchContainer: {
-        padding: spacing.md,
-        backgroundColor: colors.surface,
-    },
-    searchInput: {
-        ...typography.body,
-        backgroundColor: colors.background,
         padding: spacing.sm,
-        borderRadius: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
     },
-    section: {
-        marginTop: spacing.lg,
-        padding: spacing.md,
-    },
-    sectionTitle: {
-        ...typography.h2,
-        color: colors.primary,
-        marginBottom: spacing.md,
-        paddingBottom: spacing.sm,
-        borderBottomWidth: 2,
-        borderBottomColor: `${colors.primary}15`,
-    },
-    emptyContainer: {
-        padding: spacing.xl,
+    tabButton: {
+        flex: 1,
+        paddingVertical: spacing.sm,
         alignItems: 'center',
     },
-    emptyText: {
+    activeTab: {
+        borderBottomWidth: 2,
+        borderBottomColor: colors.primary,
+    },
+    tabText: {
         ...typography.body,
         color: colors.text.secondary,
+    },
+    activeTabText: {
+        color: colors.primary,
+        fontWeight: '600',
+    },
+    searchContainer: {
+        flexDirection: 'row',
+        padding: spacing.md,
+        gap: spacing.sm,
+    },
+    searchInput: {
+        flex: 1,
+        height: 40,
+        backgroundColor: colors.surface,
+        borderRadius: 20,
+        paddingHorizontal: spacing.md,
+        ...typography.body,
+    },
+    searchButton: {
+        width: 40,
+        height: 40,
+        backgroundColor: colors.primary,
+        borderRadius: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    content: {
+        flex: 1,
+        padding: spacing.md,
     },
     floatingButton: {
         position: 'absolute',
@@ -287,61 +320,5 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
-    },
-    popularSection: {
-        padding: spacing.lg,
-        backgroundColor: colors.surface,
-        marginBottom: spacing.md,
-    },
-    popularPostContainer: {
-        flexDirection: 'row',
-        padding: spacing.md,
-        backgroundColor: colors.background,
-        borderRadius: 12,
-        marginBottom: spacing.sm,
-        elevation: 2,
-        shadowColor: colors.text.primary,
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
-    },
-    popularPostImage: {
-        width: 60,
-        height: 60,
-        borderRadius: 8,
-        marginRight: spacing.md,
-    },
-    popularPostContent: {
-        flex: 1,
-    },
-    popularPostTitle: {
-        ...typography.body,
-        fontWeight: '600',
-        marginBottom: spacing.xs,
-    },
-    popularPostStats: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    popularPostAuthor: {
-        ...typography.caption,
-        color: colors.text.secondary,
-    },
-    statsContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.xs,
-    },
-    statText: {
-        ...typography.caption,
-        color: colors.text.secondary,
-    },
-    headerButtons: {
-        flexDirection: 'row',
-        gap: spacing.md,
-    },
-    iconButton: {
-        padding: spacing.xs,
     },
 });

@@ -12,7 +12,9 @@
     "@expo/vector-icons": "^14.0.0",
     "axios": "^1.7.7",
     "expo": "~50.0.5",
+    "expo-av": "^15.0.1",
     "expo-constants": "~15.4.6",
+    "expo-image-picker": "~14.7.1",
     "expo-linking": "~6.2.2",
     "expo-router": "~3.4.10",
     "expo-secure-store": "~12.8.1",
@@ -26,8 +28,7 @@
     "react-native-web": "~0.19.6",
     "react-native-web-webview": "^1.0.2",
     "react-native-webview": "13.6.4",
-    "react-native-youtube-iframe": "^2.3.0",
-    "expo-image-picker": "~14.7.1"
+    "react-native-youtube-iframe": "^2.3.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

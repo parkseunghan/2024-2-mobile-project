@@ -1,17 +1,14 @@
 const Post = require('../models/Post');
 const Comment = require('../models/Comment');
 const { uploadToStorage } = require('../utils/storage');
+const User = require('../models/User');
 
 exports.getPosts = async (req, res) => {
     try {
         const { category, page = 1 } = req.query;
-        const posts = await Post.findAll(category, parseInt(page));
+        const userId = req.user?.id || null;
         
-        if (req.user) {
-            for (let post of posts) {
-                post.isLiked = await Post.isLikedByUser(post.id, req.user.id);
-            }
-        }
+        const posts = await Post.findAll(category, parseInt(page), 10, userId);
         
         res.json({ posts });
     } catch (error) {
@@ -37,13 +34,26 @@ exports.getPost = async (req, res) => {
         const comments = await Comment.findByPostId(id);
         const isLiked = req.user ? await Post.isLikedByUser(id, req.user.id) : false;
 
+        const responseData = {
+            id: post.id,
+            title: post.title,
+            content: post.content,
+            category: post.category,
+            media_url: post.media_url,
+            created_at: post.created_at,
+            author: {
+                id: post.user_id,
+                username: post.author_name
+            },
+            like_count: post.like_count || 0,
+            comment_count: post.comment_count || 0,
+            isLiked,
+            comments
+        };
+
         res.json({
             success: true,
-            post: {
-                ...post,
-                isLiked,
-                comments
-            }
+            post: responseData
         });
     } catch (error) {
         console.error('게시글 조회 에러:', error);
@@ -60,46 +70,70 @@ exports.createPost = async (req, res) => {
             return res.status(401).json({ message: '로그인이 필요합니다.' });
         }
 
-        const title = req.body.title;
-        const content = req.body.content;
-        const category = req.body.category;
+        console.log('Request body:', req.body);
+        console.log('Request file:', req.file);
+
+        const { title, content, category } = req.body;
         
-        if (!title || !title.trim()) {
+        if (!title?.trim()) {
             return res.status(400).json({ message: '제목을 입력해주세요.' });
         }
-        if (!content || !content.trim()) {
+        if (!content?.trim()) {
             return res.status(400).json({ message: '내용을 입력해주세요.' });
         }
-        if (!category || !category.trim()) {
-            return res.status(400).json({ message: '카테고리를 선택해주세요.' });
-        }
+
+        const defaultCategory = '일반';
+        const finalCategory = category?.trim() || defaultCategory;
 
         let mediaUrl = null;
         if (req.file) {
-            mediaUrl = await uploadToStorage(req.file);
+            try {
+                mediaUrl = await uploadToStorage(req.file);
+            } catch (uploadError) {
+                console.error('파일 업로드 에러:', uploadError);
+                return res.status(500).json({ message: '파일 업로드에 실패했습니다.' });
+            }
         }
 
         console.log('Creating post with data:', {
             userId: req.user.id,
-            title,
-            content,
-            category,
+            title: title.trim(),
+            content: content.trim(),
+            category: finalCategory,
             mediaUrl,
-            file: req.file
         });
 
         const postId = await Post.create(req.user.id, {
             title: title.trim(),
             content: content.trim(),
-            category: category.trim(),
+            category: finalCategory,
             mediaUrl
         });
 
         const post = await Post.findById(postId);
-        res.status(201).json({ post });
+        
+        if (!post) {
+            throw new Error('게시글 생성 후 조회 실패');
+        }
+
+        try {
+            await User.updateUserScore(req.user.id, 10, '게시글 작성');
+        } catch (scoreError) {
+            console.error('점수 업데이트 에러:', scoreError);
+        }
+
+        res.status(201).json({ 
+            success: true,
+            message: '게시글이 작성되었습니다.',
+            post 
+        });
     } catch (error) {
         console.error('게시글 작성 에러:', error);
-        res.status(500).json({ message: '게시글 작성에 실패했습니다.' });
+        res.status(500).json({ 
+            success: false,
+            message: error.message || '게시글 작성에 실패했습니다.',
+            error: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
     }
 };
 

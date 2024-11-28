@@ -14,16 +14,30 @@ class User {
    * @returns {Promise<number>} 생성된 사용자의 ID
    */
   static async create(username, email, password, role = 'user') {
+    const connection = await db.getConnection();
     try {
+      await connection.beginTransaction();
+
       const hashedPassword = await bcrypt.hash(password, 10);
-      const [result] = await db.query(
+      const [userResult] = await connection.query(
         'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
         [username, email, hashedPassword, role]
       );
-      return result.insertId;
+
+      // user_scores 테이블에 초기 레코드 생성
+      await connection.query(
+        'INSERT INTO user_scores (user_id) VALUES (?)',
+        [userResult.insertId]
+      );
+
+      await connection.commit();
+      return userResult.insertId;
     } catch (error) {
+      await connection.rollback();
       console.error('사용자 생성 에러:', error);
       throw new Error('사용자 생성에 실패했습니다.');
+    } finally {
+      connection.release();
     }
   }
 
