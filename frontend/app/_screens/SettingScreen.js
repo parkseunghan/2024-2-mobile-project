@@ -9,7 +9,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { Text } from 'react-native';
 import { typography } from '@app/_styles/typography';
 
-export default function SettingsScreen() {
+export default function SettingScreen() {
     const router = useRouter();
     const { user, logout } = useAuth();
     const APP_VERSION = '1.0.0'; // 앱 버전 정보

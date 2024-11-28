@@ -26,7 +26,7 @@ export default function TabsLayout() {
             width: 80,
         }}>
             <FontAwesome5 name={name} size={20} color={color} />
-            <Text 
+            <Text
                 style={{
                     color: color,
                     fontSize: 11,
@@ -63,10 +63,24 @@ export default function TabsLayout() {
                 }}
             />
             <Tabs.Screen
+                name="(ranking)"
+                options={{
+                    title: '랭킹',
+                    tabBarIcon: ({ color, focused }) => renderTabBarIcon('trophy', color, '랭킹', focused),
+                }}
+            />
+            <Tabs.Screen
                 name="(community)"
                 options={{
                     title: '커뮤니티',
                     tabBarIcon: ({ color, focused }) => renderTabBarIcon('users', color, '커뮤니티', focused),
+                }}
+            />
+            <Tabs.Screen
+                name="(event)"
+                options={{
+                    title: '이벤트',
+                    tabBarIcon: ({ color, focused }) => renderTabBarIcon('calendar', color, '이벤트', focused),
                 }}
             />
             <Tabs.Screen

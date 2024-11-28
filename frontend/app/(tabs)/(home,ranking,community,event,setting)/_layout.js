@@ -16,12 +16,22 @@ const Layout = ({ segment }) => {
             case '(home)':
                 return <Stack.Screen name="home" options={{
                     header: () => <Header />,
-                    title: 'Home'
+                    title: 'home'
+                }} />
+            case '(ranking)':
+                return <Stack.Screen name="ranking" options={{
+                    header: () => <Header />,
+                    title: 'ranking'
                 }} />
             case '(community)':
                 return <Stack.Screen name="community" options={{
                     header: () => <Header />,
                     title: 'community'
+                }} />
+            case '(event)':
+                return <Stack.Screen name="event" options={{
+                    header: () => <Header />,
+                    title: 'event'
                 }} />
             case '(setting)':
                 return <Stack.Screen name="setting" options={{
@@ -40,18 +50,18 @@ const Layout = ({ segment }) => {
             {rootScreen}
             <Stack.Screen name="profile" options={{ header: () => <Header /> }} />
             <Stack.Screen name="search" options={{ headerShown: false }} />
-            <Stack.Screen 
-                name="search-results" 
-                options={{ 
+            <Stack.Screen
+                name="search-results"
+                options={{
                     header: () => <Header showBackButton={true} />,
-                }} 
+                }}
             />
-            <Stack.Screen 
-                name="video-detail" 
-                options={{ 
+            <Stack.Screen
+                name="video-detail"
+                options={{
                     header: () => <Header showBackButton={true} />,
                     presentation: 'card',
-                }} 
+                }}
             />
         </Stack>
     )
