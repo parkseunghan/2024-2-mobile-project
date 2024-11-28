@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Alert, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { colors } from '@app/_styles/colors';
@@ -95,7 +95,7 @@ export default function CommunityScreen() {
             >
                 <View style={styles.header}>
                     <Text style={styles.headerTitle}>게시판</Text>
-                    <TouchableOpacity
+                    <Pressable
                         onPress={() => setSearchVisible(!searchVisible)}
                     >
                         <FontAwesome5
@@ -103,7 +103,7 @@ export default function CommunityScreen() {
                             size={24}
                             color={colors.text.primary}
                         />
-                    </TouchableOpacity>
+                    </Pressable>
                 </View>
 
                 {searchVisible && (
@@ -154,12 +154,12 @@ export default function CommunityScreen() {
                 </View>
             </ScrollView>
 
-            <TouchableOpacity
+            <Pressable
                 style={styles.floatingButton}
                 onPress={handleCreatePost}
             >
                 <FontAwesome5 name="pen" size={24} color={colors.background} />
-            </TouchableOpacity>
+            </Pressable>
         </View>
     );
 }
