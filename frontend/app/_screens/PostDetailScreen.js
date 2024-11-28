@@ -101,9 +101,6 @@ export default function PostDetailScreen() {
         }
     };
 
-    // 사용자가 댓글을 작성했는지 확인
-    const hasUserComment = post?.comments?.some(comment => comment.author_id === user?.id);
-
     if (loading) {
         return <LoadingState />;
     }
@@ -148,38 +145,22 @@ export default function PostDetailScreen() {
                             onPress={handleToggleLike} 
                             style={[
                                 styles.actionButton,
-                                (post.isLiked || (user && post.likes?.includes(user.id))) && styles.likeButton
+                                post.isLiked && styles.likeButton
                             ]}
                         >
                             <FontAwesome5
                                 name="heart"
                                 size={20}
-                                color={(post.isLiked || (user && post.likes?.includes(user.id))) ? '#FF3B5C' : colors.text.secondary}
-                                solid={post.isLiked || (user && post.likes?.includes(user.id))}
+                                color={post.isLiked ? '#FF3B5C' : colors.text.secondary}
+                                solid={post.isLiked}
                             />
                             <Text style={[
                                 styles.actionText,
-                                (post.isLiked || (user && post.likes?.includes(user.id))) && styles.likeText
+                                post.isLiked && styles.likeText
                             ]}>
                                 {post.like_count || 0}
                             </Text>
                         </TouchableOpacity>
-                        <View style={[
-                            styles.actionButton,
-                            hasUserComment && styles.commentButton
-                        ]}>
-                            <FontAwesome5
-                                name="comment-alt"
-                                size={20}
-                                color={hasUserComment ? '#4A90E2' : colors.text.secondary}
-                            />
-                            <Text style={[
-                                styles.actionText,
-                                hasUserComment && styles.commentText
-                            ]}>
-                                {post.comments?.length || 0}
-                            </Text>
-                        </View>
                     </View>
                 </View>
 
@@ -337,11 +318,5 @@ const styles = StyleSheet.create({
     },
     likeText: {
         color: '#FF3B5C',
-    },
-    commentButton: {
-        backgroundColor: '#4A90E215',
-    },
-    commentText: {
-        color: '#4A90E2',
     },
 });

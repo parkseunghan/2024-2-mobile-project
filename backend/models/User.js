@@ -156,6 +156,94 @@ class User {
       throw new Error('사용자 조회에 실패했습니다.');
     }
   }
+
+  /**
+   * 사용자의 점수를 업데이트하고 등급을 갱신합니다.
+   * @param {number} userId - 사용자 ID
+   * @param {number} scoreChange - 변경될 점수
+   * @param {string} reason - 점수 변경 사유
+   */
+  static async updateUserScore(userId, scoreChange, reason) {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // 점수 이력 추가
+      await connection.query(
+        'INSERT INTO score_histories (user_id, score_change, reason) VALUES (?, ?, ?)',
+        [userId, scoreChange, reason]
+      );
+
+      // 사용자 점수 업데이트
+      await connection.query(
+        `UPDATE user_scores 
+         SET score = score + ?,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE user_id = ?`,
+        [scoreChange, userId]
+      );
+
+      // 새로운 등급 확인 및 업데이트
+      await connection.query(
+        `UPDATE users u
+         JOIN user_scores us ON u.id = us.user_id
+         JOIN user_ranks ur ON us.score BETWEEN ur.min_score AND ur.max_score
+         SET u.current_rank_id = ur.id
+         WHERE u.id = ?`,
+        [userId]
+      );
+
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      console.error('점수 업데이트 에러:', error);
+      throw new Error('점수 업데이트에 실패했습니다.');
+    } finally {
+      connection.release();
+    }
+  }
+
+  /**
+   * 사용자의 현재 등급 정보를 조회합니다.
+   * @param {number} userId - 사용자 ID
+   * @returns {Promise<Object>} 등급 정보
+   */
+  static async getUserRank(userId) {
+    try {
+      const [rows] = await db.query(
+        `SELECT ur.*, us.score
+         FROM users u
+         JOIN user_scores us ON u.id = us.user_id
+         JOIN user_ranks ur ON u.current_rank_id = ur.id
+         WHERE u.id = ?`,
+        [userId]
+      );
+      return rows[0];
+    } catch (error) {
+      console.error('등급 조회 에러:', error);
+      throw new Error('등급 조회에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 사용자의 점수 이력을 조회합니다.
+   * @param {number} userId - 사용자 ID
+   * @returns {Promise<Array>} 점수 이력 목록
+   */
+  static async getScoreHistory(userId) {
+    try {
+      const [rows] = await db.query(
+        `SELECT * FROM score_histories
+         WHERE user_id = ?
+         ORDER BY created_at DESC`,
+        [userId]
+      );
+      return rows;
+    } catch (error) {
+      console.error('점수 이력 조회 에러:', error);
+      throw new Error('점수 이력 조회에 실패했습니다.');
+    }
+  }
 }
 
 module.exports = User;

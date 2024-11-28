@@ -70,31 +70,48 @@ class Post {
     try {
       const offset = (page - 1) * limit;
       let query = `
-        SELECT p.*, 
-               u.username as author_name,
-               COUNT(DISTINCT pl.id) as like_count,
-               COUNT(DISTINCT c.id) as comment_count
+        SELECT 
+          p.*,
+          u.username as author_name,
+          u.avatar as author_avatar,
+          COUNT(DISTINCT pl.id) as like_count,
+          COUNT(DISTINCT c.id) as comment_count,
+          COUNT(DISTINCT pb.id) as bookmark_count,
+          EXISTS(
+            SELECT 1 FROM post_likes pl2 
+            WHERE pl2.post_id = p.id AND pl2.user_id = ?
+          ) as is_liked,
+          EXISTS(
+            SELECT 1 FROM post_bookmarks pb2 
+            WHERE pb2.post_id = p.id AND pb2.user_id = ?
+          ) as is_bookmarked
         FROM posts p
         LEFT JOIN users u ON p.user_id = u.id
         LEFT JOIN post_likes pl ON p.id = pl.post_id
         LEFT JOIN comments c ON p.id = c.post_id
-        WHERE p.is_deleted = false
+        LEFT JOIN post_bookmarks pb ON p.id = pb.post_id
+        WHERE p.is_deleted = false AND p.is_hidden = false
       `;
       
-      const params = [];
+      const params = [userId, userId];  // 현재 로그인한 사용자 ID
+      
       if (category) {
         query += ' AND p.category = ?';
         params.push(category);
       }
       
-      query += ' GROUP BY p.id ORDER BY p.created_at DESC LIMIT ? OFFSET ?';
+      query += `
+        GROUP BY p.id 
+        ORDER BY p.is_notice DESC, p.created_at DESC 
+        LIMIT ? OFFSET ?
+      `;
       params.push(limit, offset);
 
       const [rows] = await db.query(query, params);
       return rows;
     } catch (error) {
       console.error('게시글 목록 조회 에러:', error);
-      throw new Error('게시글 목록 조회에 실패했습니다.');
+      throw new Error('게시글 목록을 불러오는데 실패했습니다.');
     }
   }
 
@@ -247,6 +264,60 @@ class Post {
     } catch (error) {
       console.error('좋아요 확인 에러:', error);
       throw new Error('좋아요 확인에 실패했습니다.');
+    }
+  }
+
+  /**
+   * 게시글 조회수를 증가시킵니다.
+   * @param {number} postId - 게시글 ID
+   */
+  static async incrementViewCount(postId) {
+    try {
+      await db.query(
+        'UPDATE posts SET view_count = view_count + 1 WHERE id = ?',
+        [postId]
+      );
+    } catch (error) {
+      console.error('조회수 증가 에러:', error);
+    }
+  }
+
+  /**
+   * 게시글 북마크를 토글합니다.
+   * @param {number} postId - 게시글 ID
+   * @param {number} userId - 사용자 ID
+   * @returns {Promise<boolean>} 북마크 상태
+   */
+  static async toggleBookmark(postId, userId) {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [existing] = await connection.query(
+        'SELECT id FROM post_bookmarks WHERE post_id = ? AND user_id = ?',
+        [postId, userId]
+      );
+
+      if (existing.length > 0) {
+        await connection.query(
+          'DELETE FROM post_bookmarks WHERE post_id = ? AND user_id = ?',
+          [postId, userId]
+        );
+      } else {
+        await connection.query(
+          'INSERT INTO post_bookmarks (post_id, user_id) VALUES (?, ?)',
+          [postId, userId]
+        );
+      }
+
+      await connection.commit();
+      return !existing.length;
+    } catch (error) {
+      await connection.rollback();
+      console.error('북마크 토글 에러:', error);
+      throw new Error('북마크 처리에 실패했습니다.');
+    } finally {
+      connection.release();
     }
   }
 }
