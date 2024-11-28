@@ -72,8 +72,8 @@ export default function TabsLayout() {
             <Tabs.Screen
                 name="(community)"
                 options={{
-                    title: '커뮤니티',
-                    tabBarIcon: ({ color, focused }) => renderTabBarIcon('users', color, '커뮤니티', focused),
+                    title: '꿀팁 공유',
+                    tabBarIcon: ({ color, focused }) => renderTabBarIcon('users', color, '꿀팁 공유', focused),
                 }}
             />
             <Tabs.Screen

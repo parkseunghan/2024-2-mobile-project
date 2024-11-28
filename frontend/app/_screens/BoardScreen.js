@@ -4,7 +4,7 @@ import {
     Text,
     TextInput,
     FlatList,
-    TouchableOpacity,
+    Pressable,
     StyleSheet,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -39,19 +39,19 @@ const BoardScreen = ({ route }) => {
                     value={searchQuery}
                     onChangeText={(text) => setSearchQuery(text)}
                 />
-                <TouchableOpacity
+                <Pressable
                     onPress={() =>
                         navigation.navigate('CreatePost', { addPost })
                     }
                 >
                     <FontAwesome name="plus" size={24} color="blue" />
-                </TouchableOpacity>
+                </Pressable>
             </View>
             <FlatList
                 data={filteredPosts}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                    <TouchableOpacity
+                    <Pressable
                         onPress={() =>
                             navigation.navigate('PostDetail', { post: item })
                         }
@@ -61,7 +61,7 @@ const BoardScreen = ({ route }) => {
                         <Text style={styles.postContent}>
                             {item.content.substring(0, 50)}...
                         </Text>
-                    </TouchableOpacity>
+                    </Pressable>
                 )}
             />
         </View>
