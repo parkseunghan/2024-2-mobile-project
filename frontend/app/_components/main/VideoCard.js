@@ -6,7 +6,9 @@ import { typography } from '@app/_styles/typography';
 import { Ionicons } from '@expo/vector-icons';
 import api from '@app/_utils/api';
 import { useAuth } from '@app/_utils/hooks/useAuth';
+import { useRouter } from 'expo-router';
 
+const router = useRouter();
 const decodeHTMLEntities = (text) => {
   if (!text) return '';
   return text
@@ -286,9 +288,11 @@ export const VideoCard = ({ video, style, onPress }) => {
             </Text>
           )}
           {!user && (
-            <Text style={styles.loginPrompt}>
-              🔒 더 많은 영상 요약을 보려면 로그인하세요
-            </Text>
+            <Pressable onPress={() => router.push('/login')}>
+              <Text style={styles.loginPrompt}>
+                🔒 더 많은 영상 요약을 보려면 로그인하세요
+              </Text>
+            </Pressable>
           )}
         </View>
       )}
