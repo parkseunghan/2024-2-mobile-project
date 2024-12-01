@@ -5,6 +5,7 @@ import { MenuItem } from './MenuItem';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { useAuth } from '@app/_lib/hooks';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export function Menu({ isVisible, onClose, anchorPosition }) {
     const router = useRouter();
@@ -20,11 +21,20 @@ export function Menu({ isVisible, onClose, anchorPosition }) {
         try {
             await logout();
             onClose();
-            router.replace('/(auth)/login');
+            // 로컬 스토리지 초기화
+            await AsyncStorage.clear();
+            // 홈으로 이동 후 새로고침 효과
+            router.replace('/');
         } catch (error) {
             console.error('로그아웃 에러:', error);
             Alert.alert('오류', '로그아웃에 실패했습니다.');
         }
+    };
+
+    // 로그인 핸들러 추가
+    const handleLogin = () => {
+        router.replace('/(auth)/login');
+        onClose();
     };
 
     // 기본 메뉴 아이템 (모든 사용자에게 보임)
@@ -144,10 +154,7 @@ export function Menu({ isVisible, onClose, anchorPosition }) {
                             <MenuItem
                                 icon="sign-in-alt"
                                 label="로그인"
-                                onPress={() => {
-                                    router.push('/(auth)/login');
-                                    onClose();
-                                }}
+                                onPress={handleLogin}
                             />
                         )}
                     </View>
