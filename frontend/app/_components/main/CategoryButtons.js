@@ -19,6 +19,7 @@ export const CategoryButtons = () => {
      * @param {string} categoryId - 카테고리 ID
      */
     const handleCategoryPress = (categoryId) => {
+        console.log('Pressing category:', categoryId);
         router.push(`/category/${categoryId}`);
     };
 

@@ -6,7 +6,7 @@ import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 import { CATEGORIES } from '@app/_config/constants';
-import { searchVideos } from '@app/_utils/youtubeApi';
+import { youtubeApi } from '@app/_lib/api';
 import { LoadingState } from '@app/_components/common/LoadingState';
 import { useRouter } from 'expo-router';
 import { usePosts } from '@app/_context/PostContext';
@@ -17,9 +17,14 @@ export default function CategoryDetailScreen({ categoryId }) {
     const [loading, setLoading] = useState(true);
     const [videos, setVideos] = useState([]);
     const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState('videos'); // 'videos' 또는 'posts'
+    const [activeTab, setActiveTab] = useState('videos');
 
-    const category = CATEGORIES.find(cat => cat.id === categoryId);
+    console.log('Received categoryId:', categoryId);
+    console.log('CATEGORIES:', CATEGORIES);
+    
+    const category = CATEGORIES.find(cat => String(cat.id) === String(categoryId));
+    console.log('Found category:', category);
+
     const categoryPosts = posts.filter(post => post.category === category?.title);
 
     useEffect(() => {
@@ -31,19 +36,47 @@ export default function CategoryDetailScreen({ categoryId }) {
     const loadCategoryContent = async () => {
         try {
             setLoading(true);
-            const results = await searchVideos(category.searchKeywords);
-            setVideos(results);
+            console.log('Searching with params:', {
+                searchKeywords: category.searchKeywords,
+                categoryId: category.id
+            });
+            
+            const response = await youtubeApi.getVideosByCategory(category.id);
+            console.log('API Response:', response);
+            
+            if (!response.data?.videos) {
+                console.error('Invalid response format:', response.data);
+                throw new Error('검색 결과가 없습니다.');
+            }
+
+            const formattedVideos = response.data.videos.map(item => ({
+                id: item.id.videoId || item.id,
+                title: item.snippet.title,
+                thumbnail: item.snippet.thumbnails.medium.url,
+                channelTitle: item.snippet.channelTitle,
+                publishedAt: item.snippet.publishedAt,
+                description: item.snippet.description
+            }));
+            
+            console.log('Formatted Videos:', formattedVideos);
+            setVideos(formattedVideos);
         } catch (err) {
             console.error('Category content loading error:', err);
-            setError(err.message);
+            setError(err.message || '동영상을 불러오는데 실패했습니다.');
             setVideos([]);
         } finally {
             setLoading(false);
         }
     };
 
-    const handleVideoSelect = (videoId) => {
-        router.push(`/video-detail?videoId=${videoId}`);
+    const handleVideoSelect = (video) => {
+        if (video.id) {
+            console.log('Navigating to video:', video.id);
+            router.push(`/(tabs)/(home)/video-detail?videoId=${video.id}`);
+        } else {
+            console.error('Invalid video ID:', video);
+            setError('비디오 정보가 올바르지 않습니다.');
+        }
     };
 
     const handlePostPress = (post) => {
@@ -82,40 +115,35 @@ export default function CategoryDetailScreen({ categoryId }) {
                     onPress={() => setActiveTab('posts')}
                 >
                     <Text style={[styles.tabText, activeTab === 'posts' && styles.activeTabText]}>
-                        게시물 ({categoryPosts.length})
+                        게시글 ({categoryPosts.length})
                     </Text>
                 </Pressable>
             </View>
 
             <ScrollView style={styles.content}>
                 {activeTab === 'videos' ? (
-                    // 영상 탭 내용
                     <View style={styles.videoContainer}>
                         {error ? (
                             <View style={styles.messageContainer}>
                                 <Text style={styles.errorText}>{error}</Text>
-                                <Text style={styles.subErrorText}>
-                                    현재 YouTube 영상을 불러올 수 없습니다.
-                                    잠시 후 다시 시도해주세요.
-                                </Text>
                             </View>
                         ) : videos.length > 0 ? (
                             <VideoList
                                 videos={videos}
                                 onVideoSelect={handleVideoSelect}
-                                key="video-list"
                             />
                         ) : (
                             <View style={styles.emptyContainer}>
-                                <Text style={styles.emptyText}>관련 영상이 없습니다.</Text>
+                                <Text style={styles.emptyText}>
+                                    이 카테고리의 영상이 없습니다.
+                                </Text>
                             </View>
                         )}
                     </View>
                 ) : (
-                    // 게시물 탭 내용
                     <View style={styles.postsContainer}>
                         {categoryPosts.length > 0 ? (
-                            categoryPosts.map((post) => (
+                            categoryPosts.map(post => (
                                 <PostCard
                                     key={post.id}
                                     post={post}
@@ -125,7 +153,9 @@ export default function CategoryDetailScreen({ categoryId }) {
                             ))
                         ) : (
                             <View style={styles.emptyContainer}>
-                                <Text style={styles.emptyText}>관련 게시물이 없습니다.</Text>
+                                <Text style={styles.emptyText}>
+                                    이 카테고리의 게시글이 없습니다.
+                                </Text>
                             </View>
                         )}
                     </View>

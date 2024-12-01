@@ -1,5 +1,5 @@
 import { Redirect } from 'expo-router';
-import { useAuth } from '@app/_utils/hooks/useAuth';
+import { useAuth } from '@app/_lib/hooks';
 import { View, ActivityIndicator } from 'react-native';
 import { colors } from '@app/_styles/colors';
 
@@ -18,7 +18,7 @@ export default function Index() {
         return <Redirect href="/(auth)/welcome" />;
     }
 
-    if (user.role === 'admin') {
+    if (user?.role === 'admin') {
         return <Redirect href="/(admin)/dashboard" />;
     }
 

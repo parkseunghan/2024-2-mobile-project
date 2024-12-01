@@ -1,12 +1,14 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
+import { useRouter } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
-import { useAuth } from '@app/_utils/hooks/useAuth';
+import { useAuth } from '@app/_lib/hooks';
+import { formatDate } from '@app/_lib/utils';
 
-export const PostCard = ({ post, onPress, style }) => {
+export function PostCard({ post, onPress, onLikePress }) {
     const { user } = useAuth();
     
     const hasUserComment = post.comments?.some(comment => comment.author_id === user?.id);

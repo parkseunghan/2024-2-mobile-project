@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, Pressable } from 'react-native';
+import { View, Text, Image, StyleSheet, Pressable, Alert } from 'react-native';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 import { Ionicons } from '@expo/vector-icons';
-import api from '@app/_utils/api';
-import { useAuth } from '@app/_utils/hooks/useAuth';
+import { client } from '@app/_lib/api/client';
+import { useAuth } from '@app/_lib/hooks';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const router = useRouter();
 const decodeHTMLEntities = (text) => {
   if (!text) return '';
   return text
@@ -21,6 +21,10 @@ const decodeHTMLEntities = (text) => {
 };
 
 const formatSummaryText = (text) => {
+  if (!text || typeof text !== 'string') {
+    return '';
+  }
+
   if (text.startsWith('📝 요약') || text.startsWith('🔑 주요 키워드')) {
     return text;
   }
@@ -67,53 +71,204 @@ const formatSummaryText = (text) => {
 };
 
 export const VideoCard = ({ video, style, onPress }) => {
+  const router = useRouter();
   const { user } = useAuth();
   const [showSummary, setShowSummary] = useState(false);
   const [summaryText, setSummaryText] = useState('');
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(false);
   const [fromCache, setFromCache] = useState(false);
   const [creator, setCreator] = useState(null);
   const [hasSummary, setHasSummary] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   
   useEffect(() => {
     const checkSummary = async () => {
-      if (!video) return;
-
+      if (!video?.id) return;
+      
       try {
         setInitialLoading(true);
         const videoId = video.id?.videoId || video.id;
-        console.log('Checking summary for video:', videoId);
+        const response = await client.get(`/youtube/summary/${videoId}`);
         
-        const response = await api.get(`/youtube/summary/${videoId}`);
         console.log('Summary response:', response.data);
         
-        if (response.data?.summary) {
+        if (response.data?.hasSummary === true && response.data?.summary) {
           const formattedSummary = formatSummaryText(response.data.summary);
           setSummaryText(formattedSummary);
-          setFromCache(true);
-          setCreator(response.data.creator);
           setHasSummary(true);
-          console.log('Summary found, setting hasSummary to true');
+          setCreator(response.data.creator);
+          setFromCache(response.data.fromCache);
         } else {
-          setSummaryText('');
           setHasSummary(false);
-          console.log('No summary found, setting hasSummary to false');
+          setSummaryText('');
+          setCreator(null);
+          setFromCache(false);
         }
       } catch (error) {
-        console.log('Summary check error:', error.response?.status);
-        if (error.response?.status !== 404) {
-          console.error('요약 확인 에러:', error);
-        }
-        setSummaryText('');
+        console.error('요약 확인 에러:', error);
         setHasSummary(false);
+        setSummaryText('');
+        setCreator(null);
+        setFromCache(false);
       } finally {
         setInitialLoading(false);
       }
     };
-    
+
     checkSummary();
   }, [video]);
+
+  const handleSummaryPress = async () => {
+    if (!user) {
+      Alert.alert(
+        '로그인 필요',
+        '요약 기능은 로그인한 사용자만 이용할 수 있습니다. 로그인 화면으로 이동하시겠습니까?',
+        [
+          { text: '취소', style: 'cancel' },
+          { text: '로그인', onPress: () => router.push('/login') }
+        ]
+      );
+      return;
+    }
+
+    if (hasSummary) {
+      setShowSummary(!showSummary);
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      setLoading(true);
+      const videoId = video.id?.videoId || video.id;
+      const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      
+      const response = await client.post('/youtube/summarize', { 
+        videoId,
+        videoUrl
+      });
+      
+      if (response.data?.summary) {
+        const formattedSummary = formatSummaryText(response.data.summary);
+        setSummaryText(formattedSummary);
+        setHasSummary(true);
+        setShowSummary(true);
+        setCreator(response.data.creator);
+        setFromCache(response.data.fromCache);
+      } else {
+        throw new Error('요약 생성에 실패했습니다.');
+      }
+    } catch (error) {
+      handleSummaryError(error);
+    } finally {
+      setIsGenerating(false);
+      setLoading(false);
+    }
+  };
+
+  const handleSummaryError = async (error) => {
+    console.error('요약 생성 에러:', error);
+    let errorMessage = '요약 생성에 실패했습니다. 잠시 후 다시 시도해주세요.';
+    
+    if (error.code === 'ECONNABORTED') {
+      errorMessage = '요약 생성 시간이 초과되었습니다. 다시 시도해주세요.';
+    } else if (error.response?.status === 401) {
+      const currentToken = await AsyncStorage.getItem('token');
+      if (!currentToken) {
+        errorMessage = '로그인이 필요한 기능입니다.';
+        router.push('/login');
+      } else {
+        errorMessage = '세션이 만료되었습니다. 다시 로그인해주세요.';
+        await AsyncStorage.removeItem('token');
+        router.push('/login');
+      }
+    }
+    Alert.alert('오류', errorMessage);
+  };
+
+  const renderSummaryButton = () => {
+    return (
+      <Pressable 
+        style={[
+          styles.summaryButton,
+          hasSummary && showSummary && styles.summaryButtonActive,
+          loading && styles.summaryButtonLoading,
+          !user && styles.summaryButtonDisabled,
+          isGenerating && styles.summaryButtonGenerating
+        ]}
+        onPress={handleSummaryPress}
+        disabled={loading || isGenerating}
+      >
+        <View style={styles.summaryTextContainer}>
+          <Text style={styles.summaryTextTop}>요약</Text>
+          <Text style={styles.summaryTextBottom}>
+            {isGenerating ? '중...' : (hasSummary ? '보기' : '하기')}
+          </Text>
+        </View>
+        {!isGenerating && hasSummary && (
+          <Ionicons 
+            name={showSummary ? "chevron-up" : "chevron-down"} 
+            size={16} 
+            color={colors.primary}
+          />
+        )}
+      </Pressable>
+    );
+  };
+
+  const renderLoginPrompt = () => (
+    <Pressable 
+      style={styles.loginPromptContainer}
+      onPress={() => router.push('/login')}
+    >
+      <Text style={styles.loginPrompt}>
+        요약 내용을 확인하려면 로그인이 필요합니다.
+        <Text style={styles.loginLink}> 로그인하기</Text>
+      </Text>
+    </Pressable>
+  );
+
+  const renderSummarySection = () => {
+    if (!user) {
+      return (
+        <View style={styles.loginPromptContainer}>
+          <Text style={styles.loginPrompt}>
+            요약 기능을 이용하려면 {' '}
+            <Text 
+              style={styles.loginLink}
+              onPress={() => router.push('/login')}
+            >
+              로그인
+            </Text>
+            이 필요합니다.
+          </Text>
+        </View>
+      );
+    }
+
+    if (loading || initialLoading) {
+      return (
+        <View style={styles.summarySection}>
+          <Text>요약을 불러오는 중...</Text>
+        </View>
+      );
+    }
+
+    if (showSummary && summaryText) {
+      return (
+        <View style={styles.summarySection}>
+          <Text style={styles.summaryText}>{summaryText}</Text>
+          {creator && (
+            <Text style={styles.summaryInfo}>
+              {fromCache ? '기존 요약' : '새로 생성된 요약'} by {creator}
+            </Text>
+          )}
+        </View>
+      );
+    }
+
+    return null;
+  };
 
   if (initialLoading) {
     return null;
@@ -130,80 +285,8 @@ export const VideoCard = ({ video, style, onPress }) => {
   const decodedTitle = decodeHTMLEntities(title);
   const decodedChannelTitle = decodeHTMLEntities(channelTitle);
 
-  const handleSummaryPress = async (e) => {
-    e.stopPropagation();
-    
-    if (!user) {
-      setSummaryText('로그인이 필요한 기능입니다.');
-      setShowSummary(true);
-      return;
-    }
-    
-    if (!showSummary && !hasSummary) {
-      try {
-        setLoading(true);
-        setSummaryText('요약 중...');
-        
-        const videoId = video.id?.videoId || video.id;
-        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-        
-        const response = await api.post('/youtube/summarize', { videoUrl });
-        
-        if (response.data.summary) {
-          const formattedSummary = formatSummaryText(response.data.summary);
-          setSummaryText(formattedSummary);
-          setFromCache(response.data.fromCache);
-          setCreator(response.data.creator);
-          setHasSummary(true);
-        } else {
-          setSummaryText('요약 생성에 실패했습니다.');
-          setHasSummary(false);
-        }
-      } catch (error) {
-        console.error('요약 에러:', error);
-        setSummaryText(error.response?.data?.error || '요약을 가져오는데 실패했습니다.');
-        setHasSummary(false);
-      } finally {
-        setLoading(false);
-      }
-    }
-    
-    setShowSummary(!showSummary);
-  };
-
-  const renderSummaryButton = () => (
-    <Pressable 
-      style={[
-        styles.summaryButton,
-        showSummary && styles.summaryButtonActive,
-        loading && styles.summaryButtonLoading
-      ]}
-      onPress={handleSummaryPress}
-      disabled={loading || initialLoading}
-    >
-      <View style={styles.summaryTextContainer}>
-        <Text style={styles.summaryTextTop}>요약</Text>
-        {loading ? (
-          <Text style={styles.summaryTextBottom}>중</Text>
-        ) : (
-          <Text style={styles.summaryTextBottom}>
-            {hasSummary ? '보기' : '하기'}
-          </Text>
-        )}
-      </View>
-      <Ionicons 
-        name={showSummary ? "chevron-up" : "chevron-down"} 
-        size={16} 
-        color={colors.primary}
-      />
-    </Pressable>
-  );
-
   return (
-    <Pressable 
-      style={[styles.container, style]}
-      onPress={onPress}
-    >
+    <Pressable style={[styles.container, style]} onPress={onPress}>
       <View style={styles.contentContainer}>
         <Image
           source={{ uri: thumbnailUrl }}
@@ -228,74 +311,8 @@ export const VideoCard = ({ video, style, onPress }) => {
         {renderSummaryButton()}
       </View>
       
-      {showSummary && (
-        <View style={styles.summaryContainer}>
-          {summaryText.startsWith('🔑') ? (
-            <>
-              {summaryText.split('\n\n').map((section, index) => {
-                if (section.startsWith('🔑 주요 키워드')) {
-                  const keywords = section.replace('🔑 주요 키워드\n', '').split(' • ');
-                  return (
-                    <View key={`section-${index}`} style={styles.summarySection}>
-                      <Text style={styles.summaryTitle}>
-                        <Text style={styles.sectionIcon}>🔑</Text>
-                        주요 키워드
-                      </Text>
-                      <View style={styles.keywordSection}>
-                        {keywords.map((keyword, kidx) => (
-                          <View key={`keyword-${kidx}`} style={styles.keyword}>
-                            <Text style={styles.keywordText}>{keyword}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                  );
-                } else if (section.startsWith('📝 요약')) {
-                  const paragraphs = section.replace('📝 요약\n', '').split('\n');
-                  return (
-                    <View key={`section-${index}`} style={styles.summarySection}>
-                      <Text style={styles.summaryTitle}>
-                        <Text style={styles.sectionIcon}>📝</Text>
-                        요약
-                      </Text>
-                      {paragraphs.map((paragraph, pidx) => {
-                        const words = paragraph.trim().split(' ');
-                        return (
-                          <Text key={`paragraph-${pidx}`} style={styles.summaryParagraph}>
-                            {words.map((word, widx) => (
-                              <Text key={`word-${widx}`} style={
-                                word.length >= 2 && /[가-힣]+/.test(word) ? 
-                                styles.highlightText : null
-                              }>
-                                {word}{' '}
-                              </Text>
-                            ))}
-                          </Text>
-                        );
-                      })}
-                    </View>
-                  );
-                }
-                return null;
-              })}
-            </>
-          ) : (
-            <Text style={styles.summaryContent}>{summaryText}</Text>
-          )}
-          {creator && fromCache && (
-            <Text style={styles.summaryInfo}>
-              ✍️ {creator}님이 생성한 요약입니다
-            </Text>
-          )}
-          {!user && (
-            <Pressable onPress={() => router.push('/login')}>
-              <Text style={styles.loginPrompt}>
-                🔒 더 많은 영상 요약을 보려면 로그인하세요
-              </Text>
-            </Pressable>
-          )}
-        </View>
-      )}
+      {showSummary && !user && renderLoginPrompt()}
+      {renderSummarySection()}
     </Pressable>
   );
 };
@@ -306,11 +323,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: spacing.md,
-    elevation: 2,
-    shadowColor: colors.text.primary,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
   },
   contentContainer: {
     flexDirection: 'row',
@@ -372,7 +385,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: spacing.xs,
   },
   summaryTextTop: {
     ...typography.caption,
@@ -380,7 +392,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 12,
     lineHeight: 14,
-    textAlign: 'center',
+    marginBottom: 2,
   },
   summaryTextBottom: {
     ...typography.caption,
@@ -388,8 +400,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 12,
     lineHeight: 14,
-    textAlign: 'center',
-    marginTop: 2,
   },
   summaryIcon: {
     marginTop: 2,
@@ -480,11 +490,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: spacing.md,
     marginBottom: spacing.md,
-    elevation: 1,
-    shadowColor: colors.text.primary,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.1)',
   },
   sectionIcon: {
     marginRight: spacing.xs,
@@ -495,4 +501,28 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 15,
   },
+  loginPromptContainer: {
+    padding: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginVertical: spacing.sm,
+  },
+  loginPrompt: {
+    color: colors.text.primary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  loginLink: {
+    color: colors.primary,
+    fontWeight: 'bold',
+  },
+  summaryButtonDisabled: {
+    opacity: 0.7,
+    backgroundColor: `${colors.primary}05`,
+  },
+  summaryButtonGenerating: {
+    backgroundColor: `${colors.primary}20`,
+    opacity: 0.8,
+  }
 }); 

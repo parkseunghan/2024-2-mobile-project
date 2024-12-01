@@ -1,151 +1,158 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Modal, Animated, Platform } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, StyleSheet, Modal, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { FontAwesome5 } from '@expo/vector-icons';
+import { MenuItem } from './MenuItem';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
-import { typography } from '@app/_styles/typography';
-import { useAuth } from '@app/_utils/hooks/useAuth';
+import { useAuth } from '@app/_lib/hooks';
 
-export function Menu({ isVisible, onClose }) {
+export function Menu({ isVisible, onClose, anchorPosition }) {
     const router = useRouter();
     const { user, logout } = useAuth();
-    const [slideAnim] = useState(new Animated.Value(300));
+    
+    // isAdmin 상태를 직접 계산
+    const isAdmin = user?.role === 'admin' || user?.role === 'god';
 
-    useEffect(() => {
-        if (isVisible) {
-            Animated.timing(slideAnim, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: Platform.OS !== 'web',
-            }).start();
-        } else {
-            Animated.timing(slideAnim, {
-                toValue: 300,
-                duration: 300,
-                useNativeDriver: Platform.OS !== 'web',
-            }).start();
-        }
-    }, [isVisible]);
-
-    const menuItems = [
-        {
-            title: '홈',
-            icon: 'home',
-            onPress: () => {
-                router.push('/(tabs)/home');
-                onClose();
-            }
-        },
-        {
-            title: '커뮤니티',
-            icon: 'users',
-            onPress: () => {
-                router.push('/(tabs)/community');
-                onClose();
-            }
-        },
-        {
-            title: '설정',
-            icon: 'cog',
-            onPress: () => {
-                router.push('/(tabs)/setting');
-                onClose();
-            }
-        },
-        ...(user?.role === 'admin' ? [{
-            title: router.pathname?.includes('(admin)') ? '일반 화면으로' : '관리자 설정',
-            icon: router.pathname?.includes('(admin)') ? 'home' : 'shield-alt',
-            onPress: () => {
-                if (router.pathname?.includes('(admin)')) {
-                    router.push('/(tabs)/home');
-                } else {
-                    router.push('/(admin)/dashboard');
-                }
-                onClose();
-            }
-        }] : [])
-    ];
+    console.log('Current user:', user);
+    console.log('Is admin:', isAdmin);
 
     const handleLogout = async () => {
-        await logout();
-        onClose();
-        router.replace('/login');
+        try {
+            await logout();
+            onClose();
+            router.replace('/(auth)/login');
+        } catch (error) {
+            console.error('로그아웃 에러:', error);
+            Alert.alert('오류', '로그아웃에 실패했습니다.');
+        }
     };
 
-    const animatedStyle = {
-        transform: [{ translateX: slideAnim }]
-    };
+    // 기본 메뉴 아이템 (모든 사용자에게 보임)
+    const commonMenuItems = [
+        {
+            icon: "home",
+            label: "홈",
+            onPress: () => {
+                router.push('/home');
+                onClose();
+            }
+        },
+        {
+            icon: "trophy",
+            label: "랭킹",
+            onPress: () => {
+                router.push('/ranking');
+                onClose();
+            }
+        },
+        {
+            icon: "users",
+            label: "꿀팁 공유",
+            onPress: () => {
+                router.push('/community');
+                onClose();
+            }
+        },
+        {
+            icon: "calendar",
+            label: "이벤트",
+            onPress: () => {
+                router.push('/event');
+                onClose();
+            }
+        },
+        {
+            icon: "cog",
+            label: "설정",
+            onPress: () => {
+                router.push('/setting');
+                onClose();
+            }
+        },
+    ];
 
-    const renderMenuItem = (item, index) => (
-        <Pressable
-            key={index}
-            style={styles.menuItem}
-            onPress={item.onPress}
-        >
-            <View style={styles.menuItemContent}>
-                <FontAwesome5 name={item.icon} size={20} color={colors.primary} />
-                <Text style={styles.menuItemText}>{item.title}</Text>
-            </View>
-        </Pressable>
-    );
+    // 관리자 전용 메뉴
+    const adminMenuItems = isAdmin ? [
+        {
+            icon: "shield-alt",
+            label: "관리자 대시보드",
+            onPress: () => {
+                router.push('/(admin)/dashboard');
+                onClose();
+            }
+        },
+        {
+            icon: "cog",
+            label: "카테고리 관리",
+            onPress: () => {
+                router.push('/(admin)/categories');
+                onClose();
+            }
+        },
+        {
+            icon: "users-cog",
+            label: "사용자 관리",
+            onPress: () => {
+                router.push('/(admin)/users');
+                onClose();
+            }
+        }
+    ] : [];
 
     return (
         <Modal
             visible={isVisible}
-            animationType="fade"
             transparent={true}
+            animationType="fade"
             onRequestClose={onClose}
         >
-            <View style={styles.overlay}>
-                <Animated.View style={[styles.container, animatedStyle]}>
-                    <View style={styles.header}>
-                        <Text style={styles.title}>메뉴</Text>
-                        <Pressable onPress={onClose} style={styles.closeButton}>
-                            <FontAwesome5 name="times" size={24} color={colors.text.primary} />
-                        </Pressable>
-                    </View>
+            <Pressable style={styles.overlay} onPress={onClose}>
+                <View style={[styles.menuContainer, {
+                    position: 'absolute',
+                    top: anchorPosition?.y + 45 || 0,
+                    right: spacing.md,
+                }]}>
+                    <View style={styles.menu}>
+                        {/* 공통 메뉴 */}
+                        {commonMenuItems.map((item, index) => (
+                            <MenuItem key={`common-${index}`} {...item} />
+                        ))}
 
-                    <ScrollView style={styles.menuItems} showsVerticalScrollIndicator={false}>
-                        {menuItems.map(renderMenuItem)}
-                    </ScrollView>
+                        {/* 구분선 */}
+                        {user && <View style={styles.divider} />}
 
-                    <View style={styles.footer}>
-                        {user ? (
-                            <Pressable style={styles.logoutButton} onPress={handleLogout}>
-                                <View style={styles.menuItemContent}>
-                                    <FontAwesome5 name="sign-out-alt" size={20} color={colors.error} />
-                                    <Text style={[styles.menuItemText, { color: colors.error }]}>
-                                        로그아웃
-                                    </Text>
-                                </View>
-                            </Pressable>
-                        ) : (
-                            <View style={styles.authButtons}>
-                                {['로그인', '회원가입'].map((title, index) => (
-                                    <Pressable
-                                        key={index}
-                                        style={styles.authButton}
-                                        onPress={() => {
-                                            router.push(title === '로그인' ? '/login' : '/signup');
-                                            onClose();
-                                        }}
-                                    >
-                                        <View style={styles.menuItemContent}>
-                                            <FontAwesome5 
-                                                name={title === '로그인' ? 'sign-in-alt' : 'user-plus'} 
-                                                size={20} 
-                                                color={colors.primary} 
-                                            />
-                                            <Text style={styles.menuItemText}>{title}</Text>
-                                        </View>
-                                    </Pressable>
+                        {/* 관리자 메뉴 */}
+                        {isAdmin && adminMenuItems.length > 0 && (
+                            <>
+                                <View style={styles.divider} />
+                                {adminMenuItems.map((item, index) => (
+                                    <MenuItem key={`admin-${index}`} {...item} />
                                 ))}
-                            </View>
+                            </>
+                        )}
+
+                        {/* 로그인/로그아웃 */}
+                        <View style={styles.divider} />
+                        {user ? (
+                            <MenuItem
+                                icon="sign-out-alt"
+                                label="로그아웃"
+                                onPress={handleLogout}
+                                variant="danger"
+                            />
+                        ) : (
+                            <MenuItem
+                                icon="sign-in-alt"
+                                label="로그인"
+                                onPress={() => {
+                                    router.push('/(auth)/login');
+                                    onClose();
+                                }}
+                            />
                         )}
                     </View>
-                </Animated.View>
-            </View>
+                </View>
+            </Pressable>
         </Modal>
     );
 }
@@ -154,74 +161,26 @@ const styles = StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        flexDirection: 'row',
-        justifyContent: 'flex-end',
     },
-    container: {
-        width: '80%',
-        maxWidth: 300,
-        backgroundColor: colors.background,
-        height: '100%',
-        paddingVertical: spacing.lg,
-        ...(Platform.OS === 'web' ? {
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-        } : {
-            shadowColor: colors.text.primary,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-        })
+    menuContainer: {
+        backgroundColor: 'white',
+        borderRadius: 8,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+        minWidth: 200,
     },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: spacing.lg,
-        paddingBottom: spacing.md,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-    },
-    title: {
-        ...typography.h2,
-    },
-    closeButton: {
+    menu: {
         padding: spacing.sm,
     },
-    menuItems: {
-        flex: 1,
-    },
-    menuItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: spacing.lg,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
-    },
-    menuItemText: {
-        ...typography.body,
-        marginLeft: spacing.md,
-    },
-    footer: {
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
-        paddingVertical: spacing.md,
-    },
-    authButtons: {
-        gap: spacing.sm,
-    },
-    authButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: spacing.lg,
-    },
-    logoutButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: spacing.lg,
-    },
-    menuItemContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: spacing.md,
+    divider: {
+        height: 1,
+        backgroundColor: colors.border,
+        marginVertical: spacing.xs,
     }
 }); 

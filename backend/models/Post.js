@@ -6,54 +6,33 @@ const db = require('../config/database');
 class Post {
   /**
    * 새로운 게시글을 생성합니다.
-   * @param {number} userId - 작성자 ID
    * @param {Object} postData - 게시글 데이터
    * @param {string} postData.title - 제목
    * @param {string} postData.content - 내용
+   * @param {number} postData.userId - 작성자 ID
    * @param {string} postData.category - 카테고리
-   * @param {string} [postData.mediaUrl] - 미디어 URL
-   * @returns {Promise<number>} 생성된 게시글의 ID
+   * @returns {Promise<Object>} 생성된 게시글 정보
    */
-  static async create(userId, { title, content, category, mediaUrl }) {
-    const connection = await db.getConnection();
+  static async create({ title, content, userId, category = 'general' }) {
     try {
-      await connection.beginTransaction();
-
-      // 게시글 생성
-      const [result] = await connection.query(
-        `INSERT INTO posts 
-        (user_id, title, content, category, media_url) 
-        VALUES (?, ?, ?, ?, ?)`,
-        [userId, title, content, category, mediaUrl]
-      );
-
-      // user_scores 테이블에 레코드가 없으면 생성
-      await connection.query(
-        `INSERT INTO user_scores (user_id, total_posts)
-         SELECT ?, 1
-         FROM dual
-         WHERE NOT EXISTS (
-             SELECT 1 FROM user_scores WHERE user_id = ?
-         )`,
-        [userId, userId]
-      );
-
-      // 이미 레코드가 있으면 업데이트
-      await connection.query(
-        `UPDATE user_scores 
-         SET total_posts = total_posts + 1
-         WHERE user_id = ?`,
-        [userId]
-      );
-
-      await connection.commit();
-      return result.insertId;
+      const query = `
+        INSERT INTO posts (title, content, user_id, category, created_at, updated_at)
+        VALUES (?, ?, ?, ?, NOW(), NOW())
+      `;
+      const [result] = await db.execute(query, [title, content, userId, category]);
+      
+      return {
+        id: result.insertId,
+        title,
+        content,
+        userId,
+        category,
+        created_at: new Date(),
+        updated_at: new Date()
+      };
     } catch (error) {
-      await connection.rollback();
       console.error('게시글 생성 에러:', error);
-      throw new Error('게시글 생성에 실패했습니다.');
-    } finally {
-      connection.release();
+      throw error;
     }
   }
 
@@ -90,7 +69,7 @@ class Post {
    * @param {number} limit - 페이지당 항목 수
    * @returns {Promise<Array>} 게시글 목록
    */
-  static async findAll(category = null, page = 1, limit = 10, userId = null) {
+  static async findAll(category, page = 1, limit = 10, userId = null) {
     try {
       const offset = (page - 1) * limit;
       let query = `
@@ -99,54 +78,36 @@ class Post {
           u.username as author_name,
           u.avatar as author_avatar,
           COUNT(DISTINCT pl.id) as like_count,
-          COUNT(DISTINCT c.id) as comment_count,
-          COUNT(DISTINCT pb.id) as bookmark_count
-      `;
-
-      // 로그인한 사용자가 있는 경우에만 좋아요/북마크 여부 확인
-      if (userId) {
-        query += `,
-          EXISTS(
-            SELECT 1 FROM post_likes pl2 
-            WHERE pl2.post_id = p.id AND pl2.user_id = ?
-          ) as is_liked,
-          EXISTS(
-            SELECT 1 FROM post_bookmarks pb2 
-            WHERE pb2.post_id = p.id AND pb2.user_id = ?
-          ) as is_bookmarked
-        `;
-      } else {
-        query += `,
-          FALSE as is_liked,
-          FALSE as is_bookmarked
-        `;
-      }
-
-      query += `
+          COUNT(DISTINCT c.id) as comment_count
         FROM posts p
         LEFT JOIN users u ON p.user_id = u.id
         LEFT JOIN post_likes pl ON p.id = pl.post_id
         LEFT JOIN comments c ON p.id = c.post_id
-        LEFT JOIN post_bookmarks pb ON p.id = pb.post_id
         WHERE p.is_deleted = false AND p.is_hidden = false
-      `;
-      
-      const params = userId ? [userId, userId] : [];
-      
-      if (category) {
-        query += ' AND p.category = ?';
-        params.push(category);
-      }
-      
-      query += `
+        ${category ? 'AND p.category = ?' : ''}
         GROUP BY p.id 
         ORDER BY p.is_notice DESC, p.created_at DESC 
         LIMIT ? OFFSET ?
-      `;
-      params.push(limit, offset);
+        `;
 
-      const [rows] = await db.query(query, params);
-      return rows;
+      const params = category 
+        ? [category, limit, offset]
+        : [limit, offset];
+
+      const [posts] = await db.query(query, params);
+
+      // 사용자가 로그인한 경우 좋아요 상태 확인
+      if (userId) {
+        for (let post of posts) {
+          const [likeResult] = await db.query(
+            'SELECT 1 FROM post_likes WHERE post_id = ? AND user_id = ?',
+            [post.id, userId]
+          );
+          post.is_liked = likeResult.length > 0;
+        }
+      }
+
+      return posts;
     } catch (error) {
       console.error('게시글 목록 조회 에러:', error);
       throw new Error('게시글 목록을 불러오는데 실패했습니다.');
@@ -289,7 +250,7 @@ class Post {
   /**
    * 사용자의 게시글 좋아요 여부를 확인합니다.
    * @param {number} postId - 게시글 ID
-   * @param {number} userId - 사용��� ID
+   * @param {number} userId - 사용자 ID
    * @returns {Promise<boolean>} 좋아요 여부
    */
   static async isLikedByUser(postId, userId) {

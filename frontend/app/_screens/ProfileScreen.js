@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, Image, Platform, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import { useAuth } from '@app/_utils/hooks/useAuth';
+import { useAuth } from '@app/_lib/hooks';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 import { Button } from '@app/_components/common/Button';
-import { profileApi } from '@app/_utils/api/profile';
+import { profileApi } from '@app/_lib/api/profile';
 import { LoadingState } from '@app/_components/common/LoadingState';
 import { ErrorState } from '@app/_components/common/ErrorState';
 

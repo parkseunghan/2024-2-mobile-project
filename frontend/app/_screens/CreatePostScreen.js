@@ -8,7 +8,7 @@ import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 import * as ImagePicker from 'expo-image-picker';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { communityApi } from '@app/_utils/api/community';
+import { communityApi } from '@app/_lib/api';
 
 export default function CreatePostScreen() {
   const router = useRouter();

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Button } from '@app/_components/common/Button';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
-import { useAuth } from '@app/_utils/hooks/useAuth';
+import { useAuth } from '@app/_lib/hooks';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { Text } from 'react-native';
 import { typography } from '@app/_styles/typography';

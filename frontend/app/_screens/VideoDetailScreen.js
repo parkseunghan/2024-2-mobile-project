@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { LoadingState } from '@app/_components/common/LoadingState';
 import { ErrorState } from '@app/_components/common/ErrorState';
 import { VideoDetail } from '@app/_components/video/VideoDetail';
-import { getVideoDetails } from '@app/_utils/youtubeApi';
+import { youtubeApi } from '@app/_lib/api';
 import { colors } from '@app/_styles/colors';
 
 export default function VideoDetailScreen({ videoId }) {
@@ -19,6 +19,7 @@ export default function VideoDetailScreen({ videoId }) {
             setLoading(false);
             return;
         }
+        console.log('Loading video details for:', videoId);
         loadVideoDetails();
     }, [videoId]);
 
@@ -26,8 +27,14 @@ export default function VideoDetailScreen({ videoId }) {
         try {
             setLoading(true);
             setError(null);
-            const details = await getVideoDetails(videoId);
-            setVideoDetails(details);
+            const response = await youtubeApi.getVideoDetails(videoId);
+            console.log('Video details response:', response);
+            
+            if (!response.data?.video) {
+                throw new Error('비디오 정보를 불러올 수 없습니다.');
+            }
+            
+            setVideoDetails(response.data.video);
         } catch (err) {
             console.error('Video details error:', err);
             setError(err.message || '영상을 불러오는데 실패했습니다.');

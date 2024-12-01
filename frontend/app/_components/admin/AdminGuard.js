@@ -1,30 +1,32 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import { View, ActivityIndicator } from 'react-native';
-import { useAuth } from '@app/_utils/hooks/useAuth';
-import { colors } from '@app/_styles/colors';
+import { useAuth } from '@app/_context/AuthContext';
+import { LoadingSpinner } from '@app/_components/common/LoadingSpinner';
 
 export function AdminGuard({ children }) {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
+    const { user, loading } = useAuth();
+    const router = useRouter();
+    
+    const isAdmin = user?.role === 'admin' || user?.role === 'god';
 
-  useEffect(() => {
-    if (!isLoading && (!user || user.role !== 'admin')) {
-      router.replace('/(tabs)/home');
+    useEffect(() => {
+        console.log('AdminGuard - User:', user);
+        console.log('AdminGuard - IsAdmin:', isAdmin);
+        console.log('AdminGuard - User Role:', user?.role);
+
+        if (!loading && user && !isAdmin) {
+            console.log('AdminGuard - 권한 없음, 리다이렉트');
+            router.replace('/');
+        }
+    }, [user, loading, isAdmin, router]);
+
+    if (loading) {
+        return <LoadingSpinner />;
     }
-  }, [user, isLoading]);
 
-  if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
+    if (!user || !isAdmin) {
+        return null;
+    }
 
-  if (!user || user.role !== 'admin') {
-    return null;
-  }
-
-  return children;
+    return children;
 } 

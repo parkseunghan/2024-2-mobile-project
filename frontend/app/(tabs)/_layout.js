@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
-import { Platform, View, Text } from 'react-native';
+import { Platform, View, Text, StyleSheet } from 'react-native';
 
 /**
  * 탭 네비게이션 레이아웃 컴포넌트
@@ -18,21 +18,16 @@ export default function TabsLayout() {
      * @param {string} label - 탭 레이블
      * @param {boolean} focused - 탭 활성화 여부
      */
-    const renderTabBarIcon = (name, color, label, focused) => (
-        <View style={{
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingTop: 10,
-            width: 80,
-        }}>
-            <FontAwesome5 name={name} size={20} color={color} />
-            <Text
-                style={{
-                    color: color,
-                    fontSize: 11,
-                    marginTop: 4,
-                    textAlign: 'center',
-                }}
+    const renderTabBarIcon = (iconName, color, label, focused) => (
+        <View style={styles.tabBarItem}>
+            <FontAwesome5 name={iconName} size={20} color={color} />
+            <Text 
+                style={[
+                    styles.tabBarLabel,
+                    { color },
+                    focused && styles.tabBarLabelFocused
+                ]}
+                numberOfLines={1}
             >
                 {label}
             </Text>
@@ -43,16 +38,8 @@ export default function TabsLayout() {
         <Tabs
             screenOptions={{
                 headerShown: false,
-                tabBarStyle: {
-                    backgroundColor: colors.background,
-                    height: 65,
-                    paddingVertical: 0,
-                    borderTopColor: colors.border,
-                },
-                tabBarShowLabel: false,
-                tabBarItemStyle: {
-                    width: 80,
-                },
+                tabBarStyle: styles.tabBar,
+                tabBarShowLabel: false, // 기본 라벨 숨기기
             }}
         >
             <Tabs.Screen
@@ -60,6 +47,27 @@ export default function TabsLayout() {
                 options={{
                     title: '홈',
                     tabBarIcon: ({ color, focused }) => renderTabBarIcon('home', color, '홈', focused),
+                }}
+            />
+            <Tabs.Screen
+                name="post/[id]"
+                options={{
+                    title: '게시글',
+                    href: null,
+                }}
+            />
+            <Tabs.Screen
+                name="post/create"
+                options={{
+                    title: '게시글 작성',
+                    href: null,
+                }}
+            />
+            <Tabs.Screen
+                name="category/[id]"
+                options={{
+                    title: '카테고리',
+                    href: null,
                 }}
             />
             <Tabs.Screen
@@ -93,4 +101,23 @@ export default function TabsLayout() {
         </Tabs>
     );
 }
+
+const styles = StyleSheet.create({
+    tabBar: {
+        height: 60,
+        paddingBottom: 5,
+        paddingTop: 5,
+    },
+    tabBarItem: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    tabBarLabel: {
+        fontSize: 12,
+        marginTop: 2,
+    },
+    tabBarLabelFocused: {
+        fontWeight: '600',
+    },
+});
 

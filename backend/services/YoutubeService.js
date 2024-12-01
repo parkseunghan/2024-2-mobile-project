@@ -1,5 +1,6 @@
 const axios = require('axios');
 const NodeCache = require('node-cache');
+const { CATEGORIES } = require('../config/constants');
 
 /**
  * YouTube API 관련 기능을 처리하는 Service 클래스
@@ -39,41 +40,36 @@ class YoutubeService {
    * @returns {Promise<Array>} 검색 결과 목록
    * @throws {Error} API 요청 실패 시
    */
-  async searchVideos(query, categoryId = null) {
+  async searchVideos(query, categoryId) {
     try {
-      const cacheKey = `search:${query}:${categoryId || 'null'}`;
+      const cacheKey = `search:${query}:${categoryId}`;
       const cachedResult = this.cache.get(cacheKey);
       
       if (cachedResult) {
-        console.log('캐시된 검색 결과 반환:', query);
         return cachedResult;
       }
 
-      const params = {
-        part: 'snippet',
-        maxResults: 10,
-        q: query,
-        type: 'video',
-        key: this.apiKey,
-        regionCode: 'KR',
-        relevanceLanguage: 'ko',
-        ...(categoryId && { videoCategoryId: categoryId })
-      };
-
-      const response = await axios.get(`${this.baseUrl}/search`, { 
-        params,
-        headers: this.headers
+      const response = await axios.get(`${this.baseUrl}/search`, {
+        params: {
+          part: 'snippet',
+          q: query,
+          type: 'video',
+          videoCategoryId: categoryId,
+          maxResults: 10,
+          regionCode: 'KR',
+          key: this.apiKey
+        }
       });
 
       if (!response.data?.items) {
-        throw new Error('YouTube API로부터 유효한 응답을 받지 못했습니다.');
+        throw new Error('검색 결과가 없습니다.');
       }
 
       this.cache.set(cacheKey, response.data.items);
       return response.data.items;
-
     } catch (error) {
-      this.handleApiError(error);
+      console.error('YouTube 검색 에러:', error);
+      throw error;
     }
   }
 
@@ -85,11 +81,12 @@ class YoutubeService {
    */
   async getVideoDetails(videoId) {
     try {
+      console.log('Getting video details for:', videoId);
       const cacheKey = `video:${videoId}`;
       const cachedResult = this.cache.get(cacheKey);
       
       if (cachedResult) {
-        console.log('캐시된 비디오 상세 정보 반환:', videoId);
+        console.log('Returning cached video details');
         return cachedResult;
       }
 
@@ -102,14 +99,18 @@ class YoutubeService {
         headers: this.headers
       });
 
-      if (!response.data.items?.[0]) {
+      console.log('YouTube API response status:', response.status);
+
+      if (!response.data?.items?.[0]) {
         throw new Error('비디오를 찾을 수 없습니다.');
       }
 
-      this.cache.set(cacheKey, response.data.items[0]);
-      return response.data.items[0];
+      const videoDetails = response.data.items[0];
+      this.cache.set(cacheKey, videoDetails);
+      return videoDetails;
     } catch (error) {
-      this.handleApiError(error);
+      console.error('Video details error:', error.response?.data || error.message);
+      throw error;
     }
   }
 
@@ -133,7 +134,7 @@ class YoutubeService {
   }
 
   /**
-   * 전체 캐시를 삭제합니다.
+   * 전체 시를 삭제합니다.
    */
   clearCache() {
     this.cache.flushAll();
@@ -158,6 +159,83 @@ class YoutubeService {
     const cacheKey = `video:${videoId}`;
     this.cache.del(cacheKey);
     console.log('비디오 캐시 삭제됨:', videoId);
+  }
+
+  async getRecommendedVideos() {
+    try {
+      const cacheKey = 'recommended';
+      const cachedResult = this.cache.get(cacheKey);
+      
+      if (cachedResult) {
+        return cachedResult;
+      }
+
+      const response = await axios.get(`${this.baseUrl}/videos`, {
+        params: {
+          part: 'snippet',
+          chart: 'mostPopular',
+          regionCode: 'KR',
+          maxResults: 10,
+          key: this.apiKey
+        }
+      });
+
+      if (!response.data?.items) {
+        throw new Error('카천 비디오를 가져오는데 실패했습니다.');
+      }
+
+      this.cache.set(cacheKey, response.data.items);
+      return response.data.items;
+    } catch (error) {
+      console.error('카천 비디오 조회 에러:', error);
+      throw error;
+    }
+  }
+
+  async getCategoryVideos(categoryId) {
+    try {
+      const cacheKey = `category:${categoryId}`;
+      const cachedResult = this.cache.get(cacheKey);
+      
+      if (cachedResult) {
+        console.log('Returning cached result for category:', categoryId);
+        return cachedResult;
+      }
+
+      console.log('Fetching videos for category:', categoryId);
+      
+      const category = CATEGORIES.find(cat => String(cat.id) === String(categoryId));
+      if (!category) {
+        console.error('Category not found:', categoryId);
+        throw new Error('카테고리를 찾을 수 없습니다.');
+      }
+
+      console.log('Using search keywords:', category.searchKeywords);
+
+      const response = await axios.get(`${this.baseUrl}/search`, {
+        params: {
+          part: 'snippet',
+          q: category.searchKeywords,
+          type: 'video',
+          maxResults: 10,
+          regionCode: 'KR',
+          key: this.apiKey
+        },
+        headers: this.headers
+      });
+
+      console.log('YouTube API Response status:', response.status);
+
+      if (!response.data?.items?.length) {
+        throw new Error('검색 결과가 없습니다.');
+      }
+
+      this.cache.set(cacheKey, response.data.items);
+      return response.data.items;
+    } catch (error) {
+      console.error('카테고리 비디오 조회 에러:', error.response?.data || error.message);
+      throw error;
+    }
   }
 }
 

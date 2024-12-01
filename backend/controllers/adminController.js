@@ -3,6 +3,7 @@ const StatisticsService = require('../services/StatisticsService');
 const StatisticsRepository = require('../repositories/StatisticsRepository');
 const db = require('../config/database');
 const SearchHistory = require('../models/SearchHistory');
+const Category = require('../models/Category');
 
 const statisticsRepository = new StatisticsRepository(db);
 const statisticsService = new StatisticsService(statisticsRepository);
@@ -106,5 +107,52 @@ exports.getSearchStats = async (req, res) => {
   } catch (error) {
     console.error('검색 통계 조회 에러:', error);
     res.status(500).json({ message: '통계 조회에 실패했습니다.' });
+  }
+};
+
+exports.getCategories = async (req, res) => {
+  try {
+    const categories = await Category.findAll();
+    res.json({ categories });
+  } catch (error) {
+    console.error('카테고리 목록 조회 에러:', error);
+    res.status(500).json({ message: '카테고리 목록 조회에 실패했습니다.' });
+  }
+};
+
+exports.createCategory = async (req, res) => {
+  try {
+    const { name, description } = req.body;
+    const category = await Category.create({ name, description });
+    res.status(201).json({ 
+      message: '카테고리가 생성되었습니다.',
+      category 
+    });
+  } catch (error) {
+    console.error('카테고리 생성 에러:', error);
+    res.status(500).json({ message: '카테고리 생성에 실패했습니다.' });
+  }
+};
+
+exports.updateCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description } = req.body;
+    await Category.update(id, { name, description });
+    res.json({ message: '카테고리가 수정되었습니다.' });
+  } catch (error) {
+    console.error('카테고리 수정 에러:', error);
+    res.status(500).json({ message: '카테고리 수정에 실패했습니다.' });
+  }
+};
+
+exports.deleteCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Category.delete(id);
+    res.json({ message: '카테고리가 삭제되었습니다.' });
+  } catch (error) {
+    console.error('카테고리 삭제 에러:', error);
+    res.status(500).json({ message: '카테고리 삭제에 실패했습니다.' });
   }
 };

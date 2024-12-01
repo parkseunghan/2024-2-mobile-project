@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
+const authMiddleware = require('../middleware/authMiddleware');
 
 // 회원가입
 router.post('/signup', authController.signup);
@@ -12,6 +13,6 @@ router.post('/login', authController.login);
 router.post('/logout', authController.logout);
 
 // 현재 사용자 정보 조회
-router.get('/me', authController.getMe);
+router.get('/me', authMiddleware, authController.getMe);
 
 module.exports = router; 

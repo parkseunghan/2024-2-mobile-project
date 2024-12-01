@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const youtubeController = require('../controllers/youtubeController');
-const { authenticateToken } = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/authMiddleware');
 
-router.get('/search', youtubeController.searchVideos);
+// 인증이 필요한 라우트
+router.post('/summarize', authMiddleware, youtubeController.summarizeVideo);
+
+// 인증이 필요하지 않은 라우트
+router.get('/category/:categoryId', youtubeController.getCategoryVideos);
 router.get('/videos/:videoId', youtubeController.getVideoDetails);
+router.get('/search', youtubeController.searchVideos);
 router.get('/summary/:videoId', youtubeController.getVideoSummary);
-router.post('/summarize', authenticateToken, youtubeController.summarizeVideo);
-router.get('/summary/:requestId', authenticateToken, youtubeController.getSummaryResult);
-router.post('/update-formats', authenticateToken, youtubeController.updateAllSummaryFormats);
 
 module.exports = router; 

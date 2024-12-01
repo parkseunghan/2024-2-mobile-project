@@ -1,10 +1,10 @@
 import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
-import { CategoryButtons } from '@app/_components/main/CategoryButtons';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { useAuth } from '@app/_lib/hooks';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
-import Banner from '@app/_components/main/Banner';
-import { useAuth } from '@app/_utils/hooks/useAuth';
+import { typography } from '@app/_styles/typography';
+import { CategoryButtons } from '@app/_components/main/CategoryButtons';
 
 /**
  * 메인 화면 컴포넌트
@@ -19,12 +19,15 @@ const MainScreen = () => {
             style={styles.container}
             contentContainerStyle={styles.content}
         >
-            {/* 사용자 상태에 따른 배너 표시 */}
-            {user ? (
-                <Banner title="오늘의 추천 영상" subtitle="오늘의 추천 영상을 확인해보세요." />
-            ) : (
-                <Banner title="현재 비회원으로 이용 중입니다." subtitle="추가 서비스를 이용하시려면 로그인이 필요합니다." />
-            )}
+            {/* 사용자 상태에 따른 배너 */}
+            <View style={styles.bannerContainer}>
+                <Text style={styles.bannerTitle}>
+                    {user ? "오늘의 추천 영상" : "현재 비회원으로 이용 중입니다."}
+                </Text>
+                <Text style={styles.bannerSubtitle}>
+                    {user ? "오늘의 추천 영상을 확인해보세요." : "추가 서비스를 이용하시려면 로그인이 필요합니다."}
+                </Text>
+            </View>
 
             {/* 카테고리 버튼 목록 */}
             <CategoryButtons />
@@ -39,7 +42,21 @@ const styles = StyleSheet.create({
     },
     content: {
         flexGrow: 1,
-        paddingVertical: spacing.md,
+        padding: spacing.md,
+    },
+    bannerContainer: {
+        padding: spacing.lg,
+        backgroundColor: colors.surface,
+        borderRadius: 12,
+        marginBottom: spacing.lg,
+    },
+    bannerTitle: {
+        ...typography.h2,
+        marginBottom: spacing.xs,
+    },
+    bannerSubtitle: {
+        ...typography.body,
+        color: colors.text.secondary,
     },
 });
 

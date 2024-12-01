@@ -8,8 +8,8 @@ import { PostCard } from '@app/_components/community/PostCard';
 import { CategoryFilter } from '@app/_components/community/CategoryFilter';
 import { LoadingState } from '@app/_components/common/LoadingState';
 import { ErrorState } from '@app/_components/common/ErrorState';
-import { communityApi } from '@app/_utils/api/community';
-import { useAuth } from '@app/_utils/hooks/useAuth';
+import { communityApi } from '@app/_lib/api';
+import { useAuth } from '@app/_lib/hooks';
 import { typography } from '@app/_styles/typography';
 
 export default function CommunityScreen() {
@@ -43,30 +43,34 @@ export default function CommunityScreen() {
             setError(null);
 
             let response;
-            if (activeTab === 'liked') {
-                response = await communityApi.getLikedPosts();
-            } else {
-                response = await communityApi.getPosts(
-                    selectedCategory === '전체' ? null : selectedCategory,
-                    refresh ? 1 : page
-                );
-            }
+            try {
+                if (activeTab === 'liked') {
+                    response = await communityApi.getLikedPosts();
+                } else {
+                    response = await communityApi.getPosts(
+                        selectedCategory === '전체' ? null : selectedCategory,
+                        refresh ? 1 : page
+                    );
+                }
 
-            const newPosts = response?.posts || [];
-            
-            if (refresh) {
-                setAllPosts(newPosts);
-                setFilteredPosts(newPosts);
-            } else {
-                setAllPosts(prev => [...prev, ...newPosts]);
-                setFilteredPosts(prev => [...prev, ...newPosts]);
+                const newPosts = response?.posts || [];
+                
+                if (refresh) {
+                    setAllPosts(newPosts);
+                    setFilteredPosts(newPosts);
+                } else {
+                    setAllPosts(prev => [...prev, ...newPosts]);
+                    setFilteredPosts(prev => [...prev, ...newPosts]);
+                }
+                
+                setHasMore(newPosts.length === 10);
+                setPage(prev => refresh ? 2 : prev + 1);
+            } catch (err) {
+                console.error('API 호출 에러:', err);
+                setError(err.response?.data?.message || '게시글을 불러오는데 실패했습니다.');
+                setAllPosts([]);
+                setFilteredPosts([]);
             }
-            
-            setHasMore(newPosts.length === 10);
-            setPage(prev => refresh ? 2 : prev + 1);
-        } catch (error) {
-            console.error('게시글 로드 에러:', error);
-            setError(error.response?.data?.message || '게시글을 불러오는데 실패했습니다.');
         } finally {
             setLoading(false);
             setRefreshing(false);
@@ -153,7 +157,13 @@ export default function CommunityScreen() {
                     style={[styles.tabButton, activeTab === 'all' && styles.activeTab]}
                     onPress={() => setActiveTab('all')}
                 >
-                    <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
+                    <Text 
+                        style={[
+                            styles.tabText, 
+                            activeTab === 'all' && styles.activeTabText
+                        ]}
+                        numberOfLines={1}
+                    >
                         전체 게시글
                     </Text>
                 </Pressable>
@@ -167,7 +177,13 @@ export default function CommunityScreen() {
                         setActiveTab('liked');
                     }}
                 >
-                    <Text style={[styles.tabText, activeTab === 'liked' && styles.activeTabText]}>
+                    <Text 
+                        style={[
+                            styles.tabText, 
+                            activeTab === 'liked' && styles.activeTabText
+                        ]}
+                        numberOfLines={1}
+                    >
                         좋아요 모음
                     </Text>
                 </Pressable>
@@ -259,21 +275,22 @@ const styles = StyleSheet.create({
     },
     tabContainer: {
         flexDirection: 'row',
-        padding: spacing.sm,
+        marginBottom: 10,
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
     },
     tabButton: {
         flex: 1,
-        paddingVertical: spacing.sm,
+        paddingVertical: 10,
         alignItems: 'center',
+        justifyContent: 'center',
     },
     activeTab: {
         borderBottomWidth: 2,
         borderBottomColor: colors.primary,
     },
     tabText: {
-        ...typography.body,
+        fontSize: 16,
         color: colors.text.secondary,
     },
     activeTabText: {

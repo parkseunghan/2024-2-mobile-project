@@ -6,7 +6,7 @@ import { Button } from '@app/_components/common/Button';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
-import { useAuth } from '@app/_utils/hooks/useAuth';
+import { useAuth } from '@app/_lib/hooks';
 
 export default function SignupScreen() {
   const router = useRouter();

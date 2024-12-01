@@ -3,7 +3,7 @@ use board;
 -- 사용자 등급 테이블 추가
 CREATE TABLE user_ranks (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(50) NOT NULL UNIQUE,     -- 등급명 (Bronze, Silver, Gold, Platinum)
+    name VARCHAR(50) NOT NULL UNIQUE,     -- 등급명 (Bronze, Silver, Gold, Platinum, Diamond)
     min_score INT NOT NULL,               -- 등급 최소 점수
     max_score INT NOT NULL,               -- 등급 최대 점수
     color VARCHAR(7) NOT NULL,            -- 등급 색상 코드
@@ -15,7 +15,7 @@ CREATE TABLE users (
   username VARCHAR(255) NOT NULL UNIQUE,
   email VARCHAR(255) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
-  role ENUM('user', 'admin') DEFAULT 'user', -- 권한
+  role ENUM('user', 'admin', 'god') DEFAULT 'user', -- 권한
   is_active BOOLEAN DEFAULT true,            -- 활동 여부
   bio TEXT,                                    -- 자기소개  
   avatar VARCHAR(255),                         -- 프로필 이미지
@@ -24,8 +24,6 @@ CREATE TABLE users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (current_rank_id) REFERENCES user_ranks(id)
 );
-
-
 
 CREATE TABLE search_history (
   id INT PRIMARY KEY AUTO_INCREMENT,
@@ -111,7 +109,10 @@ CREATE TABLE post_categories (
     id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(50) NOT NULL UNIQUE, -- 카테고리 이름
     description TEXT,                 -- 설명
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT true,   -- 카테고리 활성화 여부
+    created_by INT NOT NULL,          -- 카테고리 생성자
+    FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
 -- 댓글 좋아요 테이블 추가
@@ -123,43 +124,6 @@ CREATE TABLE comment_likes (
     FOREIGN KEY (comment_id) REFERENCES comments(id),
     FOREIGN KEY (user_id) REFERENCES users(id),
     UNIQUE KEY unique_comment_like (comment_id, user_id)
-);
-
--- 게시글 북마크 테이블 추가
-CREATE TABLE post_bookmarks (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    post_id INT NOT NULL,
-    user_id INT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (post_id) REFERENCES posts(id),
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    UNIQUE KEY unique_post_bookmark (post_id, user_id)
-);
-
--- 게시글 신고 테이블 추가
-CREATE TABLE post_reports (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    post_id INT NOT NULL,
-    user_id INT NOT NULL,
-    reason TEXT NOT NULL,
-    status ENUM('pending', 'resolved', 'rejected') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    resolved_at TIMESTAMP NULL,
-    FOREIGN KEY (post_id) REFERENCES posts(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
-);
-
--- 댓글 신고 테이블 추가
-CREATE TABLE comment_reports (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    comment_id INT NOT NULL,
-    user_id INT NOT NULL,
-    reason TEXT NOT NULL,
-    status ENUM('pending', 'resolved', 'rejected') DEFAULT 'pending',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    resolved_at TIMESTAMP NULL,
-    FOREIGN KEY (comment_id) REFERENCES comments(id),
-    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- 사용자 활동 로그 테이블 추가
@@ -180,6 +144,7 @@ CREATE TABLE user_scores (
     total_posts INT DEFAULT 0,            -- 총 게시글 수
     total_comments INT DEFAULT 0,         -- 총 댓글 수
     total_likes_received INT DEFAULT 0,   -- 받은 좋아요 수
+    total_view_counts INT DEFAULT 0,      -- 전체 게시글 조회수 합계
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id)
@@ -195,42 +160,55 @@ CREATE TABLE score_histories (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- 관리자 활동 로그 테이블 추가
+CREATE TABLE admin_activity_logs (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    admin_id INT NOT NULL,
+    activity_type ENUM('user_manage', 'post_manage', 'category_manage', 'admin_manage') NOT NULL,
+    action VARCHAR(50) NOT NULL,           -- 수행한 작업 (create, update, delete 등)
+    target_type VARCHAR(50) NOT NULL,      -- 대상 타입 (user, post, category 등)
+    target_id INT NOT NULL,                -- 대상 ID
+    details TEXT,                          -- 작업 세부 내용
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (admin_id) REFERENCES users(id)
+);
+
 -- 기본 등급 데이터 추가
 INSERT INTO user_ranks (name, min_score, max_score, color) VALUES 
 ('Bronze', 0, 99, '#CD7F32'),
 ('Silver', 100, 499, '#C0C0C0'),
 ('Gold', 500, 999, '#FFD700'),
-('Platinum', 1000, 999999, '#E5E4E2');
+('Platinum', 1000, 4999, '#E5E4E2'),
+('Diamond', 5000, 999999, '#B9F2FF');
 
--- 기본 카테고리 데이터 추가
-INSERT INTO post_categories (name, description) VALUES
-('상품 리뷰', '제품 및 서비스 리뷰'),
-('취미', '취미 및 여가 활동'),
-('건강·운동', '건강 관리 및 운동 정보'),
-('맛집', '맛집 추천 및 리뷰'),
-('여행', '여행 정보 및 후기'),
-('슈퍼전대', '슈퍼전대 관련 정보');
+-- 테스트 계정 생성 (비밀번호는 'superuser!1'로 해시화)
+INSERT INTO users (username, email, password, role, current_rank_id)
+VALUES 
+('god', 'god', '$2b$10$3Cl2A2TtIzdPLLuy/3.wluT3Hrg0/lG9Lq2kKUAXtkAUHM.U6ni1a', 'god', 
+ (SELECT id FROM user_ranks WHERE name = 'Diamond'));
 
+-- god 계정의 초기 점수 설정
+INSERT INTO user_scores (user_id, score)
+SELECT id, 5000
+FROM users
+WHERE email = 'god';
 
--- 기본 관리자 데이터 추가
-INSERT INTO users (username, email, password, role)
-VALUES ('admin', 'admin', '$2b$10$aZp98KThXZz6Q4OheflmB.MCzWuf9lOnNrqjCHySl8dvJ6MkjVNYS', 'admin');
+-- 모든 테이블 삭제 (필요시 주석 해제하여 사용)
+-- SET FOREIGN_KEY_CHECKS = 0;
+-- DROP TABLE IF EXISTS
+--     admin_activity_logs,
+--     user_activity_logs,
+--     comment_likes,
+--     post_likes,
+--     score_histories,
+--     user_scores,
+--     comments,
+--     posts,
+--     video_summaries,
+--     search_statistics,
+--     search_history,
+--     post_categories,
+--     users,
+--     user_ranks;
+-- SET FOREIGN_KEY_CHECKS = 1;
 
-
-
-DROP TABLE IF EXISTS
-    users,
-    user_ranks,
-    user_scores,
-    score_histories,
-    post_categories,
-    video_summaries,
-    search_history,
-    search_statistics,
-    posts,
-    post_likes,
-    comments,
-    post_bookmarks,
-    post_reports,
-    comment_reports,
-    user_activity_logs;

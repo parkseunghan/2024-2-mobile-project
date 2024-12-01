@@ -1,79 +1,37 @@
-const SearchService = require('../services/SearchService');
+const YoutubeService = require('../services/YoutubeService');
+const Post = require('../models/Post');
 
-/**
- * 검색 관련 컨트롤러
- */
-class SearchController {
-    /**
-     * 검색 기록 저장
-     */
-    async addSearchHistory(req, res) {
-        try {
-            const { query } = req.body;
-            if (!query?.trim()) {
-                return res.status(400).json({ message: '검색어가 필요합니다.' });
-            }
+exports.search = async (req, res) => {
+    try {
+        const { query, type = 'all' } = req.query;
+        const results = { videos: [], posts: [] };
 
-            await SearchService.addSearchHistory(req.user.id, query);
-            res.json({ success: true });
-        } catch (error) {
-            console.error('검색 기록 저장 에러:', error);
-            res.status(500).json({ message: '검색 기록 저장에 실패했습니다.' });
+        // YouTube 검색
+        if (type === 'all' || type === 'video') {
+            results.videos = await YoutubeService.searchVideos(query);
         }
-    }
 
-    /**
-     * 검색 기록 조회
-     */
-    async getSearchHistory(req, res) {
-        try {
-            const history = await SearchService.getUserSearchHistory(req.user?.id);
-            res.json({ history });
-        } catch (error) {
-            console.error('검색 기록 조회 에러:', error);
-            res.json({ history: [] });
+        // 커뮤니티 게시글 검색
+        if (type === 'all' || type === 'post') {
+            results.posts = await Post.search(query);
         }
-    }
 
-    /**
-     * 특정 검색어 삭제
-     */
-    async deleteSearchQuery(req, res) {
-        try {
-            const { query } = req.params;
-            await SearchService.deleteSearchQuery(req.user.id, query);
-            res.json({ success: true });
-        } catch (error) {
-            console.error('검색 기록 삭제 에러:', error);
-            res.status(500).json({ message: '검색 기록 삭제에 실패했습니다.' });
-        }
+        res.json(results);
+    } catch (error) {
+        console.error('통합 검색 에러:', error);
+        res.status(500).json({ message: '검색에 실패했습니다.' });
     }
+};
 
-    /**
-     * 전체 검색 기록 삭제
-     */
-    async clearSearchHistory(req, res) {
-        try {
-            await SearchService.clearUserSearchHistory(req.user.id);
-            res.json({ success: true });
-        } catch (error) {
-            console.error('검색 기록 전체 삭제 에러:', error);
-            res.status(500).json({ message: '검색 기록 삭제에 실패했습니다.' });
-        }
+exports.searchByCategory = async (req, res) => {
+    try {
+        const { categoryId } = req.params;
+        const { query } = req.query;
+
+        const videos = await YoutubeService.searchVideos(query, categoryId);
+        res.json({ videos });
+    } catch (error) {
+        console.error('카테고리 검색 에러:', error);
+        res.status(500).json({ message: '카테고리 검색에 실패했습니다.' });
     }
-
-    /**
-     * 검색 통계 조회
-     */
-    async getSearchStats(req, res) {
-        try {
-            const stats = await SearchService.getSearchStatistics();
-            res.json({ success: true, stats });
-        } catch (error) {
-            console.error('검색 통계 조회 에러:', error);
-            res.status(500).json({ message: '검색 통계 조회에 실패했습니다.' });
-        }
-    }
-}
-
-module.exports = new SearchController(); 
+}; 

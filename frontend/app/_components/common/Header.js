@@ -4,11 +4,11 @@ import { useRouter } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
-import { useAuth } from '@app/_utils/hooks/useAuth';
+import { useAuth } from '@app/_lib/hooks';
 import { Menu } from './Menu';
 import { SearchBar } from '@app/_components/main/SearchBar';
 import { SearchContext } from '@app/_context/SearchContext';
-import { searchVideos } from '@app/_utils/youtubeApi';
+import { youtubeApi } from '@app/_lib/api';
 import { typography } from '@app/_styles/typography';
 import SearchScreen from '@app/_screens/SearchScreen';
 
@@ -35,6 +35,7 @@ export function Header({ title, showBackButton, hideSearchBar = false, isSearchP
         setSearchResults,
         addToSearchHistory,
     } = useContext(SearchContext);
+    const [menuAnchor, setMenuAnchor] = useState(null);
 
     /**
      * 뒤로가기 버튼 클릭 핸들러
@@ -53,8 +54,8 @@ export function Header({ title, showBackButton, hideSearchBar = false, isSearchP
         }
 
         try {
-            const results = await searchVideos(searchQuery);
-            setSearchResults(results || []);
+            const response = await youtubeApi.searchVideos(searchQuery);
+            setSearchResults(response.data?.videos || []);
             if (user) {
                 await addToSearchHistory(searchQuery);
             }
@@ -105,6 +106,14 @@ export function Header({ title, showBackButton, hideSearchBar = false, isSearchP
             isProcessingRef.current = false;
         }, 100);
     }, []);
+
+    const handleMenuPress = (event) => {
+        // 메뉴 버튼의 위치 정보를 저장
+        event.target.measure((x, y, width, height, pageX, pageY) => {
+            setMenuAnchor({ x: pageX, y: pageY });
+            setIsMenuVisible(true);
+        });
+    };
 
     return (
         <>

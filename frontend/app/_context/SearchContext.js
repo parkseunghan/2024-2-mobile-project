@@ -1,5 +1,5 @@
 import React, { createContext, useState } from 'react';
-import api from '@app/_utils/api';
+import { client } from '@app/_lib/api';
 
 /**
  * 검색 관련 상태 관리를 위한 Context
@@ -19,7 +19,7 @@ export function SearchProvider({ children }) {
     // 검색 기록 추가
     const addToSearchHistory = async (query) => {
         try {
-            await api.post('/search/history', { query });
+            await client.post('/search/history', { query });
             await loadSearchHistory();
         } catch (error) {
             console.error('검색 기록 저장 실패:', error);
@@ -30,7 +30,7 @@ export function SearchProvider({ children }) {
     const loadSearchHistory = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/search/history');
+            const response = await client.get('/search/history');
             if (response.data?.history) {
                 setSearchHistory(response.data.history);
             }
@@ -45,7 +45,7 @@ export function SearchProvider({ children }) {
     // 검색 기록 전체 삭제
     const clearAllSearchHistory = async () => {
         try {
-            await api.delete('/search/history');
+            await client.delete('/search/history');
             setSearchHistory([]);
         } catch (error) {
             console.error('검색 기록 삭제 실패:', error);
@@ -69,7 +69,7 @@ export function SearchProvider({ children }) {
     // 검색 기록 항목 삭제
     const deleteSearchHistoryItem = async (query) => {
         try {
-            await api.delete(`/search/history/${encodeURIComponent(query)}`);
+            await client.delete(`/search/history/${encodeURIComponent(query)}`);
             await loadSearchHistory();
         } catch (error) {
             console.error('검색 기록 항목 삭제 실패:', error);

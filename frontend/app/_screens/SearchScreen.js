@@ -1,20 +1,14 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Modal, ScrollView, Pressable, Animated, Platform, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Platform, Modal } from 'react-native';
+import { useRouter } from 'expo-router';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
-import { SearchContext } from '@app/_context/SearchContext';
-import { FontAwesome5 } from '@expo/vector-icons';
-import { VideoCard } from '@app/_components/main/VideoCard';
 import { SearchBar } from '@app/_components/main/SearchBar';
-import { useRouter } from 'expo-router';
-import { useAuth } from '@app/_utils/hooks/useAuth';
-import { searchVideos } from '@app/_utils/youtubeApi';
-
-const SCREEN_HEIGHT = Dimensions.get('window').height;
+import { SearchContext } from '@app/_context/SearchContext';
+import { useAuth } from '@app/_lib/hooks';
 
 const SearchScreen = ({ visible, onClose }) => {
-    const [slideAnim] = useState(new Animated.Value(SCREEN_HEIGHT));
     const router = useRouter();
     const { user } = useAuth();
     const {
@@ -34,22 +28,6 @@ const SearchScreen = ({ visible, onClose }) => {
             loadSearchHistory();
         }
     }, [visible, user]);
-
-    useEffect(() => {
-        if (visible) {
-            Animated.timing(slideAnim, {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: true,
-            }).start();
-        } else {
-            Animated.timing(slideAnim, {
-                toValue: SCREEN_HEIGHT,
-                duration: 300,
-                useNativeDriver: true,
-            }).start();
-        }
-    }, [visible]);
 
     const handleSearchSubmit = async (event) => {
         try {
@@ -111,7 +89,7 @@ const SearchScreen = ({ visible, onClose }) => {
         return (
             <View style={styles.historySection}>
                 <View style={styles.historyHeader}>
-                    <Text style={styles.historyTitle}>최근 검색어</Text>
+                    <Text style={styles.historyTitle}>최근 색어</Text>
                     <Pressable
                         style={styles.clearButton}
                         onPress={clearAllSearchHistory}

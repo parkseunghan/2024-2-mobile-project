@@ -6,32 +6,63 @@ const bcrypt = require('bcrypt');
  */
 class User {
   /**
-   * 새로운 사용자를 생성합니다.
-   * @param {string} username - 사용자명
-   * @param {string} email - 이메일
-   * @param {string} password - 비밀번호
-   * @param {string} role - 사용자 역할 (기본값: 'user')
-   * @returns {Promise<number>} 생성된 사용자의 ID
+   * 사용자 생성
+   * @param {Object} userData - 사용자 데이터
+   * @param {string} userData.username - 사용자명
+   * @param {string} userData.email - 이메일
+   * @param {string} userData.password - 비밀번호
+   * @returns {Promise<Object>} 생성된 사용자 정보
    */
-  static async create(username, email, password, role = 'user') {
+  static async create(userData) {
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+      // 비밀번호 해시화
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
+      
+      // 사용자 생성
       const [userResult] = await connection.query(
-        'INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)',
-        [username, email, hashedPassword, role]
+        'INSERT INTO users (username, email, password) VALUES (?, ?, ?)',
+        [userData.username, userData.email, hashedPassword]
       );
 
-      // user_scores 테이블에 초기 레코드 생성
+      // Bronze 등급 ID 조회
+      const [bronzeRank] = await connection.query(
+        'SELECT id FROM user_ranks WHERE name = ?',
+        ['Bronze']
+      );
+
+      // 기본 등급 설정
+      if (bronzeRank.length > 0) {
+        await connection.query(
+          'UPDATE users SET current_rank_id = ? WHERE id = ?',
+          [bronzeRank[0].id, userResult.insertId]
+        );
+      }
+
+      // 사용자 점수 테이블 초기화
       await connection.query(
-        'INSERT INTO user_scores (user_id) VALUES (?)',
+        `INSERT INTO user_scores (user_id, score, total_posts, total_likes_received, total_comments) 
+         VALUES (?, 0, 0, 0, 0)`,
+        [userResult.insertId]
+      );
+
+      // 생성된 사용자 정보 조회
+      const [users] = await connection.query(
+        `SELECT u.id, u.username, u.email, u.role, u.created_at,
+                ur.name as rank_name, ur.color as rank_color,
+                COALESCE(us.score, 0) as points
+         FROM users u
+         LEFT JOIN user_ranks ur ON u.current_rank_id = ur.id
+         LEFT JOIN user_scores us ON u.id = us.user_id
+         WHERE u.id = ?`,
         [userResult.insertId]
       );
 
       await connection.commit();
-      return userResult.insertId;
+      return users[0];
+
     } catch (error) {
       await connection.rollback();
       console.error('사용자 생성 에러:', error);
@@ -42,35 +73,20 @@ class User {
   }
 
   /**
-   * 이메일로 사용자를 조회합니다.
+   * 이메일로 사용자 찾기
    * @param {string} email - 이메일
-   * @returns {Promise<Object|null>} 사용자 정보
+   * @returns {Promise<Object>} 사용자 정보
    */
   static async findByEmail(email) {
     try {
-      const [rows] = await db.query(
-        'SELECT * FROM users WHERE email = ? AND is_active = true',
+      const [users] = await db.query(
+        `SELECT u.*, ur.name as rank_name, ur.color as rank_color
+         FROM users u
+         LEFT JOIN user_ranks ur ON u.current_rank_id = ur.id
+         WHERE u.email = ? AND u.is_active = true`,
         [email]
       );
-      return rows[0];
-    } catch (error) {
-      console.error('이메일 조회 에러:', error);
-      throw new Error('사용자 조회에 실패했습니다.');
-    }
-  }
-
-  /**
-   * ID로 사용자를 조회합니다.
-   * @param {number} id - 사용자 ID
-   * @returns {Promise<Object|null>} 사용자 정보
-   */
-  static async findById(id) {
-    try {
-      const [rows] = await db.query(
-        'SELECT id, username, email, role, created_at FROM users WHERE id = ? AND is_active = true',
-        [id]
-      );
-      return rows[0];
+      return users[0];
     } catch (error) {
       console.error('사용자 조회 에러:', error);
       throw new Error('사용자 조회에 실패했습니다.');
@@ -78,184 +94,96 @@ class User {
   }
 
   /**
-   * 모든 사용자 목록을 조회합니다.
-   * @param {number} page - 페이지 번호
-   * @param {number} limit - 페이지당 항목 수
-   * @returns {Promise<Array>} 사용자 목록
+   * 모밀번호 검증
+   * @param {string} password - 입력된 비밀번호
+   * @param {string} hashedPassword - 저장된 해시 비밀번호
+   * @returns {Promise<boolean>} 검증 결과
    */
-  static async getAllUsers(page = 1, limit = 10) {
-    try {
-      const offset = (page - 1) * limit;
-      const [rows] = await db.query(
-        'SELECT id, username, email, role, created_at FROM users WHERE is_active = true LIMIT ? OFFSET ?',
-        [limit, offset]
-      );
-      return rows;
-    } catch (error) {
-      console.error('사용자 목록 조회 에러:', error);
-      throw new Error('사용자 목록 조회에 실패했습니다.');
-    }
+  static async verifyPassword(password, hashedPassword) {
+    return await bcrypt.compare(password, hashedPassword);
   }
 
   /**
-   * 사용자의 역할을 업데이트합니다.
-   * @param {number} userId - 사용자 ID
-   * @param {string} newRole - 새로운 역할
-   * @returns {Promise<boolean>} 업데이트 성공 여부
+   * 테스트 계정 생성
    */
-  static async updateRole(userId, newRole) {
-    try {
-      const [result] = await db.query(
-        'UPDATE users SET role = ? WHERE id = ?',
-        [newRole, userId]
-      );
-      return result.affectedRows > 0;
-    } catch (error) {
-      console.error('역할 업데이트 에러:', error);
-      throw new Error('역할 업데이트에 실패했습니다.');
-    }
-  }
-
-  /**
-   * 사용자를 비활성화합니다.
-   * @param {number} userId - 사용자 ID
-   * @returns {Promise<boolean>} 비활성화 성공 여부
-   */
-  static async deactivateUser(userId) {
-    try {
-      const [result] = await db.query(
-        'UPDATE users SET is_active = false WHERE id = ?',
-        [userId]
-      );
-      return result.affectedRows > 0;
-    } catch (error) {
-      console.error('사용자 비활성화 에러:', error);
-      throw new Error('사용자 비활성화에 실패했습니다.');
-    }
-  }
-
-  /**
-   * 사용자 프로필을 업데이트합니다.
-   * @param {number} userId - 사용자 ID
-   * @param {Object} updateData - 업데이트할 데이터
-   * @returns {Promise<boolean>} 업데이트 성공 여부
-   */
-  static async updateProfile(userId, updateData) {
-    try {
-      const [result] = await db.query(
-        'UPDATE users SET ? WHERE id = ?',
-        [updateData, userId]
-      );
-      return result.affectedRows > 0;
-    } catch (error) {
-      console.error('프로필 업데이트 에러:', error);
-      throw new Error('프로필 업데이트에 실패했습니다.');
-    }
-  }
-
-  /**
-   * 사용자명으로 사용자를 조회합니다.
-   * @param {string} username - 사용자명
-   * @returns {Promise<Object|null>} 사용자 정보
-   */
-  static async findByUsername(username) {
-    try {
-      const [rows] = await db.query(
-        'SELECT id, username, email, role FROM users WHERE username = ? AND is_active = true',
-        [username]
-      );
-      return rows[0];
-    } catch (error) {
-      console.error('사용자명 조회 에러:', error);
-      throw new Error('사용자 조회에 실패했습니다.');
-    }
-  }
-
-  /**
-   * 사용자의 점수를 업데이트하고 등급을 갱신합니다.
-   * @param {number} userId - 사용자 ID
-   * @param {number} scoreChange - 변경될 점수
-   * @param {string} reason - 점수 변경 사유
-   */
-  static async updateUserScore(userId, scoreChange, reason) {
+  static async createTestAccounts() {
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
 
-      // 점수 이력 추가
+      // god 계정 비밀번호 해시
+      const godPassword = await bcrypt.hash('god', 10);
+      // admin 계정 비밀번호 해시
+      const adminPassword = await bcrypt.hash('admin', 10);
+      // user 계정 비밀번호 해시
+      const userPassword = await bcrypt.hash('user', 10);
+
+      // 기존 테스트 계정 삭제
       await connection.query(
-        'INSERT INTO score_histories (user_id, score_change, reason) VALUES (?, ?, ?)',
-        [userId, scoreChange, reason]
+        'DELETE FROM users WHERE email IN (?, ?, ?)',
+        ['god', 'admin', 'user']
       );
 
-      // 사용자 점수 업데이트
-      await connection.query(
-        `UPDATE user_scores 
-         SET score = score + ?,
-             updated_at = CURRENT_TIMESTAMP
-         WHERE user_id = ?`,
-        [scoreChange, userId]
+      // 테스트 계정 생성
+      const [godResult] = await connection.query(
+        `INSERT INTO users (username, email, password, role, current_rank_id)
+         VALUES (?, ?, ?, ?, (SELECT id FROM user_ranks WHERE name = ?))`,
+        ['God Admin', 'god', godPassword, 'god', 'Diamond']
       );
 
-      // 새로운 등급 확인 및 업데이트
+      const [adminResult] = await connection.query(
+        `INSERT INTO users (username, email, password, role, current_rank_id)
+         VALUES (?, ?, ?, ?, (SELECT id FROM user_ranks WHERE name = ?))`,
+        ['Test Admin', 'admin', adminPassword, 'admin', 'Platinum']
+      );
+
+      const [userResult] = await connection.query(
+        `INSERT INTO users (username, email, password, role, current_rank_id)
+         VALUES (?, ?, ?, ?, (SELECT id FROM user_ranks WHERE name = ?))`,
+        ['Test User', 'user', userPassword, 'user', 'Bronze']
+      );
+
+      // 점수 초기화
       await connection.query(
-        `UPDATE users u
-         JOIN user_scores us ON u.id = us.user_id
-         JOIN user_ranks ur ON us.score BETWEEN ur.min_score AND ur.max_score
-         SET u.current_rank_id = ur.id
-         WHERE u.id = ?`,
-        [userId]
+        `INSERT INTO user_scores (user_id, score)
+         VALUES 
+         (?, 5000),
+         (?, 1000),
+         (?, 0)`,
+        [godResult.insertId, adminResult.insertId, userResult.insertId]
       );
 
       await connection.commit();
     } catch (error) {
       await connection.rollback();
-      console.error('점수 업데이트 에러:', error);
-      throw new Error('점수 업데이트에 실패했습니다.');
+      console.error('테스트 계정 생성 에러:', error);
+      throw error;
     } finally {
       connection.release();
     }
   }
 
   /**
-   * 사용자의 현재 등급 정보를 조회합니다.
-   * @param {number} userId - 사용자 ID
-   * @returns {Promise<Object>} 등급 정보
+   * ID로 사용자 찾기
+   * @param {number} id - 사용자 ID
+   * @returns {Promise<Object>} 사용자 정보
    */
-  static async getUserRank(userId) {
+  static async findById(id) {
     try {
-      const [rows] = await db.query(
-        `SELECT ur.*, us.score
+      const [users] = await db.query(
+        `SELECT u.id, u.username, u.email, u.role, u.created_at,
+                ur.name as rank_name, ur.color as rank_color,
+                COALESCE(us.score, 0) as points
          FROM users u
-         JOIN user_scores us ON u.id = us.user_id
-         JOIN user_ranks ur ON u.current_rank_id = ur.id
+         LEFT JOIN user_ranks ur ON u.current_rank_id = ur.id
+         LEFT JOIN user_scores us ON u.id = us.user_id
          WHERE u.id = ?`,
-        [userId]
+        [id]
       );
-      return rows[0];
+      return users[0];
     } catch (error) {
-      console.error('등급 조회 에러:', error);
-      throw new Error('등급 조회에 실패했습니다.');
-    }
-  }
-
-  /**
-   * 사용자의 점수 이력을 조회합니다.
-   * @param {number} userId - 사용자 ID
-   * @returns {Promise<Array>} 점수 이력 목록
-   */
-  static async getScoreHistory(userId) {
-    try {
-      const [rows] = await db.query(
-        `SELECT * FROM score_histories
-         WHERE user_id = ?
-         ORDER BY created_at DESC`,
-        [userId]
-      );
-      return rows;
-    } catch (error) {
-      console.error('점수 이력 조회 에러:', error);
-      throw new Error('점수 이력 조회에 실패했습니다.');
+      console.error('사용자 조회 에러:', error);
+      throw new Error('사용자 조회에 실패했습니다.');
     }
   }
 }

@@ -38,42 +38,42 @@ export const VIDEO = {
  */
 export const CATEGORIES = [
   { 
-    id: 'car', 
+    id: '1', 
     icon: 'car-sport', 
     color: '#FF5733', 
     title: '자동차 팁',
     searchKeywords: '자동차 정비방법 차량관리 운전방법 자동차설명'
   },
   { 
-    id: 'home', 
+    id: '2', 
     icon: 'home', 
     color: '#4CAF50', 
     title: '생활 팁',
     searchKeywords: '집안정리방법 청소방법 수납정리 공간활용'
   },
   { 
-    id: 'travel', 
+    id: '3', 
     icon: 'airplane', 
     color: '#FFC107', 
     title: '여행 팁',
     searchKeywords: '여행준비방법 여행계획 여행경비 숙소예약'
   },
   { 
-    id: 'tech', 
+    id: '4', 
     icon: 'laptop', 
     color: '#2196F3', 
     title: '기술 팁',
     searchKeywords: '전자기기 스마트폰 컴퓨터'
   },
   { 
-    id: 'food', 
+    id: '5', 
     icon: 'restaurant', 
     color: '#9C27B0', 
     title: '요리 팁',
     searchKeywords: '요리 레시피 음식 맛집'
   },
   { 
-    id: 'fashion', 
+    id: '6', 
     icon: 'shirt', 
     color: '#FF9800', 
     title: '패션 팁',
@@ -93,4 +93,6 @@ export const ERROR_MESSAGES = {
 export const PAGINATION = {
   ITEMS_PER_PAGE: 10,
   MAX_PAGES: 100,
-}; 
+};
+
+export const API_URL = 'http://localhost:3000/api';  // 백엔드 API 기본 URL 

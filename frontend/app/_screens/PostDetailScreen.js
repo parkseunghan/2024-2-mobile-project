@@ -5,10 +5,10 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
-import { communityApi } from '@app/_utils/api/community';
+import { communityApi } from '@app/_lib/api';
 import { LoadingState } from '@app/_components/common/LoadingState';
 import { ErrorState } from '@app/_components/common/ErrorState';
-import { useAuth } from '@app/_utils/hooks/useAuth';
+import { useAuth } from '@app/_lib/hooks';
 
 export default function PostDetailScreen() {
     // URL 파라미터에서 게시글 ID 추출

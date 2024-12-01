@@ -1,149 +1,73 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { useRouter } from 'expo-router';
-import api from '@app/_utils/api';
-import storage from '@app/_utils/storage';
-import { SearchContext } from './SearchContext';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AUTH } from '@app/_config/constants';
+import client from '@app/_lib/api/client';
 
-/**
- * 인증 관련 Context
- * - 사용자 인증 상태 관리
- * - 로그인/로그아웃/회원가입 기능 제공
- */
-export const AuthContext = createContext({});
+export const AuthContext = createContext();
 
-/**
- * 인증 Provider 컴포넌트
- * @param {ReactNode} children - 자식 컴포넌트
- */
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [signupEmail, setSignupEmail] = useState('');
-  const router = useRouter();
-  const searchContext = useContext(SearchContext);
+  const [loading, setLoading] = useState(true);
 
-  // 초기 인증 상태 확인
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  /**
-   * 인증 상태 확인
-   * - 저장된 토큰으로 사용자 정보 조회
-   */
-  const checkAuth = async () => {
+  const loadUserInfo = async () => {
     try {
-      setIsLoading(true);
-      const token = await storage.getItem('userToken');
-      
+      const token = await AsyncStorage.getItem(AUTH.TOKEN_KEY);
       if (!token) {
-        setUser(null);
-        api.setToken(null);
-        setIsLoading(false);
+        setLoading(false);
         return;
       }
 
-      api.setToken(token);
-      
-      try {
-        const response = await api.get('/auth/me');
-        if (response.data.user) {
-          setUser(response.data.user);
-        } else {
-          throw new Error('User data not found');
-        }
-      } catch (apiError) {
-        console.error('API Error:', apiError);
-        await storage.removeItem('userToken');
-        api.setToken(null);
-        setUser(null);
-      }
+      const response = await client.get('/auth/me');
+      setUser(response.data.user);
     } catch (error) {
-      console.error('Auth check failed:', error);
-      await storage.removeItem('userToken');
-      api.setToken(null);
-      setUser(null);
+      console.error('사용자 정보 로드 에러:', error);
+      await AsyncStorage.removeItem(AUTH.TOKEN_KEY);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  /**
-   * 로그인 함수
-   * @param {string} email - 이메일
-   * @param {string} password - 비밀번호
-   */
-  const login = async (email, password) => {
-    try {
-      const response = await api.post('/auth/login', { email, password });
-      const { user, token } = response.data;
-      
-      if (!token) {
-        throw new Error('토큰이 없습니다.');
-      }
+  // 초기 로딩 시 사용자 정보 가져오기
+  useEffect(() => {
+    loadUserInfo();
+  }, []);
 
-      await storage.setItem('userToken', token);
-      api.setToken(token);
-      setUser(user);
-      
-      return user;
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
-  };
+  // role 기반 관리자 권한 체크 함수
+  const isAdmin = useMemo(() => {
+    return user?.role === 'admin' || user?.role === 'god';
+  }, [user?.role]);
 
-  /**
-   * 로그아웃 함수
-   */
   const logout = async () => {
     try {
-      await api.post('/auth/logout');
-    } catch (error) {
-      console.log('Logout failed:', error);
-    } finally {
-      await storage.removeItem('userToken');
-      api.setToken(null);
+      await AsyncStorage.removeItem(AUTH.TOKEN_KEY);
       setUser(null);
-      if (searchContext) {
-        searchContext.clearAll();
-      }
+    } catch (error) {
+      console.error('로그아웃 에러:', error);
+      throw error;
     }
   };
 
-  /**
-   * 회원가입 함수
-   * @param {string} username - 사용자명
-   * @param {string} email - 이메일
-   * @param {string} password - 비밀번호
-   */
-  const signup = async (username, email, password) => {
-    try {
-      const response = await api.post('/auth/signup', {
-        username,
-        email,
-        password
-      });
-      setSignupEmail(email);
-      return response.data.user;
-    } catch (error) {
-      console.error('Signup error:', error);
-      throw error;
-    }
+  const value = {
+    user,
+    loading,
+    isAdmin,
+    loadUserInfo,
+    logout
   };
 
   return (
-    <AuthContext.Provider value={{
-      user,
-      isLoading,
-      login,
-      logout,
-      signup,
-      checkAuth,
-      signupEmail,
-      setSignupEmail,
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 }
+
+export function useAuth() {
+    const context = useContext(AuthContext);
+    if (!context) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    
+    return context;
+}
+
