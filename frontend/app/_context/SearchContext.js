@@ -1,5 +1,5 @@
 import React, { createContext, useState } from 'react';
-import { client } from '@app/_lib/api';
+import { client } from '@app/_lib/api/client';
 
 /**
  * 검색 관련 상태 관리를 위한 Context
@@ -19,11 +19,15 @@ export function SearchProvider({ children }) {
     // 검색 기록 추가
     const addToSearchHistory = async (query) => {
         try {
-            await client.post('/search/history', { query });
-            await loadSearchHistory();
+            const response = await client.post('/search/history', { query });
+            if (response.data?.success) {
+                await loadSearchHistory();
+            }
         } catch (error) {
             console.error('검색 기록 저장 실패:', error);
+            return false;
         }
+        return true;
     };
 
     // 검색 기록 로드
@@ -48,22 +52,8 @@ export function SearchProvider({ children }) {
             await client.delete('/search/history');
             setSearchHistory([]);
         } catch (error) {
-            console.error('검색 기록 삭제 실패:', error);
+            console.error('검색 기록 전체 삭제 실패:', error);
         }
-    };
-
-    // 검색 결과 초기화
-    const clearSearchResults = () => {
-        setSearchResults([]);
-        setSearchQuery('');
-    };
-
-    // 모든 검색 관련 상태 초기화
-    const clearAll = () => {
-        setSearchQuery('');
-        setSearchResults([]);
-        setSearchHistory([]);
-        setError(null);
     };
 
     // 검색 기록 항목 삭제
@@ -86,12 +76,10 @@ export function SearchProvider({ children }) {
             setSearchHistory,
             addToSearchHistory,
             loadSearchHistory,
-            clearSearchResults,
             clearAllSearchHistory,
-            clearAll,
+            deleteSearchHistoryItem,
             loading,
             error,
-            deleteSearchHistoryItem,
         }}>
             {children}
         </SearchContext.Provider>

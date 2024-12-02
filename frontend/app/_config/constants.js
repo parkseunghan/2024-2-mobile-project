@@ -42,42 +42,42 @@ export const CATEGORIES = [
     icon: 'car-sport', 
     color: '#FF5733', 
     title: '자동차 팁',
-    searchKeywords: '자동차 정비방법 차량관리 운전방법 자동차설명'
+    searchKeywords: '자동차 정비방법 차량관리 운전방법 자동차설명 자동차 꿀팁'
   },
   { 
     id: '2', 
     icon: 'home', 
     color: '#4CAF50', 
     title: '생활 팁',
-    searchKeywords: '집안정리방법 청소방법 수납정리 공간활용'
+    searchKeywords: '집안정리방법 청소방법 수납정리 공간활용 생활 꿀팁'
   },
   { 
     id: '3', 
     icon: 'airplane', 
     color: '#FFC107', 
     title: '여행 팁',
-    searchKeywords: '여행준비방법 여행계획 여행경비 숙소예약'
+    searchKeywords: '여행준비방법 여행계획 여행경비 숙소예약 여행 추천'
   },
   { 
     id: '4', 
     icon: 'laptop', 
     color: '#2196F3', 
     title: '기술 팁',
-    searchKeywords: '전자기기 스마트폰 컴퓨터'
+    searchKeywords: '전자기기 스마트폰 컴퓨터 기술 활용'
   },
   { 
     id: '5', 
     icon: 'restaurant', 
     color: '#9C27B0', 
     title: '요리 팁',
-    searchKeywords: '요리 레시피 음식 맛집'
+    searchKeywords: '요리 레시피 음식 맛집 쿠킹'
   },
   { 
     id: '6', 
     icon: 'shirt', 
     color: '#FF9800', 
     title: '패션 팁',
-    searchKeywords: '패션 코디 옷 스타일'
+    searchKeywords: '남자 여자 패션 코디 옷 스타일'
   },
 ];
 
