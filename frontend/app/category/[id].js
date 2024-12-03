@@ -1,10 +1,10 @@
 import React from 'react';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Header } from '@app/_components/common/Header';
-import SearchResultScreen from '@app/_screens/SearchResultScreen';
+import CategoryDetailScreen from '@app/_screens/CategoryDetailScreen';
 
 export default function CategoryDetail() {
-    const { id, searchKeywords, title, hideSearchQuery } = useLocalSearchParams();
+    const { id, title } = useLocalSearchParams();
 
     return (
         <>
@@ -20,11 +20,7 @@ export default function CategoryDetail() {
                     headerShown: true
                 }}
             />
-            <SearchResultScreen 
-                initialQuery={searchKeywords}
-                hideSearchQuery={true}
-                skipSearchHistory={true}
-            />
+            <CategoryDetailScreen categoryId={id} />
         </>
     );
 } 

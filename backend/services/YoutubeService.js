@@ -40,7 +40,7 @@ class YoutubeService {
    * @returns {Promise<Array>} 검색 결과 목록
    * @throws {Error} API 요청 실패 시
    */
-  async searchVideos(query, categoryId) {
+  async searchVideos(query, categoryId = null) {
     try {
       const cacheKey = `search:${query}:${categoryId}`;
       const cachedResult = this.cache.get(cacheKey);
@@ -49,16 +49,22 @@ class YoutubeService {
         return cachedResult;
       }
 
+      const params = {
+        part: 'snippet',
+        q: query,
+        type: 'video',
+        maxResults: 10,
+        regionCode: 'KR',
+        key: this.apiKey
+      };
+
+      if (categoryId) {
+        params.videoCategoryId = categoryId;
+      }
+
       const response = await axios.get(`${this.baseUrl}/search`, {
-        params: {
-          part: 'snippet',
-          q: query,
-          type: 'video',
-          videoCategoryId: categoryId,
-          maxResults: 10,
-          regionCode: 'KR',
-          key: this.apiKey
-        }
+        params,
+        headers: this.headers
       });
 
       if (!response.data?.items) {
@@ -204,18 +210,27 @@ class YoutubeService {
 
       console.log('Fetching videos for category:', categoryId);
       
-      const category = CATEGORIES.find(cat => String(cat.id) === String(categoryId));
-      if (!category) {
+      // 서브카테고리 찾기
+      let searchKeywords;
+      for (const category of CATEGORIES) {
+        const subItem = category.subItems?.find(sub => sub.id === categoryId);
+        if (subItem) {
+          searchKeywords = subItem.searchKeywords;
+          break;
+        }
+      }
+
+      if (!searchKeywords) {
         console.error('Category not found:', categoryId);
         throw new Error('카테고리를 찾을 수 없습니다.');
       }
 
-      console.log('Using search keywords:', category.searchKeywords);
+      console.log('Using search keywords:', searchKeywords);
 
       const response = await axios.get(`${this.baseUrl}/search`, {
         params: {
           part: 'snippet',
-          q: category.searchKeywords,
+          q: searchKeywords,
           type: 'video',
           maxResults: 10,
           regionCode: 'KR',
@@ -233,7 +248,7 @@ class YoutubeService {
       this.cache.set(cacheKey, response.data.items);
       return response.data.items;
     } catch (error) {
-      console.error('카테고리 비디오 조회 에러:', error.response?.data || error.message);
+      console.error('카테고리 비디오 조회 에러:', error);
       throw error;
     }
   }
