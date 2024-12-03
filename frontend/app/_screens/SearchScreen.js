@@ -5,11 +5,9 @@ import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 import { SearchBar } from '@app/_components/main/SearchBar';
-import { SearchContext } from '@app/_context/SearchContext';
 import { useAuth } from '@app/_lib/hooks';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { client } from '@app/_lib/api';
-import { youtubeApi } from '@app/_lib/api';
+import { useSearch } from '@app/_context/SearchContext';
 
 const SearchScreen = ({ visible, onClose }) => {
     const router = useRouter();
@@ -18,13 +16,11 @@ const SearchScreen = ({ visible, onClose }) => {
         searchQuery,
         setSearchQuery,
         searchHistory,
+        handleSearch,
         clearAllSearchHistory,
         deleteSearchHistoryItem,
-        recommendedVideos,
-        setSearchResults,
-        addToSearchHistory,
         loadSearchHistory,
-    } = useContext(SearchContext);
+    } = useSearch();
     const [slideAnim] = useState(new Animated.Value(0));
 
     useEffect(() => {
@@ -52,60 +48,18 @@ const SearchScreen = ({ visible, onClose }) => {
     }, [visible]);
 
     const handleSearchSubmit = async (event) => {
-        try {
-            const query = event.nativeEvent.text;
-            
-            if (!query.trim()) {
-                return;
-            }
+        const query = event.nativeEvent.text;
+        if (!query.trim()) return;
 
-            const searchQueries = [
-                query.trim(),
-                `${query.trim()} 팁`,
-                `${query.trim()} 꿀팁`,
-                `${query.trim()} tip`
-            ];
-
-            if (user) {
-                try {
-                    await addToSearchHistory(query.trim());
-                } catch (error) {
-                    console.error('검색 기록 저장 실패:', error);
-                }
-            }
-
-            try {
-                const searchPromises = searchQueries.map(q => youtubeApi.searchVideos(q));
-                const searchResults = await Promise.all(searchPromises);
-                
-                const combinedResults = searchResults.flat()
-                    .map(result => result.data?.videos || [])
-                    .flat()
-                    .filter((video, index, self) =>
-                        index === self.findIndex((v) => 
-                            (v.id?.videoId || v.id) === (video.id?.videoId || video.id)
-                        )
-                    );
-
-                setSearchResults(combinedResults || []);
-                onClose();
-                router.push('/search-results');
-            } catch (error) {
-                console.error('검색 에러:', error);
-                setSearchResults([]);
-                onClose();
-                router.push('/search-results');
-            }
-        } catch (error) {
-            console.error('검색 처리 중 에러:', error);
-            onClose();
-            router.push('/search-results');
-        }
+        await handleSearch(query);
+        onClose();
+        router.push('/search-results');
     };
 
     const handleSearchHistoryItemPress = async (query) => {
-        setSearchQuery(query);
-        await handleSearchSubmit({ nativeEvent: { text: query } });
+        await handleSearch(query);
+        onClose();
+        router.push('/search-results');
     };
 
     const handleDeleteHistoryItem = async (query) => {
@@ -146,29 +100,7 @@ const SearchScreen = ({ visible, onClose }) => {
         );
     };
 
-    const renderRecommendedVideos = () => {
-        if (!recommendedVideos?.length) return null;
-
-        return (
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>추천 영상</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                    {recommendedVideos.map((video) => (
-                        <VideoCard
-                            key={video.id}
-                            video={video}
-                            onPress={() => {
-                                onClose();
-                                router.push(`/video/${video.id}`);
-                            }}
-                            style={styles.videoCard}
-                        />
-                    ))}
-                </ScrollView>
-            </View>
-        );
-    };
-
+    
     return (
         <Modal
             visible={visible}
@@ -199,7 +131,6 @@ const SearchScreen = ({ visible, onClose }) => {
 
                 <ScrollView style={styles.content}>
                     {renderSearchHistory()}
-                    {renderRecommendedVideos()}
                 </ScrollView>
             </Animated.View>
         </Modal>

@@ -38,8 +38,7 @@ app.use('/uploads', express.static(uploadsDir));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/youtube', require('./routes/youtube'));
 app.use('/api/community', require('./routes/community'));
-app.use('/api/profile', require('./routes/profile'));
-app.use('/api/search', require('./routes/search'));
+app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/admin', require('./routes/admin'));
 
 // 에러 핸들링
