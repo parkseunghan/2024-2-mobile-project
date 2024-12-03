@@ -22,7 +22,7 @@ export const VideoList = ({ videos, onVideoSelect }) => {
           key={video.id}
           video={video}
           style={styles.videoCard}
-          onPress={() => onVideoSelect(video)}
+          onPress={() => onVideoSelect(video.id)}
         />
       ))}
     </View>
