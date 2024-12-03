@@ -9,7 +9,9 @@ exports.search = async (req, res) => {
 
         // YouTube 검색
         if (type === 'all' || type === 'video') {
-            results.videos = await YoutubeService.searchVideos(query);
+            const videos = await YoutubeService.searchVideos(query);
+            console.log('YouTube API Response:', videos); // 유튜브 API 응답 로깅
+            results.videos = videos;
         }
 
         // 커뮤니티 게시글 검색
@@ -17,6 +19,7 @@ exports.search = async (req, res) => {
             results.posts = await Post.search(query);
         }
 
+        console.log('Final Response:', results); // 최종 응답 로깅
         res.json(results);
     } catch (error) {
         console.error('통합 검색 에러:', error);
@@ -61,10 +64,25 @@ exports.addSearchHistory = async (req, res) => {
         const { query } = req.body;
         const userId = req.user.id;
 
-        await db.query(
-            'INSERT INTO search_history (user_id, query) VALUES (?, ?)',
+        // 기존 검색어가 있는지 확인
+        const [existingQuery] = await db.query(
+            'SELECT id FROM search_history WHERE user_id = ? AND query = ?',
             [userId, query]
         );
+
+        if (existingQuery.length > 0) {
+            // 기존 검색어가 있으면 시간만 업데이트
+            await db.query(
+                'UPDATE search_history SET created_at = NOW() WHERE id = ?',
+                [existingQuery[0].id]
+            );
+        } else {
+            // 새로운 검색어 추가
+            await db.query(
+                'INSERT INTO search_history (user_id, query) VALUES (?, ?)',
+                [userId, query]
+            );
+        }
 
         res.json({ success: true });
     } catch (error) {

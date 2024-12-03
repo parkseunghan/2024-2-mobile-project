@@ -1,106 +1,167 @@
-import React from 'react';
-import { View, StyleSheet, Text, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, Text, Pressable, FlatList, SafeAreaView, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@app/_styles/colors';
-import { spacing } from '@app/_styles/spacing';
 import { useRouter } from 'expo-router';
 import { CATEGORIES } from '@app/_config/constants';
 
 /**
- * 카테고리 버튼 목록 컴포넌트
- * - 메인 화면에 표시되는 카테고리 버튼들
- * - 각 버튼은 아이콘과 제목으로 구성
+ * 유동적인 카테고리 버튼 목록 컴포넌트
  */
 export const CategoryButtons = () => {
     const router = useRouter();
+    const [activeCategory, setActiveCategory] = useState(null);
 
-    /**
-     * 카테고리 버튼 클릭 핸들러
-     * @param {string} categoryId - 카테고리 ID
-     */
     const handleCategoryPress = (categoryId) => {
-        console.log('Pressing category:', categoryId);
-        router.push(`/category/${categoryId}`);
+        setActiveCategory(activeCategory === categoryId ? null : categoryId);
     };
 
-    /**
-     * 개별 카테고리 버튼 렌더링
-     * @param {Object} category - 카테고리 정보
-     */
-    const renderCategoryButton = (category) => (
+    const handleSubItemPress = (subItem) => {
+        const parentCategory = CATEGORIES.find(cat => 
+            cat.subItems.some(sub => sub.id === subItem.id)
+        );
+        
+        router.push({
+            pathname: `/category/${subItem.id}`,
+            params: {
+                searchKeywords: subItem.searchKeywords,
+                title: `${parentCategory.title} - ${subItem.title}`,
+                hideSearchQuery: true
+            }
+        });
+    };
+
+    const renderCategoryButton = ({ item: category }) => (
         <Pressable
             key={category.id}
-            style={styles.button}
+            style={({ pressed }) => [
+                styles.button,
+                pressed && styles.buttonPressed,
+                activeCategory === category.id && styles.activeButton,
+            ]}
             onPress={() => handleCategoryPress(category.id)}
         >
-            <View style={styles.buttonContent}>
-                <View style={[styles.iconContainer, { backgroundColor: `${category.color}15` }]}>
-                    <Ionicons name={category.icon} size={28} color={category.color} />
-                </View>
-                <Text style={styles.buttonText} numberOfLines={1}>
-                    {category.title}
-                </Text>
-            </View>
+            <Text style={styles.buttonText}>{category.title}</Text>
         </Pressable>
     );
 
-    const firstRow = CATEGORIES.slice(0, 3);
-    const secondRow = CATEGORIES.slice(3);
+    const renderSubItemButton = ({ item: subItem }) => (
+        <Pressable
+            key={subItem.id}
+            style={({ pressed }) => [
+                styles.subItemButton,
+                pressed && styles.buttonPressed,
+            ]}
+            onPress={() => handleSubItemPress(subItem)}
+        >
+            <View
+                style={[
+                    styles.iconContainer,
+                    { backgroundColor: `${subItem.color}15` },
+                ]}
+            >
+                <Ionicons name={subItem.icon} size={24} color={subItem.color} />
+            </View>
+            <Text style={styles.subItemText}>{subItem.title}</Text>
+        </Pressable>
+    );
+
+    const renderSubItems = () => {
+        if (!activeCategory) return null;
+
+        const category = CATEGORIES.find((cat) => cat.id === activeCategory);
+        return (
+            <FlatList
+                data={category.subItems}
+                renderItem={renderSubItemButton}
+                keyExtractor={(item) => item.id}
+                numColumns={3}
+                contentContainerStyle={styles.subItemsContainer}
+            />
+        );
+    };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.row}>
-                {firstRow.map(renderCategoryButton)}
-            </View>
-            <View style={styles.row}>
-                {secondRow.map(renderCategoryButton)}
-            </View>
-        </View>
+        <SafeAreaView style={styles.container}>
+            <ScrollView contentContainerStyle={styles.scrollContainer}>
+                <FlatList
+                    data={CATEGORIES}
+                    renderItem={renderCategoryButton}
+                    keyExtractor={(item) => item.id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.scrollContainer}
+                />
+                <View style={styles.subItemsWrapper}>{renderSubItems()}</View>
+            </ScrollView>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        width: '100%',
-        maxWidth: 800,
-        alignSelf: 'center',
-        paddingHorizontal: spacing.xs,
+        flex: 1,
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        paddingTop: 20,
     },
-    row: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: spacing.md,
-        width: '100%',
+    scrollContainer: {
+        alignItems: 'center',
     },
     button: {
-        flex: 1,
-        marginHorizontal: 4,
-        height: 90,
-        minWidth: 95,
-        borderRadius: 20,
         backgroundColor: 'white',
+        borderRadius: 20,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        marginHorizontal: 8,
         alignItems: 'center',
         justifyContent: 'center',
-        padding: spacing.xs,
+        elevation: 3,
     },
-    buttonContent: {
-        width: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
+    activeButton: {
+        backgroundColor: '#d0e8ff',
     },
-    iconContainer: {
-        width: 48,
-        height: 48,
-        borderRadius: 16,
+    subItemButton: {
+        backgroundColor: 'white',
+        borderRadius: 20,
+        paddingVertical: 15,
+        paddingHorizontal: 20,
+        margin: 5,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 6,
+        elevation: 2,
+        flex: 1,
+        maxWidth: '30%',
+        minHeight: 80,
+    },
+    buttonPressed: {
+        backgroundColor: '#e0e0e0',
     },
     buttonText: {
         color: '#2D3436',
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: '600',
         textAlign: 'center',
-        width: '100%',
+    },
+    subItemsWrapper: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    iconContainer: {
+        width: 35,
+        height: 35,
+        borderRadius: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 4,
+    },
+    subItemText: {
+        color: '#2D3436',
+        fontSize: 14,
+        fontWeight: '500',
+        textAlign: 'center',
+        overflow: 'hidden',
+        width: '150%',
+        whiteSpace: 'nowrap',
     },
 });

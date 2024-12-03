@@ -72,7 +72,7 @@ const SearchScreen = ({ visible, onClose }) => {
         return (
             <View style={styles.historySection}>
                 <View style={styles.historyHeader}>
-                    <Text style={styles.historyTitle}>최근 색어</Text>
+                    <Text style={styles.historyTitle}>최근 검색어</Text>
                     <Pressable
                         style={styles.clearButton}
                         onPress={clearAllSearchHistory}
