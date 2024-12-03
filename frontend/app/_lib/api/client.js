@@ -1,10 +1,9 @@
 import axios from 'axios';
-import { API_URL } from '@app/_config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 기본 설정으로 axios 인스턴스 생성
 export const client = axios.create({
-    baseURL: API_URL,
+    baseURL: process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api',
     timeout: 60000, // 타임아웃을 60초로 증가
     withCredentials: true,
     headers: {

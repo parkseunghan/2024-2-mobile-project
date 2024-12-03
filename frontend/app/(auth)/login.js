@@ -7,7 +7,6 @@ import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 import { useAuth } from '@app/_lib/hooks';
-import { authApi } from '@app/_lib/api/auth';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -17,6 +16,8 @@ export default function LoginScreen() {
     password: '',
   });
   const [loading, setLoading] = useState(false);
+
+  
 
   useEffect(() => {
     return () => {
@@ -43,15 +44,16 @@ export default function LoginScreen() {
     try {
       setLoading(true);
       console.log('Login attempt with:', { 
-        email: formData.email, 
+        email: formData.email.trim(), 
         password: formData.password 
       });
       
-      await login(formData.email, formData.password);
+      await login(formData.email.trim(), formData.password);
       router.replace('/(tabs)/home');
     } catch (error) {
-      console.error('Login error details:', error.response?.data);
-      Alert.alert('오류', error.response?.data?.message || '로그인에 실패했습니다.');
+      console.error('Login error:', error);
+      const errorMessage = error.response?.data?.message || '로그인에 실패했습니다.';
+      Alert.alert('오류', errorMessage);
     } finally {
       setLoading(false);
     }

@@ -1,8 +1,13 @@
 import { client } from './client';
 
 export const authApi = {
-    login: (email, password) => 
-        client.post('/auth/login', { email, password }),
+    signup: (userData) => {
+        console.log('API call - signup:', userData);
+        return client.post('/auth/signup', userData);
+    },
+    
+    login: (credentials) => 
+        client.post('/auth/login', credentials),
     
     logout: () => 
         client.post('/auth/logout'),

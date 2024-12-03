@@ -7,6 +7,7 @@ import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
 import { useAuth } from '@app/_lib/hooks';
+import { AUTH } from '@app/_config/constants';
 
 export default function SignupScreen() {
   const router = useRouter();
@@ -31,14 +32,28 @@ export default function SignupScreen() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      Alert.alert('알림', '비밀번호는 최소 6자 이상이어야 합니다.');
+    
+    if (formData.password.length < AUTH.MIN_PASSWORD_LENGTH) {
+      Alert.alert('알림', `비밀번호는 최소 ${AUTH.MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`);
       return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+        Alert.alert('알림', '올바른 이메일 형식이 아닙니다.');
+        return;
     }
 
     try {
       setLoading(true);
-      await signup(formData.username, formData.email, formData.password);
+      console.log('Attempting signup with:', formData);
+
+      await signup({
+        username: formData.username.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+        confirmPassword: formData.confirmPassword
+      });
       
       if (Platform.OS === 'web') {
         window.alert('회원가입이 완료되었습니다.');
@@ -53,14 +68,12 @@ export default function SignupScreen() {
       }
     } catch (error) {
       console.error('회원가입 에러:', error);
+      const errorMessage = error.response?.data?.message || '회원가입 중 오류가 발생했습니다.';
       
       if (Platform.OS === 'web') {
-        window.alert(error.response?.data?.message || '회원가입 중 오류가 발생했습니다.');
+        window.alert(errorMessage);
       } else {
-        Alert.alert(
-          '오류',
-          error.response?.data?.message || '회원가입 중 오류가 발생했습니다.'
-        );
+        Alert.alert('오류', errorMessage);
       }
     } finally {
       setLoading(false);

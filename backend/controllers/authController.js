@@ -4,11 +4,32 @@ const User = require('../models/User');
 
 exports.signup = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, confirmPassword } = req.body;
 
-    if (!username || !email || !password) {
+    if (!username || !email || !password || !confirmPassword) {
       return res.status(400).json({ 
         message: '모든 필드를 입력해주세요.' 
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).json({
+        message: '비밀번호가 일치하지 않습니다.'
+      });
+    }
+
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        message: '올바른 이메일 형식이 아닙니다.'
+      });
+    }
+
+    const passwordRegex = /^(?:[A-Za-z\d!@#$%^&*()_+={}\[\]:;"'<>,.?\/~`]{6,})$/;
+    if (!passwordRegex.test(password)) {
+      return res.status(400).json({
+        message: '비밀번호는 최소 6자 이상이어야 하며, 영문, 특수문자, 숫자를 포함해야 합니다.'
       });
     }
 
@@ -19,7 +40,12 @@ exports.signup = async (req, res) => {
       });
     }
 
-    const user = await User.create({ username, email, password });
+    const user = await User.create({
+      username,
+      email,
+      password,
+      role: 'user'
+    });
 
     res.status(201).json({
       message: '회원가입이 완료되었습니다.',

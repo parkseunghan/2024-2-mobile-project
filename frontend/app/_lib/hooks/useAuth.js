@@ -31,12 +31,12 @@ export function useAuth() {
 
     const login = async (email, password) => {
         try {
-            const response = await authApi.login(email, password);
-            const { token, user: userData } = response.data;
+            const response = await authApi.login({ email, password });
+            const { token, user } = response.data;
             
             await AsyncStorage.setItem(AUTH.TOKEN_KEY, token);
-            setUser(userData);
-            return userData;
+            setUser(user);
+            return response.data;
         } catch (error) {
             console.error('Login failed:', error);
             throw error;
@@ -54,9 +54,23 @@ export function useAuth() {
         }
     };
 
+    const signup = async (userData) => {
+        try {
+            console.log('useAuth - signup attempt:', userData);
+            const response = await authApi.signup(userData);
+            console.log('useAuth - signup response:', response);
+            setSignupEmail(userData.email);
+            return response.data;
+        } catch (error) {
+            console.error('회원가입 실패:', error);
+            throw error;
+        }
+    };
+
     return {
         user,
         isLoading,
+        signup,
         login,
         logout,
         signupEmail,

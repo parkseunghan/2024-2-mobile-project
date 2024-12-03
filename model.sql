@@ -26,11 +26,12 @@ CREATE TABLE users (
 );
 
 CREATE TABLE search_history (
-  id INT PRIMARY KEY AUTO_INCREMENT,
-  user_id INT NOT NULL,
-  query VARCHAR(255) NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id)
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    query VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_created (user_id, created_at DESC)
 );
 
 CREATE TABLE search_statistics ( -- 다듬기
@@ -173,6 +174,16 @@ CREATE TABLE admin_activity_logs (
     FOREIGN KEY (admin_id) REFERENCES users(id)
 );
 
+CREATE TABLE visits (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    page VARCHAR(255) NOT NULL,
+    ip_address VARCHAR(45),
+    user_agent TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+
 -- 기본 등급 데이터 추가
 INSERT INTO user_ranks (name, min_score, max_score, color) VALUES 
 ('Bronze', 0, 99, '#CD7F32'),
@@ -193,10 +204,14 @@ SELECT id, 5000
 FROM users
 WHERE email = 'god';
 
+
+CREATE INDEX idx_visits_created_at ON visits(created_at);
+CREATE INDEX idx_visits_user_id ON visits(user_id); 
+
 -- 모든 테이블 삭제 (필요시 주석 해제하여 사용)
 -- SET FOREIGN_KEY_CHECKS = 0;
 -- DROP TABLE IF EXISTS
---     admin_activity_logs,
+    -- admin_activity_logs,
 --     user_activity_logs,
 --     comment_likes,
 --     post_likes,
@@ -209,6 +224,7 @@ WHERE email = 'god';
 --     search_history,
 --     post_categories,
 --     users,
---     user_ranks;
+--     user_ranks,
+--     visits;
 -- SET FOREIGN_KEY_CHECKS = 1;
 
