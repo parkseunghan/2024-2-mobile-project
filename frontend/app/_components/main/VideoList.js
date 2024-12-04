@@ -1,9 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
+import { View, StyleSheet} from 'react-native';
 import { VideoCard } from './VideoCard';
-import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
-import { typography } from '@app/_styles/typography';
 
 /**
  * 비디오 목록 컴포넌트

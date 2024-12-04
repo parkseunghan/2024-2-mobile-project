@@ -22,11 +22,6 @@ export const CategoryButtons = () => {
         
         router.push({
             pathname: `/category/${subItem.id}`,
-            params: {
-                searchKeywords: subItem.searchKeywords,
-                title: `${parentCategory.title} - ${subItem.title}`,
-                hideSearchQuery: true
-            }
         });
     };
 
