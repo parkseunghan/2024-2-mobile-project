@@ -38,6 +38,7 @@ app.use('/uploads', express.static(uploadsDir));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/youtube', require('./routes/youtube'));
 app.use('/api/community', require('./routes/community'));
+app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/upload', require('./routes/upload'));

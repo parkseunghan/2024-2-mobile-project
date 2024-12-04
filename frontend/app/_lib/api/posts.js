@@ -48,7 +48,13 @@ export const postsApi = {
 
     // 카테고리 목록 조회
     fetchCategories: async () => {
-        const response = await client.get('/categories');
-        return response.data.categories;
+        try {
+            const response = await client.get('/categories');
+            console.log('카테고리 응답:', response.data);
+            return response.data.categories;
+        } catch (error) {
+            console.error('카테고리 목록 조회 실패:', error);
+            throw error;
+        }
     }
 }; 

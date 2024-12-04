@@ -20,7 +20,7 @@ export default function CreatePostScreen() {
     const [form, setForm] = useState({
         title: '',
         content: '',
-        category: '일반',
+        category: '',
         media: null,
         poll_options: [],
     });
@@ -29,10 +29,12 @@ export default function CreatePostScreen() {
     const [newPollOption, setNewPollOption] = useState('');
 
     // 카테고리 목록 조회
-    const { data: categories = [] } = useQuery({
+    const { data: categories = [], isLoading: categoriesLoading } = useQuery({
         queryKey: ['categories'],
         queryFn: postsApi.fetchCategories,
-        initialData: [{ id: 'general-1', name: '일반' }]
+        onError: (error) => {
+            console.error('카테고리 목록 조회 에러:', error);
+        }
     });
 
     // 게시글 작성 mutation
@@ -200,7 +202,7 @@ export default function CreatePostScreen() {
                 placeholder="제목을 입력하세요"
             />
 
-            {/* 카테고리 선택 추가 */}
+            {/* 카테고리 선택 섹션 */}
             <View style={styles.categorySection}>
                 <Text style={styles.sectionTitle}>카테고리</Text>
                 <ScrollView 
@@ -208,12 +210,11 @@ export default function CreatePostScreen() {
                     showsHorizontalScrollIndicator={false}
                     style={styles.categoryList}
                 >
-                    {categories.map((category) => {
-                        const uniqueKey = category.id || `category-${category.name}-${Math.random()}`;
-                        
-                        return (
+                    {!categoriesLoading && categories
+                        .filter(category => category.id !== 'all') // '전체' 카테고리 제외
+                        .map((category) => (
                             <Pressable
-                                key={uniqueKey}
+                                key={category.id || category.name}
                                 style={[
                                     styles.categoryButton,
                                     form.category === category.name && styles.categoryButtonActive
@@ -230,8 +231,7 @@ export default function CreatePostScreen() {
                                     {category.name}
                                 </Text>
                             </Pressable>
-                        );
-                    })}
+                        ))}
                 </ScrollView>
             </View>
 

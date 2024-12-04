@@ -228,3 +228,10 @@ CREATE INDEX idx_visits_user_id ON visits(user_id);
 --     visits;
 -- SET FOREIGN_KEY_CHECKS = 1;
 
+-- post_categories 테이블에 기본 데이터 추가
+INSERT INTO post_categories (name, description, created_by) VALUES 
+('일반', '일반적인 게시글', 1),
+('상품 리뷰', '상품에 대한 리뷰', 1),
+('맛집', '맛집 정보와 리뷰', 1),
+('여행', '여행 정보와 후기', 1);
+

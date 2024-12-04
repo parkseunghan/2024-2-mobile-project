@@ -42,11 +42,13 @@ export default function CommunityScreen() {
         queryFn: postsApi.fetchPopularPosts
     });
 
-    // 카테고리 목록 가져오기
-    const { data: categories } = useQuery({
+    // 카테고리 목록 조회
+    const { data: categories = [], isLoading: categoriesLoading } = useQuery({
         queryKey: ['categories'],
-        queryFn: () => postsApi.fetchCategories(),
-        initialData: ['전체', '상품 리뷰', '맛집', '여행'] // 기본 카테고리 설정
+        queryFn: postsApi.fetchCategories,
+        onError: (error) => {
+            console.error('카테고리 목록 조회 에러:', error);
+        }
     });
 
     const renderPost = useCallback(({ item }) => (
@@ -139,22 +141,22 @@ export default function CommunityScreen() {
 
                         {/* 카테고리 필터 */}
                         <ScrollView horizontal style={styles.categoryContainer}>
-                            {categories.map((category) => (
+                            {!categoriesLoading && categories.map((category) => (
                                 <Pressable
-                                    key={category}
-                                    onPress={() => setSelectedCategory(category)}
+                                    key={category.id || category.name}
+                                    onPress={() => setSelectedCategory(category.name)}
                                     style={[
                                         styles.categoryButton,
-                                        selectedCategory === category && styles.categorySelected,
+                                        selectedCategory === category.name && styles.categorySelected,
                                     ]}
                                 >
                                     <Text
                                         style={[
                                             styles.categoryText,
-                                            selectedCategory === category && styles.categoryTextSelected,
+                                            selectedCategory === category.name && styles.categoryTextSelected,
                                         ]}
                                     >
-                                        {category}
+                                        {category.name}
                                     </Text>
                                 </Pressable>
                             ))}
