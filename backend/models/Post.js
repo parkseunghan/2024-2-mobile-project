@@ -11,28 +11,57 @@ class Post {
    * @param {string} postData.content - 내용
    * @param {number} postData.userId - 작성자 ID
    * @param {string} postData.category - 카테고리
+   * @param {string} postData.media_url - 미디어 URL
+   * @param {Array} postData.poll_options - 투표 옵션 목록
    * @returns {Promise<Object>} 생성된 게시글 정보
    */
-  static async create({ title, content, userId, category = 'general' }) {
+  static async create({ title, content, userId, category = 'general', media_url = null, poll_options = null }) {
+    const connection = await db.getConnection();
+    
     try {
-      const query = `
-        INSERT INTO posts (title, content, user_id, category, created_at, updated_at)
-        VALUES (?, ?, ?, ?, NOW(), NOW())
-      `;
-      const [result] = await db.execute(query, [title, content, userId, category]);
-      
-      return {
-        id: result.insertId,
-        title,
-        content,
-        userId,
-        category,
-        created_at: new Date(),
-        updated_at: new Date()
-      };
+        await connection.beginTransaction();
+        
+        // 게시글 생성
+        const [result] = await connection.execute(
+            `INSERT INTO posts (title, content, user_id, category, media_url, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+            [title, content, userId, category, media_url]
+        );
+        
+        const postId = result.insertId;
+        
+        // 투표 옵션이 있는 경우 추가
+        if (poll_options && poll_options.length > 0) {
+            const pollValues = poll_options.map(option => 
+                [postId, option.text, 0] // votes는 초기값 0
+            );
+            
+            await connection.query(
+                `INSERT INTO poll_options (post_id, text, votes) VALUES ?`,
+                [pollValues]
+            );
+        }
+        
+        await connection.commit();
+        
+        return {
+            id: postId,
+            title,
+            content,
+            userId,
+            category,
+            media_url,
+            poll_options: poll_options || [],
+            created_at: new Date(),
+            updated_at: new Date()
+        };
+        
     } catch (error) {
-      console.error('게시글 생성 에러:', error);
-      throw error;
+        await connection.rollback();
+        console.error('게시글 생성 에러:', error);
+        throw new Error('게시글 생성에 실패했습니다.');
+    } finally {
+        connection.release();
     }
   }
 

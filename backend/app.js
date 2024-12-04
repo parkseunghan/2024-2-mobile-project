@@ -40,6 +40,7 @@ app.use('/api/youtube', require('./routes/youtube'));
 app.use('/api/community', require('./routes/community'));
 app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/upload', require('./routes/upload'));
 
 // 에러 핸들링
 app.use((err, req, res, next) => {
