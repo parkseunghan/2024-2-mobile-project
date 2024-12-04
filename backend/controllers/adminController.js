@@ -156,7 +156,19 @@ exports.updateCategory = async (req, res) => {
 exports.deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    await Category.delete(id);
+    
+    // 카테고리 존재 여부 확인
+    const category = await Category.findById(id);
+    if (!category) {
+      return res.status(404).json({ message: '카테고리를 찾을 수 없습니다.' });
+    }
+
+    // 카테고리 삭제
+    const deleted = await Category.delete(id);
+    if (!deleted) {
+      return res.status(400).json({ message: '카테고리 삭제에 실패했습니다.' });
+    }
+
     res.json({ message: '카테고리가 삭제되었습니다.' });
   } catch (error) {
     console.error('카테고리 삭제 에러:', error);

@@ -47,9 +47,24 @@ export default function CategoryManagement() {
             queryClient.invalidateQueries(['admin', 'categories']);
         },
         onError: (error) => {
-            Alert.alert('오류', error.message || '삭제 중 오류가 발생했습니다.');
+            console.error('카테고리 삭제 에러:', error);
+            Alert.alert('오류', error.response?.data?.message || '삭제 중 오류가 발생했습니다.');
         }
     });
+
+    // 삭제 확인 핸들러
+    const handleDeleteCategory = async (categoryId) => {
+        console.log('삭제 시도:', categoryId);
+
+        try {
+            console.log('삭제 요청 시작:', categoryId);
+            await deleteMutation.mutateAsync(categoryId);
+            console.log('삭제 성공:', categoryId);
+        } catch (error) {
+                console.error('카테고리 삭제 중 에러:', error);
+                Alert.alert('오류', '카테고리 삭제에 실패했습니다.');
+        }
+    };
 
     // 관리자 권한 체크
     if (user?.role !== 'admin' && user?.role !== 'god') {
@@ -78,7 +93,7 @@ export default function CategoryManagement() {
                     value={form.description}
                     onChangeText={(text) => setForm(prev => ({ ...prev, description: text }))}
                 />
-                <Pressable 
+                <Pressable
                     style={styles.submitButton}
                     onPress={() => categoryMutation.mutate(form)}
                 >
@@ -116,21 +131,9 @@ export default function CategoryManagement() {
                                 </Pressable>
                                 <Pressable
                                     style={[styles.button, styles.deleteButton]}
-                                    onPress={() => {
-                                        Alert.alert(
-                                            '카테고리 삭제',
-                                            '정말 삭제하시겠습니까?',
-                                            [
-                                                { text: '취소' },
-                                                { 
-                                                    text: '삭제',
-                                                    onPress: () => deleteMutation.mutate(category.id)
-                                                }
-                                            ]
-                                        );
-                                    }}
+                                    onPress={() => handleDeleteCategory(category.id)}
                                 >
-                                    <Text style={styles.buttonText}>삭제</Text>
+                                    <Text style={[styles.buttonText, styles.deleteButtonText]}>삭제</Text>
                                 </Pressable>
                             </View>
                         </View>
@@ -203,20 +206,27 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     button: {
-        padding: 8,
-        borderRadius: 6,
-        minWidth: 60,
-        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 4,
+        marginLeft: 8,
     },
     editButton: {
-        backgroundColor: '#4CAF50',
+        backgroundColor: '#007AFF',
     },
     deleteButton: {
         backgroundColor: '#FF3B30',
     },
     buttonText: {
-        color: '#fff',
+        color: 'white',
         fontSize: 14,
         fontWeight: '500',
+    },
+    deleteButtonText: {
+        color: 'white',
+    },
+    buttonContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
 }); 

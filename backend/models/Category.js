@@ -44,6 +44,19 @@ class Category {
     }
   }
 
+  static async findById(id) {
+    try {
+      const [rows] = await db.execute(
+        'SELECT * FROM post_categories WHERE id = ?',
+        [id]
+      );
+      return rows[0];
+    } catch (error) {
+      console.error('카테고리 조회 에러:', error);
+      throw error;
+    }
+  }
+
   static async delete(id) {
     try {
       const [result] = await db.execute(
