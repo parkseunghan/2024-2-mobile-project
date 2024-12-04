@@ -74,7 +74,7 @@ exports.getDailyStatistics = async (req, res) => {
     const stats = await StatisticsService.getDailyStats();
     res.json({ success: true, stats });
   } catch (error) {
-    console.error('일일 통계 조회 에러:', error);
+    console.error('일일 통 조회 에러:', error);
     res.status(500).json({ message: '통계 조회에 실패했습니다.' });
   }
 };
@@ -123,7 +123,14 @@ exports.getCategories = async (req, res) => {
 exports.createCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
-    const category = await Category.create({ name, description });
+    const created_by = req.user.id;
+
+    const category = await Category.create({ 
+      name, 
+      description, 
+      created_by 
+    });
+    
     res.status(201).json({ 
       message: '카테고리가 생성되었습니다.',
       category 

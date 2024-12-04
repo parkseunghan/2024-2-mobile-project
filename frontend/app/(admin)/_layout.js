@@ -19,12 +19,6 @@ export default function AdminLayout() {
                 }}
             >
                 <Stack.Screen 
-                    name="index"
-                    options={{
-                        title: '관리자'
-                    }}
-                />
-                <Stack.Screen 
                     name="dashboard" 
                     options={{
                         title: '관리자 대시보드'

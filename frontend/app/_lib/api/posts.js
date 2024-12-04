@@ -33,14 +33,7 @@ export const postsApi = {
 
     // 게시글 작성
     createPost: async (postData) => {
-        return await client.post('/posts', {
-            title: postData.title,
-            content: postData.content,
-            category: postData.category,
-            media_url: postData.media_url,
-            poll_options: postData.poll_options,
-            user_id: postData.user_id
-        });
+        return await client.post('/community/posts', postData);
     },
 
     // 게시글 좋아요/취소
@@ -56,6 +49,6 @@ export const postsApi = {
     // 카테고리 목록 조회
     fetchCategories: async () => {
         const response = await client.get('/categories');
-        return response.data;
+        return response.data.categories;
     }
 }; 

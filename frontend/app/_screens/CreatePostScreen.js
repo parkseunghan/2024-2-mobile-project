@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Pressable, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Pressable, Image, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Input } from '@app/_components/common/Input';
 import * as ImagePicker from 'expo-image-picker';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { postsApi } from '@app/_lib/api/posts';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
@@ -28,6 +28,13 @@ export default function CreatePostScreen() {
     const [selectedMedia, setSelectedMedia] = useState([]);
     const [newPollOption, setNewPollOption] = useState('');
 
+    // 카테고리 목록 조회
+    const { data: categories = [] } = useQuery({
+        queryKey: ['categories'],
+        queryFn: postsApi.fetchCategories,
+        initialData: [{ id: 'general-1', name: '일반' }]
+    });
+
     // 게시글 작성 mutation
     const createPostMutation = useMutation({
         mutationFn: async (postData) => {
@@ -37,17 +44,25 @@ export default function CreatePostScreen() {
                 if (postData.media) {
                     const formData = new FormData();
                     const filename = postData.media.split('/').pop();
-                    const match = /\.(\w+)$/.exec(filename);
-                    const type = match ? `image/${match[1]}` : `image`;
                     
+                    // 파일 타입 추출 및 설정
+                    const match = /\.(\w+)$/.exec(filename);
+                    const type = match ? `image/${match[1]}` : 'image/jpeg';
+                    
+                    // FormData에 파일 추가
                     formData.append('media', {
                         uri: postData.media,
                         name: filename,
                         type
                     });
                     
-                    const uploadResponse = await postsApi.uploadMedia(formData);
-                    media_url = uploadResponse.data.url;
+                    try {
+                        const uploadResponse = await postsApi.uploadMedia(formData);
+                        media_url = uploadResponse.data.url;
+                    } catch (uploadError) {
+                        console.error('미디어 업로드 에러:', uploadError);
+                        throw new Error('미디어 파일 업로드에 실패했습니다.');
+                    }
                 }
                 
                 // 게시글 생성
@@ -87,15 +102,32 @@ export default function CreatePostScreen() {
             const result = await ImagePicker.launchImageLibraryAsync({
                 mediaTypes: ImagePicker.MediaTypeOptions.Images,
                 allowsEditing: true,
-                quality: 1,
+                quality: 0.8,
+                base64: true,
             });
 
             if (!result.canceled) {
+                const asset = result.assets[0];
+                // 파일 이름 생성
+                const filename = asset.uri.split('/').pop() || 'image.jpg';
+                
+                // Blob 생성
+                const response = await fetch(asset.uri);
+                const blob = await response.blob();
+                
+                // FormData 생성
+                const formData = new FormData();
+                formData.append('media', {
+                    uri: Platform.OS === 'web' ? blob : asset.uri,
+                    type: 'image/jpeg',
+                    name: filename
+                });
+
                 setForm(prev => ({
                     ...prev,
-                    media: result.assets[0].uri
+                    media: asset.uri
                 }));
-                setSelectedMedia([...selectedMedia, { uri: result.assets[0].uri }]);
+                setSelectedMedia([...selectedMedia, { uri: asset.uri }]);
             }
         } catch (error) {
             console.error('미디어 선택 에러:', error);
@@ -167,6 +199,41 @@ export default function CreatePostScreen() {
                 onChangeText={(text) => setForm(prev => ({ ...prev, title: text }))}
                 placeholder="제목을 입력하세요"
             />
+
+            {/* 카테고리 선택 추가 */}
+            <View style={styles.categorySection}>
+                <Text style={styles.sectionTitle}>카테고리</Text>
+                <ScrollView 
+                    horizontal 
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.categoryList}
+                >
+                    {categories.map((category) => {
+                        const uniqueKey = category.id || `category-${category.name}-${Math.random()}`;
+                        
+                        return (
+                            <Pressable
+                                key={uniqueKey}
+                                style={[
+                                    styles.categoryButton,
+                                    form.category === category.name && styles.categoryButtonActive
+                                ]}
+                                onPress={() => setForm(prev => ({ 
+                                    ...prev, 
+                                    category: category.name 
+                                }))}
+                            >
+                                <Text style={[
+                                    styles.categoryButtonText,
+                                    form.category === category.name && styles.categoryButtonTextActive
+                                ]}>
+                                    {category.name}
+                                </Text>
+                            </Pressable>
+                        );
+                    })}
+                </ScrollView>
+            </View>
 
             <Input
                 label="내용"
@@ -351,5 +418,39 @@ const styles = StyleSheet.create({
         padding: spacing.sm,
         borderRadius: 8,
         backgroundColor: colors.surface,
+    },
+    categorySection: {
+        marginVertical: 10,
+        paddingHorizontal: 15,
+    },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 10,
+        color: '#333',
+    },
+    categoryList: {
+        flexDirection: 'row',
+        marginBottom: 15,
+    },
+    categoryButton: {
+        paddingHorizontal: 15,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: '#f0f0f0',
+        marginRight: 10,
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
+    categoryButtonActive: {
+        backgroundColor: '#007AFF',
+        borderColor: '#007AFF',
+    },
+    categoryButtonText: {
+        color: '#666',
+        fontSize: 14,
+    },
+    categoryButtonTextActive: {
+        color: '#fff',
     },
 });

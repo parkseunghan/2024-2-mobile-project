@@ -13,16 +13,17 @@ class Category {
     }
   }
 
-  static async create({ name, description }) {
+  static async create({ name, description, created_by }) {
     try {
       const [result] = await db.execute(
-        'INSERT INTO post_categories (name, description) VALUES (?, ?)',
-        [name, description]
+        'INSERT INTO post_categories (name, description, created_by, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())',
+        [name, description, created_by]
       );
       return {
         id: result.insertId,
         name,
-        description
+        description,
+        created_by
       };
     } catch (error) {
       console.error('카테고리 생성 에러:', error);

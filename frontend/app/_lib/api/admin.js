@@ -1,6 +1,6 @@
-export const adminApi = {
-  // 기존 코드...
+import { client } from './client';  // client import 추가
 
+export const adminApi = {
   // 카테고리 관리 API
   getCategories: () => 
     client.get('/admin/categories'),
@@ -13,4 +13,4 @@ export const adminApi = {
 
   deleteCategory: (categoryId) => 
     client.delete(`/admin/categories/${categoryId}`)
-}; 
+};

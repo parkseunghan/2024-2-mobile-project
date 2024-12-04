@@ -90,22 +90,6 @@ export function Menu({ isVisible, onClose, anchorPosition }) {
                 router.push('/(admin)/dashboard');
                 onClose();
             }
-        },
-        {
-            icon: "cog",
-            label: "카테고리 관리",
-            onPress: () => {
-                router.push('/(admin)/categories');
-                onClose();
-            }
-        },
-        {
-            icon: "users-cog",
-            label: "사용자 관리",
-            onPress: () => {
-                router.push('/(admin)/users');
-                onClose();
-            }
         }
     ] : [];
 
