@@ -3,8 +3,25 @@ const Comment = require('../models/Comment');
 
 exports.getPosts = async (req, res) => {
     try {
-        const posts = await Post.findAll();
-        res.json({ posts });
+        const { page = 1, category, search } = req.query;
+        const userId = req.user?.id;
+        const limit = 10;
+
+        const posts = await Post.findAll(
+            category === '전체' ? null : category,
+            parseInt(page),
+            limit,
+            userId
+        );
+
+        const totalCount = await Post.getTotalCount(category === '전체' ? null : category);
+        const totalPages = Math.ceil(totalCount / limit);
+
+        res.json({ 
+            posts,
+            nextPage: page < totalPages ? parseInt(page) + 1 : null,
+            totalPages
+        });
     } catch (error) {
         console.error('게시글 목록 조회 에러:', error);
         res.status(500).json({ message: '게시글 목록을 불러오는데 실패했습니다.' });

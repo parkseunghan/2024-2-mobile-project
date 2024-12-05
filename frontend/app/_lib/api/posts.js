@@ -7,11 +7,15 @@ export const postsApi = {
     fetchPosts: async ({ page = 1, category, search }) => {
         const params = new URLSearchParams({
             page,
-            limit: POSTS_PER_PAGE,
             ...(category && category !== '전체' && { category }),
             ...(search && { search })
         });
-        return await client.get(`/posts?${params}`);
+        const response = await client.get(`/community/posts?${params}`);
+        return {
+            posts: response.data.posts,
+            nextPage: response.data.nextPage,
+            totalPages: response.data.totalPages
+        };
     },
 
     // 인기 게시글 조회
@@ -34,7 +38,7 @@ export const postsApi = {
     // 게시글 작성
     createPost: async (postData) => {
         try {
-            const response = await client.post('/api/posts', postData);
+            const response = await client.post('/community/posts', postData);
             return response.data;
         } catch (error) {
             console.error('게시글 생성 실패:', error);

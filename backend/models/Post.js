@@ -186,7 +186,7 @@ class Post {
 
   /**
    * 사용자가 좋아요한 게시글을 조회합니다.
-   * @param {number} userId - 사용자 ID
+   * @param {number} userId - 사용 ID
    * @returns {Promise<Array>} 게시글 목록
    */
   static async findLikedByUserId(userId) {
@@ -217,7 +217,7 @@ class Post {
    * @param {number} postId - 게시글 ID
    * @param {number} userId - 작성자 ID
    * @param {Object} updateData - 수정할 데이터
-   * @returns {Promise<boolean>} ���정 성공 여부
+   * @returns {Promise<boolean>} 수정 성공 여부
    */
   static async update(postId, userId, { title, content, mediaUrl }) {
     try {
@@ -360,6 +360,32 @@ class Post {
       throw new Error('북마크 처리에 실패했습니다.');
     } finally {
       connection.release();
+    }
+  }
+
+  /**
+   * 특정 카테고리의 전체 게시글 수를 조회합니다.
+   * @param {string|null} category - 카테고리
+   * @returns {Promise<number>} 게시글 총 개수
+   */
+  static async getTotalCount(category = null) {
+    try {
+      const query = `
+        SELECT COUNT(*) as total
+        FROM posts
+        WHERE is_deleted = false
+        ${category ? 'AND category = ?' : ''}
+      `;
+      
+      const [result] = await db.query(
+        query,
+        category ? [category] : []
+      );
+
+      return result[0].total;
+    } catch (error) {
+      console.error('게시글 수 조회 에러:', error);
+      throw new Error('게시글 수 조회에 실패했습니다.');
     }
   }
 }

@@ -184,14 +184,16 @@ export default function CreatePostScreen() {
                 userId: user.id
             };
 
-            const response = await createPostMutation.mutateAsync(postData);
-
-            if (response.data) {
-                Alert.alert('성공', '게시글이 작성되었습니다.');
-                router.push('/community');
-            }
+            await createPostMutation.mutateAsync(postData);
+            
+            // 성공 시 커뮤니티 화면으로 이동
+            router.push('/community');
         } catch (error) {
-            Alert.alert('오류', error.message || '게시글 작성에 실패했습니다.');
+            console.error('게시글 작성 에러:', error);
+            Alert.alert(
+                '오류',
+                error.response?.data?.message || '게시글 작성에 실패했습니다.'
+            );
         } finally {
             setLoading(false);
         }

@@ -20,7 +20,8 @@ export default function CommunityScreen() {
         data,
         fetchNextPage,
         hasNextPage,
-        isLoading
+        isLoading,
+        isFetchingNextPage
     } = useInfiniteQuery({
         queryKey: ['posts', selectedCategory, searchText],
         queryFn: ({ pageParam = 1 }) => postsApi.fetchPosts({ 
@@ -28,43 +29,34 @@ export default function CommunityScreen() {
             category: selectedCategory,
             search: searchText 
         }),
-        getNextPageParam: (lastPage) => {
-            if (lastPage.posts.length < POSTS_PER_PAGE) return undefined;
-            return lastPage.nextPage;
-        }
-    });
-
-    // 인기 게시글 쿼리
-    const { data: popularPosts } = useQuery({
-        queryKey: ['posts', 'popular'],
-        queryFn: postsApi.fetchPopularPosts
+        getNextPageParam: (lastPage) => lastPage.nextPage,
+        staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
     });
 
     // 카테고리 목록 조회
-    const { data: categories = [], isLoading: categoriesLoading } = useQuery({
+    const { data: categories = [] } = useQuery({
         queryKey: ['categories'],
         queryFn: postsApi.fetchCategories,
-        onError: (error) => {
-            console.error('카테고리 목록 조회 에러:', error);
-        }
+        staleTime: 1000 * 60 * 30, // 30분간 캐시 유지
     });
+
+    const posts = data?.pages.flatMap(page => page.posts) ?? [];
 
     const renderPost = useCallback(({ item }) => (
         <Pressable
             style={styles.postContainer}
             onPress={() => router.push(`/post/${item.id}`)}
         >
-            {item.media_url && (
-                <View style={styles.mediaPreviewContainer}>
-                    <Image 
-                        source={{ uri: item.media_url }} 
-                        style={styles.postImage}
-                        resizeMode="cover"
-                    />
-                </View>
-            )}
             <View style={styles.postContent}>
-                <Text style={styles.postTitle}>{item.title}</Text>
+                <View style={styles.postHeader}>
+                    <Text style={styles.category}>{item.category}</Text>
+                    <Text style={styles.postDate}>
+                        {new Date(item.created_at).toLocaleDateString()}
+                    </Text>
+                </View>
+                <Text style={styles.postTitle} numberOfLines={2}>
+                    {item.title}
+                </Text>
                 <View style={styles.authorContainer}>
                     <Text style={[
                         styles.authorRank,
@@ -76,39 +68,38 @@ export default function CommunityScreen() {
                 </View>
                 <View style={styles.postStats}>
                     <View style={styles.statItem}>
-                        <Icon name="thumb-up" size={16} color={item.is_liked ? colors.primary : colors.gray[500]} />
+                        <Icon 
+                            name="thumb-up" 
+                            size={16} 
+                            color={item.is_liked ? colors.primary : colors.text.secondary} 
+                        />
                         <Text style={styles.statText}>{item.like_count}</Text>
                     </View>
                     <View style={styles.statItem}>
-                        <Icon name="comment" size={16} color={colors.gray[500]} />
+                        <Icon name="comment" size={16} color={colors.text.secondary} />
                         <Text style={styles.statText}>{item.comment_count}</Text>
                     </View>
                 </View>
             </View>
+            {item.media_url && (
+                <Image 
+                    source={{ uri: item.media_url }} 
+                    style={styles.postImage}
+                    resizeMode="cover"
+                />
+            )}
         </Pressable>
     ), []);
 
     // 무한 스크롤 처리
     const onEndReached = useCallback(() => {
-        if (hasNextPage && !isLoading) {
+        if (hasNextPage && !isFetchingNextPage) {
             fetchNextPage();
         }
-    }, [hasNextPage, isLoading]);
-
-   
+    }, [hasNextPage, isFetchingNextPage]);
 
     return (
         <View style={styles.container}>
-            {/* 헤더 */}
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>게시판</Text>
-                <Link href="/liked-posts" asChild>
-                    <Pressable style={styles.likedPostsButton}>
-                        <Icon name="favorite" size={24} color="#ff5252" />
-                    </Pressable>
-                </Link>
-            </View>
-
             {/* 검색 입력 */}
             <TextInput
                 style={styles.searchInput}
@@ -117,59 +108,42 @@ export default function CommunityScreen() {
                 onChangeText={setSearchText}
             />
 
+            {/* 카테고리 필터 */}
+            <ScrollView horizontal style={styles.categoryContainer}>
+                {categories.map((category) => (
+                    <Pressable
+                        key={category.id}
+                        onPress={() => setSelectedCategory(category.name)}
+                        style={[
+                            styles.categoryButton,
+                            selectedCategory === category.name && styles.categorySelected,
+                        ]}
+                    >
+                        <Text style={[
+                            styles.categoryText,
+                            selectedCategory === category.name && styles.categoryTextSelected,
+                        ]}>
+                            {category.name}
+                        </Text>
+                    </Pressable>
+                ))}
+            </ScrollView>
+
             {/* 게시글 리스트 */}
             <FlatList
-                data={data?.pages.flatMap(page => page.posts) ?? []}
+                data={posts}
                 renderItem={renderPost}
                 keyExtractor={item => item.id.toString()}
                 onEndReached={onEndReached}
                 onEndReachedThreshold={0.5}
-                ListHeaderComponent={
-                    <>
-                        {/* 인기글 섹션 */}
-                        {popularPosts?.length > 0 && (
-                            <View style={styles.popularSection}>
-                                <Text style={styles.popularTitle}>인기글 TOP3</Text>
-                                {popularPosts.map(post => (
-                                    <Pressable
-                                        key={post.id}
-                                        style={styles.popularPostContainer}
-                                        onPress={() => router.push(`/posts/${post.id}`)}
-                                    >
-                                        <Text style={styles.popularPostTitle}>{post.title}</Text>
-                                        <Text style={styles.popularPostLikes}>
-                                            {`조회 ${post.view_count} · 좋아요 ${post.like_count}`}
-                                        </Text>
-                                    </Pressable>
-                                ))}
-                            </View>
-                        )}
-
-                        {/* 카테고리 필터 */}
-                        <ScrollView horizontal style={styles.categoryContainer}>
-                            {!categoriesLoading && categories.map((category) => (
-                                <Pressable
-                                    key={category.id || category.name}
-                                    onPress={() => setSelectedCategory(category.name)}
-                                    style={[
-                                        styles.categoryButton,
-                                        selectedCategory === category.name && styles.categorySelected,
-                                    ]}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.categoryText,
-                                            selectedCategory === category.name && styles.categoryTextSelected,
-                                        ]}
-                                    >
-                                        {category.name}
-                                    </Text>
-                                </Pressable>
-                            ))}
-                        </ScrollView>
-                    </>
+                ListFooterComponent={isFetchingNextPage ? <LoadingSpinner /> : null}
+                ListEmptyComponent={
+                    !isLoading && (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>게시글이 없습니다.</Text>
+                        </View>
+                    )
                 }
-                ListFooterComponent={isLoading ? <LoadingSpinner /> : null}
             />
 
             {/* 게시글 작성 버튼 */}
@@ -186,7 +160,7 @@ export default function CommunityScreen() {
 const styles = StyleSheet.create({
     container: { 
         flex: 1, 
-        backgroundColor: '#fff' 
+        backgroundColor: colors.background 
     },
     header: { 
         flexDirection: 'row', 
@@ -203,10 +177,11 @@ const styles = StyleSheet.create({
     },
     searchInput: {
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: colors.border,
         borderRadius: 8,
         padding: 8,
         margin: 8,
+        backgroundColor: colors.surface,
     },
     popularSection: { 
         padding: 16, 
@@ -234,53 +209,59 @@ const styles = StyleSheet.create({
         color: 'gray', 
         marginTop: 4 
     },
-    categoryContainer: { 
-        flexDirection: 'row', 
-        padding: 8 
+    categoryContainer: {
+        paddingHorizontal: 8,
+        marginBottom: 8,
     },
-    categoryButton: { 
-        paddingHorizontal: 12, 
-        paddingVertical: 4, 
-        marginHorizontal: 4, 
-        backgroundColor: '#eee',
-        borderRadius: 16
+    categoryButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        marginHorizontal: 4,
+        borderRadius: 16,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
     },
-    categorySelected: { 
-        backgroundColor: '#007BFF' 
+    categorySelected: {
+        backgroundColor: colors.primary,
     },
-    categoryText: { 
-        color: '#555' 
+    categoryText: {
+        color: colors.text.secondary,
+        fontSize: 14,
     },
-    categoryTextSelected: { 
-        color: '#fff' 
+    categoryTextSelected: {
+        color: colors.background,
     },
     postContainer: {
         flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
+        padding: 12,
         borderBottomWidth: 1,
-        borderBottomColor: '#ddd',
+        borderBottomColor: colors.border,
+        backgroundColor: colors.background,
     },
     mediaPreviewContainer: {
         position: 'relative',
         marginRight: 16,
     },
-    postImage: { 
-        width: 50, 
-        height: 50, 
-        borderRadius: 25 
+    postImage: {
+        width: 80,
+        height: 80,
+        borderRadius: 8,
     },
     postContent: { 
-        flex: 1 
+        flex: 1,
+        marginRight: 8,
     },
     postTitle: { 
         fontSize: 16, 
-        fontWeight: 'bold' 
+        fontWeight: 'bold',
+        marginBottom: 4,
+        color: colors.text.primary,
     },
     authorContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 4,
     },
     authorRank: {
         fontSize: 12,
@@ -289,11 +270,11 @@ const styles = StyleSheet.create({
     },
     authorName: {
         fontSize: 12,
-        color: '#555',
+        color: colors.text.secondary,
     },
     postStats: {
         flexDirection: 'row',
-        marginTop: 8,
+        marginTop: 4,
     },
     statItem: {
         flexDirection: 'row',
@@ -303,18 +284,47 @@ const styles = StyleSheet.create({
     statText: { 
         marginLeft: 4, 
         fontSize: 12, 
-        color: '#555' 
+        color: colors.text.secondary,
     },
     floatingButton: {
         position: 'absolute',
         right: 20,
         bottom: 20,
-        backgroundColor: '#007BFF',
+        backgroundColor: colors.primary,
         width: 56,
         height: 56,
         borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
         elevation: 4,
+        shadowColor: colors.text.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+    },
+    postHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    category: {
+        fontSize: 12,
+        color: colors.primary,
+        fontWeight: '500',
+    },
+    postDate: {
+        fontSize: 12,
+        color: colors.text.secondary,
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: colors.text.secondary,
     },
 });
