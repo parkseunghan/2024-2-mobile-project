@@ -69,6 +69,10 @@ export default function CommunityScreen() {
                 </View>
                 <View style={styles.postStats}>
                     <View style={styles.statItem}>
+                        <Icon name="remove-red-eye" size={16} color={colors.text.secondary} />
+                        <Text style={styles.statText}>{item.view_count}</Text>
+                    </View>
+                    <View style={styles.statItem}>
                         <Icon 
                             name="thumb-up" 
                             size={16} 
@@ -104,7 +108,7 @@ export default function CommunityScreen() {
             {/* 검색 입력 */}
             <TextInput
                 style={styles.searchInput}
-                placeholder="제목, 내용, 작성자로 검색"
+                placeholder="제목, 내용, 작성로 검색"
                 value={searchText}
                 onChangeText={setSearchText}
             />
@@ -286,17 +290,18 @@ const styles = StyleSheet.create({
     },
     postStats: {
         flexDirection: 'row',
-        marginTop: 4,
+        alignItems: 'center',
+        marginTop: 8,
     },
     statItem: {
         flexDirection: 'row',
         alignItems: 'center',
         marginRight: 16,
     },
-    statText: { 
-        marginLeft: 4, 
-        fontSize: 12, 
+    statText: {
+        fontSize: 12,
         color: colors.text.secondary,
+        marginLeft: 4,
     },
     floatingButton: {
         position: 'absolute',
