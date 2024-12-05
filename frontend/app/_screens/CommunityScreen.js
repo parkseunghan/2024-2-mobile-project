@@ -27,7 +27,8 @@ export default function CommunityScreen() {
         queryFn: ({ pageParam = 1 }) => postsApi.fetchPosts({ 
             page: pageParam, 
             category: selectedCategory,
-            search: searchText 
+            search: searchText,
+            searchFields: ['title', 'content', 'author_name']
         }),
         getNextPageParam: (lastPage) => lastPage.nextPage,
         staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
@@ -103,13 +104,18 @@ export default function CommunityScreen() {
             {/* 검색 입력 */}
             <TextInput
                 style={styles.searchInput}
-                placeholder="검색어를 입력하세요"
+                placeholder="제목, 내용, 작성자로 검색"
                 value={searchText}
                 onChangeText={setSearchText}
             />
 
             {/* 카테고리 필터 */}
-            <ScrollView horizontal style={styles.categoryContainer}>
+            <ScrollView 
+                horizontal 
+                style={styles.categoryContainer}
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoryContent}
+            >
                 {categories.map((category) => (
                     <Pressable
                         key={category.id}
@@ -210,8 +216,12 @@ const styles = StyleSheet.create({
         marginTop: 4 
     },
     categoryContainer: {
+        maxHeight: 50,
         paddingHorizontal: 8,
         marginBottom: 8,
+    },
+    categoryContent: {
+        alignItems: 'center',
     },
     categoryButton: {
         paddingHorizontal: 16,
@@ -221,6 +231,8 @@ const styles = StyleSheet.create({
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.border,
+        height: 36,
+        justifyContent: 'center',
     },
     categorySelected: {
         backgroundColor: colors.primary,
