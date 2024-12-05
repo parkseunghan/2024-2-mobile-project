@@ -41,18 +41,18 @@ export default function PostDetailScreen() {
             setError(null);
             console.log('Loading post with ID:', postId);
             
-            const { data } = await communityApi.getPost(postId);
-            console.log('Loaded post data:', data);
+            const response = await communityApi.getPost(postId);
+            console.log('API Response:', response);
             
-            if (!data) {
+            if (!response.data) {
                 throw new Error('게시글을 찾을 수 없습니다.');
             }
 
-            setPost(data);
+            setPost(response.data);
+            console.log('Post data set:', response.data);
         } catch (err) {
             console.error('Error loading post:', err);
-            setError(typeof err === 'string' ? err : '게시글을 불러오는데 실패했습니다.');
-            setPost(null);
+            setError(err.message || '게시글을 불러오는데 실패했습니다.');
         } finally {
             setLoading(false);
         }
@@ -313,13 +313,14 @@ const styles = StyleSheet.create({
     date: {
         ...typography.caption,
         color: colors.text.secondary,
+        marginTop: spacing.xs,
     },
     content: {
         padding: spacing.lg,
     },
     contentText: {
         ...typography.body,
-        marginBottom: spacing.lg,
+        lineHeight: 24,
     },
     mediaImage: {
         width: '100%',
@@ -329,24 +330,21 @@ const styles = StyleSheet.create({
     },
     pollContainer: {
         padding: spacing.lg,
-        backgroundColor: colors.surface,
-        borderRadius: 8,
-        marginBottom: spacing.lg,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
     },
     pollTitle: {
-        ...typography.h3,
+        ...typography.h2,
         marginBottom: spacing.md,
     },
     pollOption: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
         padding: spacing.md,
-        backgroundColor: colors.background,
-        borderRadius: 8,
-        marginBottom: spacing.sm,
         borderWidth: 1,
         borderColor: colors.border,
+        borderRadius: 8,
+        marginBottom: spacing.sm,
     },
     pollOptionVoted: {
         backgroundColor: colors.primary + '20',
@@ -368,7 +366,7 @@ const styles = StyleSheet.create({
     },
     commentsTitle: {
         ...typography.h2,
-        marginBottom: spacing.lg,
+        marginBottom: spacing.md,
     },
     commentInputContainer: {
         flexDirection: 'row',

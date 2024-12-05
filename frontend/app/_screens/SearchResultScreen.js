@@ -8,6 +8,9 @@ import { typography } from '@app/_styles/typography';
 import { LoadingState } from '@app/_components/common/LoadingState';
 import { ErrorState } from '@app/_components/common/ErrorState';
 import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { useState } from 'react';
+import { usePosts } from '@app/_context/PostContext';
 
 
 /**
@@ -17,7 +20,20 @@ import { useRouter } from 'expo-router';
  */
 export default function SearchResultScreen() {
     const router = useRouter();
-    const { searchQuery, searchResults, loading, error } = useContext(SearchContext);    
+    const { searchQuery, searchResults, loading, error, setSearchQuery } = useContext(SearchContext);    
+    const{ posts } = usePosts();
+    const [activeTab, setActiveTab] = useState('videos');
+
+    useEffect(() => {
+        return () => {
+          setSearchQuery(''); // 검색어 초기화
+        };
+    }, [setSearchQuery]);
+    
+    const filteredPosts = posts.filter(post => 
+        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.content.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     console.log('Search Results in Screen:', searchResults); // 검색 결과 로깅
 
@@ -112,4 +128,4 @@ const styles = StyleSheet.create({
         color: colors.text.secondary,
         textAlign: 'center',
     },
-}); 
+});

@@ -76,6 +76,7 @@ class Post {
    */
   static async findById(postId, userId = null) {
     try {
+        // 게시글 기본 정보 조회
         const [post] = await db.query(`
             SELECT 
                 p.*,
@@ -92,26 +93,10 @@ class Post {
             LEFT JOIN post_likes pl ON p.id = pl.post_id
             LEFT JOIN comments c ON p.id = c.post_id
             WHERE p.id = ? AND p.is_deleted = false
-            GROUP BY p.id
+            GROUP BY p.id, u.username, u.current_rank_id, ur.name, ur.color
         `, [userId, postId]);
 
         if (!post) return null;
-
-        // 투표 옵션 조회 (테이블이 있는 경우에만)
-        try {
-            const [pollOptions] = await db.query(`
-                SELECT 
-                    po.*,
-                    EXISTS(SELECT 1 FROM poll_votes WHERE option_id = po.id AND user_id = ?) as voted
-                FROM poll_options po
-                WHERE po.post_id = ?
-            `, [userId, postId]);
-            
-            post.poll_options = pollOptions;
-        } catch (error) {
-            // poll_options 테이블이 없는 경우 무시
-            post.poll_options = null;
-        }
 
         // 댓글 조회
         const [comments] = await db.query(`
@@ -126,6 +111,12 @@ class Post {
             WHERE c.post_id = ? AND c.is_deleted = false
             ORDER BY c.created_at DESC
         `, [postId]);
+
+        // 조회수 증가
+        await db.query(
+            'UPDATE posts SET view_count = view_count + 1 WHERE id = ?',
+            [postId]
+        );
 
         return {
             ...post,
@@ -201,8 +192,8 @@ class Post {
 
   /**
    * 사용자가 작성한 게시글을 조회합니다.
-   * @param {number} userId - 사용자 ID
-   * @returns {Promise<Array>} ���시글 목록
+   * @param {number} userId - 사용��� ID
+   * @returns {Promise<Array>} 시글 목록
    */
   static async findByUserId(userId) {
     try {
@@ -325,7 +316,7 @@ class Post {
       return !existing.length;
     } catch (error) {
       await connection.rollback();
-      console.error('좋아요 ���글 에러:', error);
+      console.error('좋아요 글 에러:', error);
       throw new Error('좋아요 처리에 실패했습니다.');
     } finally {
       connection.release();
