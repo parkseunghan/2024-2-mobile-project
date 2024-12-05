@@ -9,6 +9,7 @@ import { communityApi } from '@app/_lib/api';
 import { LoadingState } from '@app/_components/common/LoadingState';
 import { ErrorState } from '@app/_components/common/ErrorState';
 import { useAuth } from '@app/_lib/hooks';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function PostDetailScreen() {
     // URL 파라미터에서 게시글 ID 추출
@@ -16,6 +17,8 @@ export default function PostDetailScreen() {
     const postId = params.id;
     const router = useRouter();
     const { user } = useAuth();
+    const [viewCountUpdated, setViewCountUpdated] = useState(false);
+    const queryClient = useQueryClient();
 
     // 상태 관리
     const [post, setPost] = useState(null);
@@ -23,8 +26,6 @@ export default function PostDetailScreen() {
     const [error, setError] = useState(null);
     const [newComment, setNewComment] = useState('');
 
-   
-    
     // 게시글 데이터 로드
     useEffect(() => {
         console.log('PostDetailScreen - postId:', postId);
@@ -34,55 +35,61 @@ export default function PostDetailScreen() {
             return;
         }
 
-        loadPost();
-    }, [postId]);
+        const loadPostWithViewCount = async () => {
+            try {
+                setLoading(true);
+                setError(null);
 
-    // 게시글 데이터 로드 함수
-    const loadPost = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            console.log('Loading post with ID:', postId);
+                // 1. 먼저 조회수를 증가시킴
+                try {
+                    await communityApi.incrementViewCount(postId);
+                    // community 페이지의 posts 쿼리 무효화
+                    queryClient.invalidateQueries(['posts']);
+                } catch (viewCountError) {
+                    console.error('조회수 증가 실패:', viewCountError);
+                    // 조회수 증가 실패해도 게시글은 로드 시도
+                }
 
-            const response = await communityApi.getPost(postId);
-            console.log('Raw API Response:', response);
+                // 2. 최신 데이터로 게시글 로드
+                const response = await communityApi.getPost(postId);
+                
+                if (!response?.data) {
+                    throw new Error('게시글을 찾을 수 없습니다.');
+                }
 
-            if (!response?.data) {
-                throw new Error('게시글을 찾을 수 없습니다.');
+                const postData = response.data[0] || response.data;
+                const comments = response.data.comments || [];
+
+                const normalizedPost = {
+                    ...postData,
+                    comments
+                };
+
+                if (!normalizedPost.id) {
+                    throw new Error('게시글 데이터가 없습니다.');
+                }
+
+                setPost(normalizedPost);
+                setViewCountUpdated(true);
+            } catch (err) {
+                console.error('Error loading post:', {
+                    message: err.message,
+                    stack: err.stack,
+                    response: err.response?.data
+                });
+                setError(err.message || '게시글을 불러오는데 실패했습니다.');
+            } finally {
+                setLoading(false);
             }
+        };
 
-            // 데이터 구조 확인 및 정규화
-            const postData = response.data[0] || response.data;
-            const comments = response.data.comments || [];
-
-            const normalizedPost = {
-                ...postData,
-                comments
-            };
-
-            console.log('Normalized post data:', normalizedPost);
-
-            if (!normalizedPost.id) {
-                throw new Error('게시글 데이터가 없습니다.');
-            }
-
-            setPost(normalizedPost);
-        } catch (err) {
-            console.error('Error loading post:', {
-                message: err.message,
-                stack: err.stack,
-                response: err.response?.data
-            });
-            setError(err.message || '게시글을 불러오는데 실패했습니다.');
-        } finally {
-            setLoading(false);
-        }
-    };
+        loadPostWithViewCount();
+    }, [postId, queryClient]);
 
     // 좋아요 토글 핸들러
     const handleLikeToggle = async () => {
         if (!user) {
-            Alert.alert('알림', '로그인이 필요한 기능입니다.');
+            Alert.alert('알림', '로그인이 필한 기능입니다.');
             return;
         }
 
@@ -90,8 +97,8 @@ export default function PostDetailScreen() {
             const response = await communityApi.toggleLike(postId);
             setPost(prev => ({
                 ...prev,
-                isLiked: response.isLiked,
-                like_count: response.likeCount
+                is_liked: response.data.isLiked,
+                like_count: response.data.likeCount
             }));
         } catch (error) {
             Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
@@ -130,7 +137,7 @@ export default function PostDetailScreen() {
             await communityApi.vote(postId, optionId);
             loadPost(); // 게시글 데이터 새로고침
         } catch (error) {
-            Alert.alert('오류', '투표 처리 중 오류가 발생했습니다.');
+            Alert.alert('오류', '투표 처리 중 오류가 발생했습니.');
         }
     };
 

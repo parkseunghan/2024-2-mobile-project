@@ -27,4 +27,10 @@ router.delete('/comments/:commentId', authMiddleware, communityController.delete
 // 투표하기 (인증 필요)
 router.post('/posts/:postId/vote/:optionId', authMiddleware, communityController.vote);
 
+// 좋아요 토글 (인증 필요)
+router.post('/posts/:postId/like', authMiddleware, communityController.toggleLike);
+
+// 조회수 증가
+router.post('/posts/:postId/view', communityController.incrementViewCount);
+
 module.exports = router; 

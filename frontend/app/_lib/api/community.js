@@ -41,7 +41,7 @@ export const communityApi = {
         client.delete(`/community/posts/${postId}`),
 
     /**
-     * 게시글 좋아요/좋아요 취소
+     * ��시글 좋아요/좋아요 취소
      * @param {string} postId - 게시글 ID
      */
     toggleLike: (postId) => 
@@ -68,4 +68,11 @@ export const communityApi = {
      */
     getLikedPosts: () => 
         client.get('/community/liked-posts'),
+
+    /**
+     * 조회수 증가
+     * @param {string} postId - 게시글 ID
+     */
+    incrementViewCount: (postId) => 
+        client.post(`/community/posts/${postId}/view`),
 }; 

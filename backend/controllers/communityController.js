@@ -1,5 +1,6 @@
 const Post = require('../models/Post');
 const Comment = require('../models/Comment');
+const db = require('../config/database');
 
 exports.getPosts = async (req, res) => {
     try {
@@ -216,7 +217,43 @@ exports.vote = async (req, res) => {
             connection.release();
         }
     } catch (error) {
-        console.error('투표 처리 에러:', error);
+        console.error('투�� 처리 에러:', error);
         res.status(500).json({ message: '투표 처리에 실패했습니다.' });
+    }
+};
+
+exports.toggleLike = async (req, res) => {
+    try {
+        const { postId } = req.params;
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ message: '로그인이 필요합니다.' });
+        }
+
+        const result = await Post.toggleLike(postId, userId);
+        res.json(result);
+    } catch (error) {
+        console.error('좋아요 토글 에러:', error);
+        res.status(500).json({ message: '좋아요 처리에 실패했습니다.' });
+    }
+};
+
+exports.incrementViewCount = async (req, res) => {
+    try {
+        const { postId } = req.params;
+        
+        await Post.incrementViewCount(postId);
+        
+        // 업데이트된 조회수 반환
+        const [[{ view_count }]] = await db.query(
+            'SELECT view_count FROM posts WHERE id = ?',
+            [postId]
+        );
+        
+        res.json({ view_count });
+    } catch (error) {
+        console.error('조회수 증가 에러:', error);
+        res.status(500).json({ message: '조회수 증가에 실패했습니다.' });
     }
 };

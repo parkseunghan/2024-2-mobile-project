@@ -185,7 +185,7 @@ class Post {
   }
 
   /**
-   * 사용자가 작성한 게시글을 조회합니다.
+   * 사��자가 작성한 게시글을 조회합니다.
    * @param {number} userId - 사용 ID
    * @returns {Promise<Array>} 시글 목록
    */
@@ -262,7 +262,7 @@ class Post {
   /**
    * 게시글을 삭제합니다.
    * @param {number} postId - 게시글 ID
-   * @param {number} userId - 작성자 ID
+   * @param {number} userId - 성자 ID
    * @returns {Promise<boolean>} 삭제 성공 여부
    */
   static async delete(postId, userId) {
@@ -287,33 +287,44 @@ class Post {
   static async toggleLike(postId, userId) {
     const connection = await db.getConnection();
     try {
-      await connection.beginTransaction();
+        await connection.beginTransaction();
 
-      const [existing] = await connection.query(
-        'SELECT id FROM post_likes WHERE post_id = ? AND user_id = ?',
-        [postId, userId]
-      );
-
-      if (existing.length > 0) {
-        await connection.query(
-          'DELETE FROM post_likes WHERE post_id = ? AND user_id = ?',
-          [postId, userId]
+        // 이미 좋아요 했는지 확인
+        const [existing] = await connection.query(
+            'SELECT id FROM post_likes WHERE post_id = ? AND user_id = ?',
+            [postId, userId]
         );
-      } else {
-        await connection.query(
-          'INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)',
-          [postId, userId]
-        );
-      }
 
-      await connection.commit();
-      return !existing.length;
+        if (existing.length > 0) {
+            // 좋아요 취소
+            await connection.query(
+                'DELETE FROM post_likes WHERE post_id = ? AND user_id = ?',
+                [postId, userId]
+            );
+        } else {
+            // 좋아요 추가
+            await connection.query(
+                'INSERT INTO post_likes (post_id, user_id) VALUES (?, ?)',
+                [postId, userId]
+            );
+        }
+
+        // 현재 좋아요 수 조회
+        const [[{ likeCount }]] = await connection.query(
+            'SELECT COUNT(*) as likeCount FROM post_likes WHERE post_id = ?',
+            [postId]
+        );
+
+        await connection.commit();
+        return {
+            isLiked: !existing.length,
+            likeCount
+        };
     } catch (error) {
-      await connection.rollback();
-      console.error('좋아요 글 에러:', error);
-      throw new Error('좋아요 처리에 실패했습니다.');
+        await connection.rollback();
+        throw error;
     } finally {
-      connection.release();
+        connection.release();
     }
   }
 
@@ -342,12 +353,13 @@ class Post {
    */
   static async incrementViewCount(postId) {
     try {
-      await db.query(
-        'UPDATE posts SET view_count = view_count + 1 WHERE id = ?',
-        [postId]
-      );
+        await db.query(
+            'UPDATE posts SET view_count = view_count + 1 WHERE id = ?',
+            [postId]
+        );
     } catch (error) {
-      console.error('조회수 가 에러:', error);
+        console.error('조회수 증가 에러:', error);
+        throw new Error('조회수 증가에 실패했습니다.');
     }
   }
 
@@ -392,7 +404,7 @@ class Post {
 
   /**
    * 특정 카테고리의 전체 게시글 수를 조회합니다.
-   * @param {string|null} category - 카테고리
+   * @param {string|null} category - 카테고
    * @returns {Promise<number>} 게시글 총 개수
    */
   static async getTotalCount(category = null) {
