@@ -29,23 +29,32 @@ exports.getPostDetail = async (req, res) => {
 
 exports.createPost = async (req, res) => {
     try {
-        const { title, content, category = 'general' } = req.body;
-        const userId = req.user.id;
+        const { title, content, category = 'general', media_url = null } = req.body;
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ message: '로그인이 필요합니다.' });
+        }
 
         const post = await Post.create({
             title,
             content,
             userId,
-            category
+            category,
+            media_url
         });
+
+        const postDetail = await Post.findById(post.id);
 
         res.status(201).json({ 
             message: '게시글이 작성되었습니다.',
-            post 
+            post: postDetail
         });
     } catch (error) {
         console.error('게시글 작성 에러:', error);
-        res.status(500).json({ message: '게시글 작성에 실패했습니다.' });
+        res.status(error.status || 500).json({ 
+            message: error.message || '게시글 작성에 실패했습니다.' 
+        });
     }
 };
 
@@ -82,7 +91,7 @@ exports.deletePost = async (req, res) => {
         const post = await Post.findById(postId);
         
         if (!post) {
-            return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
+            return res.status(404).json({ message: '게시글을 찾 수 없습니다.' });
         }
 
         if (post.userId !== userId) {

@@ -56,10 +56,9 @@ export function PostCard({ post, onPress, onLikePress }) {
                             (post.isLiked || (user && post.likes?.includes(user.id))) && styles.statLiked
                         ]}>
                             <FontAwesome5 
-                                name="heart" 
-                                size={12} 
-                                color={(post.isLiked || (user && post.likes?.includes(user.id))) ? '#FF3B5C' : colors.text.secondary} 
-                                solid={post.isLiked || (user && post.likes?.includes(user.id))}
+                                name={post.isLiked ? "heart" : "heart-o"} 
+                                size={20} 
+                                color={post.isLiked ? colors.primary : colors.text.secondary} 
                             />
                             <Text style={[
                                 styles.statText,

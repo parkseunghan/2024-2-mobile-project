@@ -16,6 +16,10 @@ class Post {
    * @returns {Promise<Object>} 생성된 게시글 정보
    */
   static async create({ title, content, userId, category = 'general', media_url = null, poll_options = null }) {
+    if (!title?.trim() || !content?.trim() || !userId || !category?.trim()) {
+        throw new Error('필수 입력값이 누락되었습니다.');
+    }
+
     const connection = await db.getConnection();
     
     try {
@@ -59,7 +63,7 @@ class Post {
     } catch (error) {
         await connection.rollback();
         console.error('게시글 생성 에러:', error);
-        throw new Error('게시글 생성에 실패했습니다.');
+        throw error;
     } finally {
         connection.release();
     }
@@ -98,48 +102,58 @@ class Post {
    * @param {number} limit - 페이지당 항목 수
    * @returns {Promise<Array>} 게시글 목록
    */
-  static async findAll(category, page = 1, limit = 10, userId = null) {
+  static async findAll(category = null, page = 1, limit = 10, userId = null) {
     try {
-      const offset = (page - 1) * limit;
-      let query = `
-        SELECT 
-          p.*,
-          u.username as author_name,
-          u.avatar as author_avatar,
-          COUNT(DISTINCT pl.id) as like_count,
-          COUNT(DISTINCT c.id) as comment_count
-        FROM posts p
-        LEFT JOIN users u ON p.user_id = u.id
-        LEFT JOIN post_likes pl ON p.id = pl.post_id
-        LEFT JOIN comments c ON p.id = c.post_id
-        WHERE p.is_deleted = false AND p.is_hidden = false
-        ${category ? 'AND p.category = ?' : ''}
-        GROUP BY p.id 
-        ORDER BY p.is_notice DESC, p.created_at DESC 
-        LIMIT ? OFFSET ?
+        const offset = (page - 1) * limit;
+        let query = `
+            SELECT 
+                p.*,
+                u.username as author_name,
+                u.avatar as author_avatar,
+                ur.name as author_rank,
+                ur.color as author_rank_color,
+                COUNT(DISTINCT pl.id) as like_count,
+                COUNT(DISTINCT c.id) as comment_count,
+                ${userId ? 'EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = ?) as is_liked,' : ''}
+                GROUP_CONCAT(DISTINCT c.id) as comment_ids
+            FROM posts p
+            LEFT JOIN users u ON p.user_id = u.id
+            LEFT JOIN user_ranks ur ON u.current_rank_id = ur.id
+            LEFT JOIN post_likes pl ON p.id = pl.post_id
+            LEFT JOIN comments c ON p.id = c.post_id
+            WHERE p.is_deleted = false
+            ${category ? 'AND p.category = ?' : ''}
+            GROUP BY p.id
+            ORDER BY p.created_at DESC
+            LIMIT ? OFFSET ?
         `;
 
-      const params = category 
-        ? [category, limit, offset]
-        : [limit, offset];
+        const params = userId 
+            ? [userId, ...(category ? [category] : []), limit, offset]
+            : [...(category ? [category] : []), limit, offset];
 
-      const [posts] = await db.query(query, params);
+        const [posts] = await db.query(query, params);
 
-      // 사용자가 로그인한 경우 좋아요 상태 확인
-      if (userId) {
+        // 댓글 정보 추가
         for (let post of posts) {
-          const [likeResult] = await db.query(
-            'SELECT 1 FROM post_likes WHERE post_id = ? AND user_id = ?',
-            [post.id, userId]
-          );
-          post.is_liked = likeResult.length > 0;
+            if (post.comment_ids) {
+                const [comments] = await db.query(`
+                    SELECT c.*, u.username as author_name
+                    FROM comments c
+                    LEFT JOIN users u ON c.user_id = u.id
+                    WHERE c.id IN (?)
+                `, [post.comment_ids.split(',')]);
+                post.comments = comments;
+            } else {
+                post.comments = [];
+            }
+            delete post.comment_ids;
         }
-      }
 
-      return posts;
+        return posts;
     } catch (error) {
-      console.error('게시글 목록 조회 에러:', error);
-      throw new Error('게시글 목록을 불러오는데 실패했습니다.');
+        console.error('게시글 목록 조회 에러:', error);
+        throw new Error('게시글 목록을 불러오는데 실패했습니다.');
     }
   }
 
@@ -203,7 +217,7 @@ class Post {
    * @param {number} postId - 게시글 ID
    * @param {number} userId - 작성자 ID
    * @param {Object} updateData - 수정할 데이터
-   * @returns {Promise<boolean>} 수정 성공 여부
+   * @returns {Promise<boolean>} ���정 성공 여부
    */
   static async update(postId, userId, { title, content, mediaUrl }) {
     try {
@@ -214,7 +228,7 @@ class Post {
       return result.affectedRows > 0;
     } catch (error) {
       console.error('게시글 수정 에러:', error);
-      throw new Error('게시글 수정에 실패했습니다.');
+      throw new Error('게시글 수정에 패했습니다.');
     }
   }
 
@@ -306,7 +320,7 @@ class Post {
         [postId]
       );
     } catch (error) {
-      console.error('조회수 증가 에러:', error);
+      console.error('조회수 가 에러:', error);
     }
   }
 

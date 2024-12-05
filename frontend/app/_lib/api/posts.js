@@ -33,7 +33,13 @@ export const postsApi = {
 
     // 게시글 작성
     createPost: async (postData) => {
-        return await client.post('/community/posts', postData);
+        try {
+            const response = await client.post('/api/posts', postData);
+            return response.data;
+        } catch (error) {
+            console.error('게시글 생성 실패:', error);
+            throw error;
+        }
     },
 
     // 게시글 좋아요/취소
@@ -50,7 +56,6 @@ export const postsApi = {
     fetchCategories: async () => {
         try {
             const response = await client.get('/categories');
-            console.log('카테고리 응답:', response.data);
             return response.data.categories;
         } catch (error) {
             console.error('카테고리 목록 조회 실패:', error);

@@ -1,15 +1,13 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, Image, TextInput, ScrollView } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, Image, TextInput, ScrollView, Alert } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { postsApi } from '@app/_lib/api/posts';
 import { useAuth } from '@app/_lib/hooks';
 import { LoadingSpinner } from '@app/_components/common/LoadingSpinner';
-import { formatTimeAgo } from '@app/_lib/utils/date';
 import { colors } from '@app/_styles/colors';
-import { spacing } from '@app/_styles/spacing';
-import { typography } from '@app/_styles/typography';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 export default function CommunityScreen() {
     const router = useRouter();
@@ -54,30 +52,36 @@ export default function CommunityScreen() {
     const renderPost = useCallback(({ item }) => (
         <Pressable
             style={styles.postContainer}
-            onPress={() => router.push(`/posts/${item.id}`)}
+            onPress={() => router.push(`/post/${item.id}`)}
         >
             {item.media_url && (
                 <View style={styles.mediaPreviewContainer}>
-                    <Image source={{ uri: item.media_url }} style={styles.postImage} />
+                    <Image 
+                        source={{ uri: item.media_url }} 
+                        style={styles.postImage}
+                        resizeMode="cover"
+                    />
                 </View>
             )}
             <View style={styles.postContent}>
                 <Text style={styles.postTitle}>{item.title}</Text>
-                <Text style={styles.postAuthor}>
-                    {`${item.author.username} (${item.author.rank.name}) · ${formatTimeAgo(item.created_at)}`}
-                </Text>
+                <View style={styles.authorContainer}>
+                    <Text style={[
+                        styles.authorRank,
+                        { color: item.author_rank_color }
+                    ]}>
+                        {item.author_rank}
+                    </Text>
+                    <Text style={styles.authorName}>{item.author_name}</Text>
+                </View>
                 <View style={styles.postStats}>
-                    <View style={styles.postStat}>
-                        <Icon name="thumb-up" size={16} color={colors.gray[500]} />
+                    <View style={styles.statItem}>
+                        <Icon name="thumb-up" size={16} color={item.is_liked ? colors.primary : colors.gray[500]} />
                         <Text style={styles.statText}>{item.like_count}</Text>
                     </View>
-                    <View style={styles.postStat}>
+                    <View style={styles.statItem}>
                         <Icon name="comment" size={16} color={colors.gray[500]} />
                         <Text style={styles.statText}>{item.comment_count}</Text>
-                    </View>
-                    <View style={styles.postStat}>
-                        <Icon name="visibility" size={16} color={colors.gray[500]} />
-                        <Text style={styles.statText}>{item.view_count}</Text>
                     </View>
                 </View>
             </View>
@@ -90,6 +94,8 @@ export default function CommunityScreen() {
             fetchNextPage();
         }
     }, [hasNextPage, isLoading]);
+
+   
 
     return (
         <View style={styles.container}>
@@ -167,11 +173,12 @@ export default function CommunityScreen() {
             />
 
             {/* 게시글 작성 버튼 */}
-            <Link href="/post/create" asChild>
-                <Pressable style={styles.floatingButton}>
-                    <Icon name="add" size={24} color={colors.white} />
-                </Pressable>
-            </Link>
+            <Pressable
+                style={styles.floatingButton}
+                onPress={() => router.push('/post/create')}
+            >
+                <FontAwesome5 name="plus" size={24} color={colors.background} />
+            </Pressable>
         </View>
     );
 }
@@ -270,15 +277,25 @@ const styles = StyleSheet.create({
         fontSize: 16, 
         fontWeight: 'bold' 
     },
-    postAuthor: { 
-        fontSize: 12, 
-        color: '#555' 
+    authorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    authorRank: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        marginRight: 4,
+    },
+    authorName: {
+        fontSize: 12,
+        color: '#555',
     },
     postStats: {
         flexDirection: 'row',
         marginTop: 8,
     },
-    postStat: {
+    statItem: {
         flexDirection: 'row',
         alignItems: 'center',
         marginRight: 16,

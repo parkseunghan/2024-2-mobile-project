@@ -9,8 +9,8 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
-import { useAuth } from '@app/_context/AuthContext';
-
+import { useAuth } from '@app/_lib/hooks';
+import { Button } from '@app/_components/common/Button';
 
 
 export default function CreatePostScreen() {
@@ -46,18 +46,18 @@ export default function CreatePostScreen() {
                 if (postData.media) {
                     const formData = new FormData();
                     const filename = postData.media.split('/').pop();
-                    
+
                     // 파일 타입 추출 및 설정
                     const match = /\.(\w+)$/.exec(filename);
                     const type = match ? `image/${match[1]}` : 'image/jpeg';
-                    
+
                     // FormData에 파일 추가
                     formData.append('media', {
                         uri: postData.media,
                         name: filename,
                         type
                     });
-                    
+
                     try {
                         const uploadResponse = await postsApi.uploadMedia(formData);
                         media_url = uploadResponse.data.url;
@@ -66,14 +66,14 @@ export default function CreatePostScreen() {
                         throw new Error('미디어 파일 업로드에 실패했습니다.');
                     }
                 }
-                
+
                 // 게시글 생성
                 const response = await postsApi.createPost({
                     ...postData,
                     media_url,
                     user_id: user.id
                 });
-                
+
                 return response.data;
             } catch (error) {
                 console.error('게시글 작성 에러:', error);
@@ -95,7 +95,7 @@ export default function CreatePostScreen() {
     const handleMediaPick = async () => {
         try {
             const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-            
+
             if (!permissionResult.granted) {
                 Alert.alert('알림', '미디어 라이브러리 접근 권한이 필요합니다.');
                 return;
@@ -112,11 +112,11 @@ export default function CreatePostScreen() {
                 const asset = result.assets[0];
                 // 파일 이름 생성
                 const filename = asset.uri.split('/').pop() || 'image.jpg';
-                
+
                 // Blob 생성
                 const response = await fetch(asset.uri);
                 const blob = await response.blob();
-                
+
                 // FormData 생성
                 const formData = new FormData();
                 formData.append('media', {
@@ -156,25 +156,81 @@ export default function CreatePostScreen() {
         }));
     };
 
-    // 게시글 작성
-    const handleSubmit = async () => {
-        if (!form.title.trim() || !form.content.trim()) {
-            Alert.alert('알림', '제목과 내용을 입력해주세요.');
-            return;
+    // 입력값 검증 함수
+    const validateForm = () => {
+        if (!form.title.trim()) {
+            Alert.alert('알림', '제목을 입력해주세요.');
+            return false;
         }
-
-        if (!user) {
-            Alert.alert('알림', '로그인이 필요합니다.');
-            return;
+        if (!form.content.trim()) {
+            Alert.alert('알림', '내용을 입력해주세요.');
+            return false;
         }
-
-        createPostMutation.mutate(form);
+        if (!form.category) {
+            Alert.alert('알림', '카테고리를 선택해주세요.');
+            return false;
+        }
+        return true;
     };
+
+    // 게시글 작성 처리
+    const handleSubmit = async () => {
+        if (!validateForm()) return;
+
+        setLoading(true);
+        try {
+            const postData = {
+                ...form,
+                userId: user.id
+            };
+
+            const response = await createPostMutation.mutateAsync(postData);
+
+            if (response.data) {
+                Alert.alert('성공', '게시글이 작성되었습니다.');
+                router.push('/community');
+            }
+        } catch (error) {
+            Alert.alert('오류', error.message || '게시글 작성에 실패했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 비회원인 경우 UnauthorizedState 컴포넌트 표시
+    if (!user) {
+        return (
+            <View style={styles.container}>
+                <View style={styles.messageContainer}>
+                    <FontAwesome5 name="lock" size={50} color={colors.primary} style={styles.icon} />
+                    <Text style={styles.title}>로그인이 필요합니다</Text>
+                    <Text style={styles.subtitle}>
+                        게시글을 작성하려면 로그인이 필요합니다.
+                    </Text>
+                    <View style={styles.buttonContainer}>
+                        <Button
+                            title="로그인하기"
+                            onPress={() => router.push('/login')}
+                            variant="primary"
+                            fullWidth
+                        />
+                        <Button
+                            title="뒤로가기"
+                            onPress={() => router.back()}
+                            variant="secondary"
+                            fullWidth
+                            style={styles.backBtn}
+                        />
+                    </View>
+                </View>
+            </View>
+        );
+    }
 
     return (
         <ScrollView style={styles.container}>
             <View style={styles.header}>
-                <Pressable 
+                <Pressable
                     style={styles.backButton}
                     onPress={() => router.back()}
                 >
@@ -205,8 +261,8 @@ export default function CreatePostScreen() {
             {/* 카테고리 선택 섹션 */}
             <View style={styles.categorySection}>
                 <Text style={styles.sectionTitle}>카테고리</Text>
-                <ScrollView 
-                    horizontal 
+                <ScrollView
+                    horizontal
                     showsHorizontalScrollIndicator={false}
                     style={styles.categoryList}
                 >
@@ -219,9 +275,9 @@ export default function CreatePostScreen() {
                                     styles.categoryButton,
                                     form.category === category.name && styles.categoryButtonActive
                                 ]}
-                                onPress={() => setForm(prev => ({ 
-                                    ...prev, 
-                                    category: category.name 
+                                onPress={() => setForm(prev => ({
+                                    ...prev,
+                                    category: category.name
                                 }))}
                             >
                                 <Text style={[
@@ -255,7 +311,7 @@ export default function CreatePostScreen() {
                         placeholder="투표 항목 입력"
                         style={styles.pollInput}
                     />
-                    <Pressable 
+                    <Pressable
                         style={styles.addButton}
                         onPress={handleAddPollOption}
                     >
@@ -278,8 +334,8 @@ export default function CreatePostScreen() {
 
             {/* 미디어 미리보기 */}
             {selectedMedia.length > 0 && (
-                <ScrollView 
-                    horizontal 
+                <ScrollView
+                    horizontal
                     style={styles.mediaPreview}
                     showsHorizontalScrollIndicator={false}
                 >
@@ -453,4 +509,33 @@ const styles = StyleSheet.create({
     categoryButtonTextActive: {
         color: '#fff',
     },
+    messageContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: spacing.xl,
+        backgroundColor: colors.background,
+    },
+    icon: {
+        marginBottom: spacing.lg,
+    },
+    title: {
+        ...typography.h1,
+        marginBottom: spacing.sm,
+        color: colors.text.primary,
+        textAlign: 'center',
+    },
+    subtitle: {
+        ...typography.body1,
+        color: colors.text.secondary,
+        textAlign: 'center',
+        marginBottom: spacing.xl,
+    },
+    buttonContainer: {
+        width: '100%',
+        maxWidth: 300,
+    },
+    backBtn: {
+        marginTop: spacing.md,
+    }
 });
