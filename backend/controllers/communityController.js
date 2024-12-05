@@ -31,13 +31,18 @@ exports.getPosts = async (req, res) => {
 exports.getPostDetail = async (req, res) => {
     try {
         const { postId } = req.params;
-        const post = await Post.findById(postId);
+        const userId = req.user?.id;
+        
+        const post = await Post.findById(postId, userId);
         
         if (!post) {
             return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
         }
 
-        res.json({ post });
+        // 조회수 증가
+        await Post.incrementViewCount(postId);
+
+        res.json(post);
     } catch (error) {
         console.error('게시글 상세 조회 에러:', error);
         res.status(500).json({ message: '게시글을 불러오는데 실패했습니다.' });
@@ -167,5 +172,51 @@ exports.deleteComment = async (req, res) => {
     } catch (error) {
         console.error('댓글 삭제 에러:', error);
         res.status(500).json({ message: '댓글 삭제에 실패했습니다.' });
+    }
+};
+
+exports.vote = async (req, res) => {
+    try {
+        const { postId, optionId } = req.params;
+        const userId = req.user.id;
+
+        // 이미 투표했는지 확인
+        const [existing] = await db.query(
+            'SELECT 1 FROM poll_votes WHERE post_id = ? AND user_id = ?',
+            [postId, userId]
+        );
+
+        if (existing.length > 0) {
+            return res.status(400).json({ message: '이미 투표하셨습니다.' });
+        }
+
+        // 트랜잭션 시작
+        const connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        try {
+            // 투표 기록
+            await connection.query(
+                'INSERT INTO poll_votes (post_id, option_id, user_id) VALUES (?, ?, ?)',
+                [postId, optionId, userId]
+            );
+
+            // 투표 수 증가
+            await connection.query(
+                'UPDATE poll_options SET votes = votes + 1 WHERE id = ?',
+                [optionId]
+            );
+
+            await connection.commit();
+            res.json({ message: '투표가 완료되었습니다.' });
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+    } catch (error) {
+        console.error('투표 처리 에러:', error);
+        res.status(500).json({ message: '투표 처리에 실패했습니다.' });
     }
 };

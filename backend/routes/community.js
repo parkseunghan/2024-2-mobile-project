@@ -24,4 +24,7 @@ router.post('/posts/:postId/comments', authMiddleware, communityController.creat
 // 댓글 삭제 (인증 필요)
 router.delete('/comments/:commentId', authMiddleware, communityController.deleteComment);
 
+// 투표하기 (인증 필요)
+router.post('/posts/:postId/vote/:optionId', authMiddleware, communityController.vote);
+
 module.exports = router; 

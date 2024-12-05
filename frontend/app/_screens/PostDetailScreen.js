@@ -41,14 +41,14 @@ export default function PostDetailScreen() {
             setError(null);
             console.log('Loading post with ID:', postId);
             
-            const response = await communityApi.getPost(postId);
-            console.log('Loaded post data:', response);
+            const { data } = await communityApi.getPost(postId);
+            console.log('Loaded post data:', data);
             
-            if (!response.post) {
+            if (!data) {
                 throw new Error('게시글을 찾을 수 없습니다.');
             }
 
-            setPost(response.post);
+            setPost(data);
         } catch (err) {
             console.error('Error loading post:', err);
             setError(typeof err === 'string' ? err : '게시글을 불러오는데 실패했습니다.');
@@ -98,6 +98,21 @@ export default function PostDetailScreen() {
         }
     };
 
+    // 투표 핸들러
+    const handleVote = async (optionId) => {
+        if (!user) {
+            Alert.alert('알림', '로그인이 필요한 기능입니다.');
+            return;
+        }
+
+        try {
+            await communityApi.vote(postId, optionId);
+            loadPost(); // 게시글 데이터 새로고침
+        } catch (error) {
+            Alert.alert('오류', '투표 처리 중 오류가 발생했습니다.');
+        }
+    };
+
     // 로딩 상태 표시
     if (loading) {
         return <LoadingState />;
@@ -126,71 +141,117 @@ export default function PostDetailScreen() {
             <View style={styles.postHeader}>
                 <Text style={styles.title}>{post.title}</Text>
                 <View style={styles.authorInfo}>
-                    <Text style={styles.author}>
-                        {post.author?.username || '익명'}
-                    </Text>
+                    <View style={styles.authorContainer}>
+                        <Text style={styles.author}>{post.author_name}</Text>
+                        <View style={[styles.rankBadge, { backgroundColor: post.rank_color }]}>
+                            <Text style={styles.rankText}>{post.author_rank}</Text>
+                        </View>
+                    </View>
+                    <View style={styles.postStats}>
+                        <View style={styles.statItem}>
+                            <FontAwesome5 name="eye" size={14} color={colors.text.secondary} />
+                            <Text style={styles.statText}>{post.view_count}</Text>
+                        </View>
+                        <Pressable style={styles.statItem} onPress={handleLikeToggle}>
+                            <FontAwesome5 
+                                name="heart" 
+                                size={14} 
+                                solid={post.is_liked} 
+                                color={post.is_liked ? colors.primary : colors.text.secondary} 
+                            />
+                            <Text style={styles.statText}>{post.like_count}</Text>
+                        </Pressable>
+                        <View style={styles.statItem}>
+                            <FontAwesome5 name="comment" size={14} color={colors.text.secondary} />
+                            <Text style={styles.statText}>{post.comment_count}</Text>
+                        </View>
+                    </View>
                     <Text style={styles.date}>
-                        {new Date(post.created_at).toLocaleDateString()}
+                        {new Date(post.created_at).toLocaleDateString('ko-KR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}
                     </Text>
                 </View>
             </View>
 
-            <Text style={styles.postContent}>{post.content}</Text>
-
-            {post.media_url && (
-                <View style={styles.mediaContainer}>
+            <View style={styles.content}>
+                <Text style={styles.contentText}>{post.content}</Text>
+                {post.media_url && (
                     <Image 
                         source={{ uri: post.media_url }} 
-                        style={styles.media}
+                        style={styles.mediaImage}
                         resizeMode="contain"
                     />
+                )}
+            </View>
+
+            {post.poll_options && post.poll_options.length > 0 && (
+                <View style={styles.pollContainer}>
+                    <Text style={styles.pollTitle}>투표</Text>
+                    {post.poll_options.map((option) => (
+                        <Pressable
+                            key={option.id}
+                            style={[
+                                styles.pollOption,
+                                option.voted && styles.pollOptionVoted
+                            ]}
+                            onPress={() => handleVote(option.id)}
+                            disabled={post.poll_options.some(opt => opt.voted)}
+                        >
+                            <Text style={styles.pollOptionText}>{option.text}</Text>
+                            <Text style={styles.pollVoteCount}>{option.votes}표</Text>
+                        </Pressable>
+                    ))}
                 </View>
             )}
 
-            <View style={styles.actions}>
-                <Pressable 
-                    onPress={handleLikeToggle}
-                    style={styles.likeButton}
-                >
-                    <FontAwesome5 
-                        name={post.isLiked ? "heart" : "heart-o"} 
-                        size={20} 
-                        color={post.isLiked ? colors.primary : colors.text.secondary} 
-                    />
-                    <Text style={styles.likeCount}>{post.like_count || 0}</Text>
-                </Pressable>
-            </View>
+            <View style={styles.commentsSection}>
+                <Text style={styles.commentsTitle}>댓글 {post.comment_count}개</Text>
+                
+                {/* 댓글 입력 */}
+                {user && (
+                    <View style={styles.commentInputContainer}>
+                        <TextInput
+                            style={styles.commentInput}
+                            value={newComment}
+                            onChangeText={setNewComment}
+                            placeholder="댓글을 입력하세요"
+                            multiline
+                        />
+                        <Pressable 
+                            style={[
+                                styles.commentButton,
+                                !newComment.trim() && styles.commentButtonDisabled
+                            ]} 
+                            onPress={handleComment}
+                            disabled={!newComment.trim()}
+                        >
+                            <Text style={styles.commentButtonText}>작성</Text>
+                        </Pressable>
+                    </View>
+                )}
 
-            <View style={styles.comments}>
-                <Text style={styles.commentsTitle}>
-                    댓글 {post.comments?.length || 0}개
-                </Text>
-                {post.comments?.map(comment => (
+                {/* 댓글 목록 */}
+                {post.comments?.map((comment) => (
                     <View key={comment.id} style={styles.commentItem}>
-                        <Text style={styles.commentAuthor}>
-                            {comment.author?.username || '익명'}
-                        </Text>
-                        <Text style={styles.commentContent}>
-                            {comment.content}
-                        </Text>
+                        <View style={styles.commentHeader}>
+                            <View style={styles.commentAuthor}>
+                                <Text style={styles.commentAuthorName}>{comment.author_name}</Text>
+                                <View style={[styles.rankBadge, { backgroundColor: comment.rank_color }]}>
+                                    <Text style={styles.rankText}>{comment.author_rank}</Text>
+                                </View>
+                            </View>
+                            <Text style={styles.commentDate}>
+                                {new Date(comment.created_at).toLocaleDateString('ko-KR')}
+                            </Text>
+                        </View>
+                        <Text style={styles.commentContent}>{comment.content}</Text>
                     </View>
                 ))}
-            </View>
-
-            <View style={styles.commentInput}>
-                <TextInput
-                    style={styles.input}
-                    placeholder="댓글을 입력하세요"
-                    value={newComment}
-                    onChangeText={setNewComment}
-                    multiline
-                />
-                <Pressable 
-                    onPress={handleComment}
-                    style={styles.submitButton}
-                >
-                    <Text style={styles.submitButtonText}>등록</Text>
-                </Pressable>
             </View>
         </ScrollView>
     );
@@ -208,101 +269,158 @@ const styles = StyleSheet.create({
         borderBottomColor: colors.border,
     },
     title: {
-        ...typography.h2,
-        marginBottom: spacing.sm,
+        ...typography.h1,
+        marginBottom: spacing.md,
     },
     authorInfo: {
+        marginBottom: spacing.sm,
+    },
+    authorContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
+        marginBottom: spacing.xs,
     },
     author: {
-        ...typography.body,
+        ...typography.subtitle,
+        marginRight: spacing.sm,
+    },
+    rankBadge: {
+        paddingHorizontal: spacing.sm,
+        paddingVertical: spacing.xs,
+        borderRadius: 12,
+    },
+    rankText: {
+        ...typography.caption,
+        color: colors.text.primary,
+    },
+    postStats: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: spacing.xs,
+    },
+    statItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginRight: spacing.md,
+        paddingVertical: spacing.xs,
+        paddingHorizontal: spacing.sm,
+    },
+    statText: {
+        ...typography.caption,
         color: colors.text.secondary,
+        marginLeft: spacing.xs,
     },
     date: {
         ...typography.caption,
-        color: colors.text.tertiary,
-    },
-    postContent: {
-        ...typography.body,
-        padding: spacing.lg,
-    },
-    mediaContainer: {
-        width: '100%',
-        height: 200,
-        marginBottom: spacing.lg,
-    },
-    media: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 8,
-    },
-    actions: {
-        flexDirection: 'row',
-        padding: spacing.md,
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
-    },
-    likeButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: spacing.sm,
-        borderRadius: 20,
-        backgroundColor: colors.surface,
-    },
-    likeCount: {
-        ...typography.caption,
-        marginLeft: spacing.xs,
         color: colors.text.secondary,
     },
-    comments: {
+    content: {
         padding: spacing.lg,
     },
-    commentsTitle: {
+    contentText: {
+        ...typography.body,
+        marginBottom: spacing.lg,
+    },
+    mediaImage: {
+        width: '100%',
+        height: 300,
+        marginTop: spacing.md,
+        borderRadius: 8,
+    },
+    pollContainer: {
+        padding: spacing.lg,
+        backgroundColor: colors.surface,
+        borderRadius: 8,
+        marginBottom: spacing.lg,
+    },
+    pollTitle: {
         ...typography.h3,
         marginBottom: spacing.md,
     },
-    commentItem: {
+    pollOption: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
         padding: spacing.md,
-        backgroundColor: colors.surface,
+        backgroundColor: colors.background,
         borderRadius: 8,
         marginBottom: spacing.sm,
+        borderWidth: 1,
+        borderColor: colors.border,
     },
-    commentAuthor: {
-        ...typography.caption,
-        fontWeight: '600',
-        marginBottom: spacing.xs,
+    pollOptionVoted: {
+        backgroundColor: colors.primary + '20',
+        borderColor: colors.primary,
     },
-    commentContent: {
+    pollOptionText: {
         ...typography.body,
+        flex: 1,
     },
-    commentInput: {
-        padding: spacing.md,
+    pollVoteCount: {
+        ...typography.caption,
+        color: colors.text.secondary,
+        marginLeft: spacing.sm,
+    },
+    commentsSection: {
+        padding: spacing.lg,
         borderTopWidth: 1,
         borderTopColor: colors.border,
+    },
+    commentsTitle: {
+        ...typography.h2,
+        marginBottom: spacing.lg,
+    },
+    commentInputContainer: {
+        flexDirection: 'row',
+        marginBottom: spacing.lg,
+    },
+    commentInput: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: 8,
+        padding: spacing.sm,
+        marginRight: spacing.sm,
+        ...typography.body,
+    },
+    commentButton: {
+        backgroundColor: colors.primary,
+        paddingHorizontal: spacing.lg,
+        justifyContent: 'center',
+        borderRadius: 8,
+    },
+    commentButtonText: {
+        ...typography.button,
+        color: colors.background,
+    },
+    commentButtonDisabled: {
+        backgroundColor: colors.border,
+    },
+    commentItem: {
+        padding: spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+    },
+    commentHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: spacing.xs,
+    },
+    commentAuthor: {
         flexDirection: 'row',
         alignItems: 'center',
     },
-    input: {
-        flex: 1,
-        ...typography.body,
-        backgroundColor: colors.surface,
-        borderRadius: 20,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
+    commentAuthorName: {
+        ...typography.subtitle,
         marginRight: spacing.sm,
-        minHeight: 40,
     },
-    submitButton: {
-        backgroundColor: colors.primary,
-        paddingHorizontal: spacing.md,
-        paddingVertical: spacing.sm,
-        borderRadius: 20,
+    commentDate: {
+        ...typography.caption,
+        color: colors.text.secondary,
     },
-    submitButtonText: {
-        ...typography.button,
-        color: colors.background,
+    commentContent: {
+        ...typography.body,
     },
     errorContainer: {
         flex: 1,

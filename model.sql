@@ -19,7 +19,7 @@ CREATE TABLE users (
   is_active BOOLEAN DEFAULT true,            -- 활동 여부
   bio TEXT,                                    -- 자기소개  
   avatar VARCHAR(255),                         -- 프로필 이미지
-  current_rank_id INT,                          -- 현재 등급 ID
+  current_rank_id INT default 1,                          -- 현재 등급 ID
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (current_rank_id) REFERENCES user_ranks(id)
@@ -64,15 +64,15 @@ CREATE TABLE posts (
 );
 
 
--- post_likes 테이블 생성
+-- 게시글 좋아요 테이블
 CREATE TABLE post_likes (
     id INT PRIMARY KEY AUTO_INCREMENT,
     post_id INT NOT NULL,
     user_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (post_id) REFERENCES posts(id),
-    FOREIGN KEY (user_id) REFERENCES users(id),
-    UNIQUE KEY unique_post_like (post_id, user_id)
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_like (post_id, user_id)
 );
 
 -- comments 테이블 생성
@@ -108,11 +108,11 @@ CREATE TABLE video_summaries (
 -- 게시글 카테고리 테이블 추가
 CREATE TABLE post_categories (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(50) NOT NULL UNIQUE, -- 카테고리 이름
-    description TEXT,                 -- 설명
+    name VARCHAR(50) NOT NULL,
+    description TEXT,
+    created_by INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_active BOOLEAN DEFAULT true,   -- 카테고리 활성화 여부
-    created_by INT NOT NULL,          -- 카테고리 생성자
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
@@ -125,6 +125,29 @@ CREATE TABLE comment_likes (
     FOREIGN KEY (comment_id) REFERENCES comments(id),
     FOREIGN KEY (user_id) REFERENCES users(id),
     UNIQUE KEY unique_comment_like (comment_id, user_id)
+);
+
+-- 투표 옵션 테이블
+CREATE TABLE poll_options (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    post_id INT NOT NULL,
+    text VARCHAR(200) NOT NULL,
+    votes INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE
+);
+
+-- 투표 기록 테이블
+CREATE TABLE poll_votes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    post_id INT NOT NULL,
+    option_id INT NOT NULL,
+    user_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+    FOREIGN KEY (option_id) REFERENCES poll_options(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_vote (post_id, user_id)
 );
 
 -- 사용자 활동 로그 테이블 추가
@@ -211,7 +234,7 @@ CREATE INDEX idx_visits_user_id ON visits(user_id);
 -- 모든 테이블 삭제 (필요시 주석 해제하여 사용)
 -- SET FOREIGN_KEY_CHECKS = 0;
 -- DROP TABLE IF EXISTS
-    -- admin_activity_logs,
+--     admin_activity_logs,
 --     user_activity_logs,
 --     comment_likes,
 --     post_likes,
@@ -225,13 +248,12 @@ CREATE INDEX idx_visits_user_id ON visits(user_id);
 --     post_categories,
 --     users,
 --     user_ranks,
---     visits;
+--     visits,
+--     poll_options,
+--     poll_votes; 
 -- SET FOREIGN_KEY_CHECKS = 1;
 
--- post_categories 테이블에 기본 데이터 추가
-INSERT INTO post_categories (name, description, created_by) VALUES 
-('일반', '일반적인 게시글', 1),
-('상품 리뷰', '상품에 대한 리뷰', 1),
-('맛집', '맛집 정보와 리뷰', 1),
-('여행', '여행 정보와 후기', 1);
+
+
+
 

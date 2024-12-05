@@ -74,24 +74,66 @@ class Post {
    * @param {number} postId - 게시글 ID
    * @returns {Promise<Object|null>} 게시글 정보
    */
-  static async findById(postId) {
+  static async findById(postId, userId = null) {
     try {
-      const [rows] = await db.query(`
-        SELECT p.*, 
-               u.username as author_name,
-               COUNT(DISTINCT pl.id) as like_count,
-               COUNT(DISTINCT c.id) as comment_count
-        FROM posts p
-        LEFT JOIN users u ON p.user_id = u.id
-        LEFT JOIN post_likes pl ON p.id = pl.post_id
-        LEFT JOIN comments c ON p.id = c.post_id
-        WHERE p.id = ? AND p.is_deleted = false
-        GROUP BY p.id
-      `, [postId]);
-      return rows[0];
+        const [post] = await db.query(`
+            SELECT 
+                p.*,
+                u.username as author_name,
+                u.current_rank_id,
+                ur.name as author_rank,
+                ur.color as rank_color,
+                COUNT(DISTINCT pl.id) as like_count,
+                COUNT(DISTINCT c.id) as comment_count,
+                EXISTS(SELECT 1 FROM post_likes WHERE post_id = p.id AND user_id = ?) as is_liked
+            FROM posts p
+            LEFT JOIN users u ON p.user_id = u.id
+            LEFT JOIN user_ranks ur ON u.current_rank_id = ur.id
+            LEFT JOIN post_likes pl ON p.id = pl.post_id
+            LEFT JOIN comments c ON p.id = c.post_id
+            WHERE p.id = ? AND p.is_deleted = false
+            GROUP BY p.id
+        `, [userId, postId]);
+
+        if (!post) return null;
+
+        // 투표 옵션 조회 (테이블이 있는 경우에만)
+        try {
+            const [pollOptions] = await db.query(`
+                SELECT 
+                    po.*,
+                    EXISTS(SELECT 1 FROM poll_votes WHERE option_id = po.id AND user_id = ?) as voted
+                FROM poll_options po
+                WHERE po.post_id = ?
+            `, [userId, postId]);
+            
+            post.poll_options = pollOptions;
+        } catch (error) {
+            // poll_options 테이블이 없는 경우 무시
+            post.poll_options = null;
+        }
+
+        // 댓글 조회
+        const [comments] = await db.query(`
+            SELECT 
+                c.*,
+                u.username as author_name,
+                ur.name as author_rank,
+                ur.color as rank_color
+            FROM comments c
+            LEFT JOIN users u ON c.user_id = u.id
+            LEFT JOIN user_ranks ur ON u.current_rank_id = ur.id
+            WHERE c.post_id = ? AND c.is_deleted = false
+            ORDER BY c.created_at DESC
+        `, [postId]);
+
+        return {
+            ...post,
+            comments
+        };
     } catch (error) {
-      console.error('게시글 조회 에러:', error);
-      throw new Error('게시글 조회에 실패했습니다.');
+        console.error('게시글 상세 조회 에러:', error);
+        throw error;
     }
   }
 
@@ -160,7 +202,7 @@ class Post {
   /**
    * 사용자가 작성한 게시글을 조회합니다.
    * @param {number} userId - 사용자 ID
-   * @returns {Promise<Array>} 게시글 목록
+   * @returns {Promise<Array>} ���시글 목록
    */
   static async findByUserId(userId) {
     try {
@@ -283,7 +325,7 @@ class Post {
       return !existing.length;
     } catch (error) {
       await connection.rollback();
-      console.error('좋아요 토글 에러:', error);
+      console.error('좋아요 ���글 에러:', error);
       throw new Error('좋아요 처리에 실패했습니다.');
     } finally {
       connection.release();
