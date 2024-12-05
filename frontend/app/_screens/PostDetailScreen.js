@@ -23,8 +23,11 @@ export default function PostDetailScreen() {
     const [error, setError] = useState(null);
     const [newComment, setNewComment] = useState('');
 
+   
+    
     // 게시글 데이터 로드
     useEffect(() => {
+        console.log('PostDetailScreen - postId:', postId);
         if (!postId) {
             setError('게시글 ID가 없습니다.');
             setLoading(false);
@@ -40,18 +43,36 @@ export default function PostDetailScreen() {
             setLoading(true);
             setError(null);
             console.log('Loading post with ID:', postId);
-            
+
             const response = await communityApi.getPost(postId);
-            console.log('API Response:', response);
-            
-            if (!response.data) {
+            console.log('Raw API Response:', response);
+
+            if (!response?.data) {
                 throw new Error('게시글을 찾을 수 없습니다.');
             }
 
-            setPost(response.data);
-            console.log('Post data set:', response.data);
+            // 데이터 구조 확인 및 정규화
+            const postData = response.data[0] || response.data;
+            const comments = response.data.comments || [];
+
+            const normalizedPost = {
+                ...postData,
+                comments
+            };
+
+            console.log('Normalized post data:', normalizedPost);
+
+            if (!normalizedPost.id) {
+                throw new Error('게시글 데이터가 없습니다.');
+            }
+
+            setPost(normalizedPost);
         } catch (err) {
-            console.error('Error loading post:', err);
+            console.error('Error loading post:', {
+                message: err.message,
+                stack: err.stack,
+                response: err.response?.data
+            });
             setError(err.message || '게시글을 불러오는데 실패했습니다.');
         } finally {
             setLoading(false);
@@ -94,7 +115,7 @@ export default function PostDetailScreen() {
             setNewComment('');
             loadPost(); // 게시글 데이터 새로고침
         } catch (error) {
-            Alert.alert('오류', '댓글 작성에 실패했습니다.');
+            Alert.alert('오', '댓글 작성에 실패했습니다.');
         }
     };
 
@@ -153,11 +174,11 @@ export default function PostDetailScreen() {
                             <Text style={styles.statText}>{post.view_count}</Text>
                         </View>
                         <Pressable style={styles.statItem} onPress={handleLikeToggle}>
-                            <FontAwesome5 
-                                name="heart" 
-                                size={14} 
-                                solid={post.is_liked} 
-                                color={post.is_liked ? colors.primary : colors.text.secondary} 
+                            <FontAwesome5
+                                name="heart"
+                                size={14}
+                                solid={post.is_liked}
+                                color={post.is_liked ? colors.primary : colors.text.secondary}
                             />
                             <Text style={styles.statText}>{post.like_count}</Text>
                         </Pressable>
@@ -181,8 +202,8 @@ export default function PostDetailScreen() {
             <View style={styles.content}>
                 <Text style={styles.contentText}>{post.content}</Text>
                 {post.media_url && (
-                    <Image 
-                        source={{ uri: post.media_url }} 
+                    <Image
+                        source={{ uri: post.media_url }}
                         style={styles.mediaImage}
                         resizeMode="contain"
                     />
@@ -211,7 +232,7 @@ export default function PostDetailScreen() {
 
             <View style={styles.commentsSection}>
                 <Text style={styles.commentsTitle}>댓글 {post.comment_count}개</Text>
-                
+
                 {/* 댓글 입력 */}
                 {user && (
                     <View style={styles.commentInputContainer}>
@@ -222,11 +243,11 @@ export default function PostDetailScreen() {
                             placeholder="댓글을 입력하세요"
                             multiline
                         />
-                        <Pressable 
+                        <Pressable
                             style={[
                                 styles.commentButton,
                                 !newComment.trim() && styles.commentButtonDisabled
-                            ]} 
+                            ]}
                             onPress={handleComment}
                             disabled={!newComment.trim()}
                         >

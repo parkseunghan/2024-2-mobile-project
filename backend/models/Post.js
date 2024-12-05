@@ -77,7 +77,7 @@ class Post {
   static async findById(postId, userId = null) {
     try {
         // 게시글 기본 정보 조회
-        const [post] = await db.query(`
+        const [[post]] = await db.query(`
             SELECT 
                 p.*,
                 u.username as author_name,
@@ -111,12 +111,6 @@ class Post {
             WHERE c.post_id = ? AND c.is_deleted = false
             ORDER BY c.created_at DESC
         `, [postId]);
-
-        // 조회수 증가
-        await db.query(
-            'UPDATE posts SET view_count = view_count + 1 WHERE id = ?',
-            [postId]
-        );
 
         return {
             ...post,
@@ -192,7 +186,7 @@ class Post {
 
   /**
    * 사용자가 작성한 게시글을 조회합니다.
-   * @param {number} userId - 사용��� ID
+   * @param {number} userId - 사용 ID
    * @returns {Promise<Array>} 시글 목록
    */
   static async findByUserId(userId) {

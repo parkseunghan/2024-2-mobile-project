@@ -39,9 +39,9 @@ exports.getPostDetail = async (req, res) => {
             return res.status(404).json({ message: '게시글을 찾을 수 없습니다.' });
         }
 
-        // 조회수 증가
-        await Post.incrementViewCount(postId);
-
+        // 응답 데이터 구조 확인을 위한 로깅
+        console.log('Sending post data:', post);
+        
         res.json(post);
     } catch (error) {
         console.error('게시글 상세 조회 에러:', error);

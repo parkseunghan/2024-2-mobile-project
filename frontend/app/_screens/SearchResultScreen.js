@@ -22,8 +22,7 @@ export default function SearchResultScreen() {
     const router = useRouter();
     const { searchQuery, searchResults, loading, error, setSearchQuery } = useContext(SearchContext);    
     const{ posts } = usePosts();
-    const [activeTab, setActiveTab] = useState('videos');
-
+    
     useEffect(() => {
         return () => {
           setSearchQuery(''); // 검색어 초기화
