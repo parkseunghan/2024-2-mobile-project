@@ -185,7 +185,7 @@ class Post {
   }
 
   /**
-   * 사��자가 작성한 게시글을 조회합니다.
+   * 사자가 작성한 게시글을 조회합니다.
    * @param {number} userId - 사용 ID
    * @returns {Promise<Array>} 시글 목록
    */
@@ -218,24 +218,30 @@ class Post {
    */
   static async findLikedByUserId(userId) {
     try {
+      console.log('Finding liked posts for user:', userId);
+      
       const [rows] = await db.query(`
         SELECT p.*, 
                u.username as author_name,
                COUNT(DISTINCT pl2.id) as like_count,
-               COUNT(DISTINCT c.id) as comment_count
+               COUNT(DISTINCT c.id) as comment_count,
+               TRUE as is_liked
         FROM posts p
         INNER JOIN post_likes pl ON p.id = pl.post_id
-        LEFT JOIN users u ON p.user_id = u.id
+        INNER JOIN users u ON p.user_id = u.id
         LEFT JOIN post_likes pl2 ON p.id = pl2.post_id
         LEFT JOIN comments c ON p.id = c.post_id
-        WHERE pl.user_id = ? AND p.is_deleted = false
+        WHERE pl.user_id = ?
+        AND p.is_deleted = false
         GROUP BY p.id
-        ORDER BY pl.created_at DESC
+        ORDER BY p.created_at DESC
       `, [userId]);
+
+      console.log('Found posts:', rows);
       return rows;
     } catch (error) {
-      console.error('좋아요 게시글 조회 에러:', error);
-      throw new Error('게시글 조회에 실패했습니다.');
+      console.error('좋아요한 게시글 조회 에러:', error);
+      throw new Error('좋아요한 게시글 조회에 실패했습니다.');
     }
   }
 
@@ -274,7 +280,7 @@ class Post {
       return result.affectedRows > 0;
     } catch (error) {
       console.error('게시글 삭제 에러:', error);
-      throw new Error('게시글 삭제에 실패했습니다.');
+      throw new Error('게시글 삭제�� 실패했습니다.');
     }
   }
 

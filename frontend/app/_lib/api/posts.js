@@ -53,7 +53,15 @@ export const postsApi = {
 
     // 좋아요한 게시글 목록
     fetchLikedPosts: async () => {
-        return await client.get('/posts/liked');
+        try {
+            console.log('Fetching liked posts...');
+            const response = await client.get('/community/posts/liked');
+            console.log('Liked posts response:', response);
+            return response;
+        } catch (error) {
+            console.error('Liked posts error:', error.response || error);
+            throw error;
+        }
     },
 
     // 카테고리 목록 조회

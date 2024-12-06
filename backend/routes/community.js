@@ -6,6 +6,9 @@ const authMiddleware = require('../middleware/authMiddleware');
 // 게시글 목록 조회
 router.get('/posts', communityController.getPosts);
 
+// 좋아요한 게시글 목록 조회 (인증 필요)
+router.get('/posts/liked', authMiddleware, communityController.getLikedPosts);
+
 // 게시글 상세 조회
 router.get('/posts/:postId', communityController.getPostDetail);
 

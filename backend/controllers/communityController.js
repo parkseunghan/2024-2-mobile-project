@@ -76,7 +76,7 @@ exports.createPost = async (req, res) => {
     } catch (error) {
         console.error('게시글 작성 에러:', error);
         res.status(error.status || 500).json({ 
-            message: error.message || '게시글 작성에 실패했습니다.' 
+            message: error.message || '게시글 작성에 실했습니다.' 
         });
     }
 };
@@ -118,7 +118,7 @@ exports.deletePost = async (req, res) => {
         }
 
         if (post.userId !== userId) {
-            return res.status(403).json({ message: '게시글을 삭제할 권한이 없습니다.' });
+            return res.status(403).json({ message: '게시글을 삭제할 권한이 없��니다.' });
         }
 
         await Post.delete(postId);
@@ -217,7 +217,7 @@ exports.vote = async (req, res) => {
             connection.release();
         }
     } catch (error) {
-        console.error('투�� 처리 에러:', error);
+        console.error('투 처리 에러:', error);
         res.status(500).json({ message: '투표 처리에 실패했습니다.' });
     }
 };
@@ -255,5 +255,26 @@ exports.incrementViewCount = async (req, res) => {
     } catch (error) {
         console.error('조회수 증가 에러:', error);
         res.status(500).json({ message: '조회수 증가에 실패했습니다.' });
+    }
+};
+
+exports.getLikedPosts = async (req, res) => {
+    try {
+        console.log('Getting liked posts for user:', req.user);
+        const userId = req.user?.id;
+
+        if (!userId) {
+            console.log('No user ID found');
+            return res.status(401).json({ message: '로그인이 필요합니다.' });
+        }
+
+        console.log('Fetching liked posts from database...');
+        const posts = await Post.findLikedByUserId(userId);
+        console.log('Found liked posts:', posts);
+        
+        res.json({ posts });
+    } catch (error) {
+        console.error('좋아요한 게시글 조회 에러:', error);
+        res.status(500).json({ message: '좋아요한 게시글을 불러오는데 실패했습니다.' });
     }
 };
