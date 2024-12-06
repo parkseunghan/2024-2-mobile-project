@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, Image, TextInput, ScrollView, Alert, Button } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, Image, TextInput, ScrollView, Alert } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
@@ -8,6 +8,9 @@ import { useAuth } from '@app/_lib/hooks';
 import { LoadingSpinner } from '@app/_components/common/LoadingSpinner';
 import { colors } from '@app/_styles/colors';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { spacing } from '@app/_styles/spacing';
+import { typography } from '@app/_styles/typography';
+import { Button } from '@app/_components/common/Button';
 
 export default function CommunityScreen() {
     const router = useRouter();
@@ -25,8 +28,8 @@ export default function CommunityScreen() {
         isFetchingNextPage: isFetchingNextAllPosts
     } = useInfiniteQuery({
         queryKey: ['posts', selectedCategory, searchText],
-        queryFn: ({ pageParam = 1 }) => postsApi.fetchPosts({ 
-            page: pageParam, 
+        queryFn: ({ pageParam = 1 }) => postsApi.fetchPosts({
+            page: pageParam,
             category: selectedCategory,
             search: searchText,
             searchFields: ['title', 'content', 'author_name']
@@ -43,7 +46,6 @@ export default function CommunityScreen() {
         queryKey: ['likedPosts'],
         queryFn: postsApi.fetchLikedPosts,
         enabled: !!user, // 로그인한 경우에만 실행
-        staleTime: 1000 * 60 * 5,
     });
 
     // 카테고리 목록 조회
@@ -85,10 +87,10 @@ export default function CommunityScreen() {
                         <Text style={styles.statText}>{item.view_count}</Text>
                     </View>
                     <View style={styles.statItem}>
-                        <Icon 
-                            name="thumb-up" 
-                            size={16} 
-                            color={item.is_liked ? colors.primary : colors.text.secondary} 
+                        <Icon
+                            name="thumb-up"
+                            size={16}
+                            color={item.is_liked ? colors.primary : colors.text.secondary}
                         />
                         <Text style={styles.statText}>{item.like_count}</Text>
                     </View>
@@ -99,8 +101,8 @@ export default function CommunityScreen() {
                 </View>
             </View>
             {item.media_url && (
-                <Image 
-                    source={{ uri: item.media_url }} 
+                <Image
+                    source={{ uri: item.media_url }}
                     style={styles.postImage}
                     resizeMode="cover"
                 />
@@ -115,25 +117,6 @@ export default function CommunityScreen() {
         }
     }, [hasNextAllPosts, isFetchingNextAllPosts]);
 
-    // 비로그인 상태에서 좋아요 탭 클릭시 보여줄 컴포넌트
-    const UnauthorizedState = () => (
-        <View style={styles.unauthorizedContainer}>
-            <FontAwesome5 name="heart" size={50} color={colors.primary} style={styles.icon} />
-            <Text style={styles.unauthorizedTitle}>로그인이 필요합니다</Text>
-            <Text style={styles.unauthorizedSubtitle}>
-                좋아요한 게시글을 보려면 로그인이 필요합니다.
-            </Text>
-            <View style={styles.buttonContainer}>
-                <Button
-                    title="로그인하기"
-                    onPress={() => router.push('/login')}
-                    variant="primary"
-                    fullWidth
-                />
-            </View>
-        </View>
-    );
-
     return (
         <View style={styles.container}>
             {/* 검색 입력 */}
@@ -144,7 +127,7 @@ export default function CommunityScreen() {
                 onChangeText={setSearchText}
             />
 
-            {/* 탭 메뉴 추가 */}
+            {/* 탭 메뉴 */}
             <View style={styles.tabContainer}>
                 <Pressable
                     style={[styles.tab, activeTab === 'all' && styles.activeTab]}
@@ -156,7 +139,9 @@ export default function CommunityScreen() {
                 </Pressable>
                 <Pressable
                     style={[styles.tab, activeTab === 'liked' && styles.activeTab]}
-                    onPress={() => setActiveTab('liked')}
+                    onPress={() => {
+                        setActiveTab('liked');
+                    }}
                 >
                     <Text style={[styles.tabText, activeTab === 'liked' && styles.activeTabText]}>
                         좋아요한 글
@@ -167,11 +152,10 @@ export default function CommunityScreen() {
             {activeTab === 'all' ? (
                 <>
                     {/* 카테고리 필터 */}
-                    <ScrollView 
-                        horizontal 
+                    <ScrollView
+                        horizontal
                         style={styles.categoryContainer}
                         showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.categoryContent}
                     >
                         {categories.map((category) => (
                             <Pressable
@@ -212,7 +196,23 @@ export default function CommunityScreen() {
             ) : (
                 // 좋아요 탭 컨텐츠
                 !user ? (
-                    <UnauthorizedState />
+                    <View style={styles.container}>
+                        <View style={styles.messageContainer}>
+                            <FontAwesome5 name="heart" size={50} color={colors.primary} style={styles.icon} />
+                            <Text style={styles.title}>로그인이 필요합니다</Text>
+                            <Text style={styles.subtitle}>
+                                좋아요 한 게시물을 보려면 로그인이 필요합니다.
+                            </Text>
+                            <View style={styles.buttonContainer}>
+                                <Button
+                                    title="로그인하기"
+                                    onPress={() => router.push('/login')}
+                                    variant="primary"
+                                    fullWidth
+                                />
+                            </View>
+                        </View>
+                    </View>
                 ) : (
                     <FlatList
                         data={likedPostsData?.data?.posts ?? []}
@@ -225,6 +225,7 @@ export default function CommunityScreen() {
                                 </View>
                             )
                         }
+                        ListFooterComponent={isLoadingLikedPosts ? <LoadingSpinner /> : null}
                     />
                 )
             )}
@@ -241,22 +242,22 @@ export default function CommunityScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { 
-        flex: 1, 
-        backgroundColor: colors.background 
+    container: {
+        flex: 1,
+        backgroundColor: colors.background
     },
-    header: { 
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        padding: 16 
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16
     },
-    headerTitle: { 
-        fontSize: 18, 
-        fontWeight: 'bold' 
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: 'bold'
     },
-    likedPostsButton: { 
-        padding: 8 
+    likedPostsButton: {
+        padding: 8
     },
     searchInput: {
         borderWidth: 1,
@@ -266,15 +267,15 @@ const styles = StyleSheet.create({
         margin: 8,
         backgroundColor: colors.surface,
     },
-    popularSection: { 
-        padding: 16, 
-        backgroundColor: '#f9f9f9', 
-        marginBottom: 8 
+    popularSection: {
+        padding: 16,
+        backgroundColor: '#f9f9f9',
+        marginBottom: 8
     },
-    popularTitle: { 
-        fontSize: 18, 
-        fontWeight: 'bold', 
-        marginBottom: 8 
+    popularTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 8
     },
     popularPostContainer: {
         padding: 8,
@@ -283,14 +284,14 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginBottom: 8,
     },
-    popularPostTitle: { 
-        fontSize: 14, 
-        fontWeight: 'bold' 
+    popularPostTitle: {
+        fontSize: 14,
+        fontWeight: 'bold'
     },
-    popularPostLikes: { 
-        fontSize: 12, 
-        color: 'gray', 
-        marginTop: 4 
+    popularPostLikes: {
+        fontSize: 12,
+        color: 'gray',
+        marginTop: 4
     },
     categoryContainer: {
         maxHeight: 50,
@@ -337,12 +338,12 @@ const styles = StyleSheet.create({
         height: 80,
         borderRadius: 8,
     },
-    postContent: { 
+    postContent: {
         flex: 1,
         marginRight: 8,
     },
-    postTitle: { 
-        fontSize: 16, 
+    postTitle: {
+        fontSize: 16,
         fontWeight: 'bold',
         marginBottom: 4,
         color: colors.text.primary,
@@ -460,6 +461,29 @@ const styles = StyleSheet.create({
     },
     icon: {
         marginBottom: 16,
+    },
+    
+    messageContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: spacing.xl,
+        backgroundColor: colors.background,
+    },
+    icon: {
+        marginBottom: spacing.lg,
+    },
+    title: {
+        ...typography.h1,
+        marginBottom: spacing.sm,
+        color: colors.text.primary,
+        textAlign: 'center',
+    },
+    subtitle: {
+        ...typography.body1,
+        color: colors.text.secondary,
+        textAlign: 'center',
+        marginBottom: spacing.xl,
     },
     buttonContainer: {
         width: '100%',
