@@ -133,14 +133,17 @@ exports.logout = (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     if (!req.user || !req.user.id) {
+      console.log('인증되지 않은 요청');
       return res.status(401).json({ message: '인증되지 않았습니다.' });
     }
 
     const user = await User.findById(req.user.id);
     if (!user) {
+      console.log('사용자를 찾을 수 없음:', req.user.id);
       return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
     }
 
+    console.log('사용자 정보 조회 성공:', user.id);
     res.json({
       user: {
         id: user.id,
@@ -148,7 +151,8 @@ exports.getMe = async (req, res) => {
         email: user.email,
         role: user.role,
         rank: user.rank_name,
-        rankColor: user.rank_color
+        rankColor: user.rank_color,
+        points: user.points
       }
     });
   } catch (error) {

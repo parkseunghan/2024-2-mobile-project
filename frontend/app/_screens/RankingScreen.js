@@ -73,10 +73,10 @@ export default function RankingScreen() {
         </View>
         <View style={styles.statsContainer}>
           <Text style={styles.statsText}>총점: {item.total_score}</Text>
-          <Text style={styles.statsText}>게시글: {item.total_posts}</Text>
-          <Text style={styles.statsText}>댓글: {item.total_comments}</Text>
-          <Text style={styles.statsText}>조회수: {item.total_views}</Text>
-          <Text style={styles.statsText}>좋아요: {item.total_likes}</Text>
+          <Text style={styles.statsText}>게시글: {item.total_posts} (점수: {item.post_score})</Text>
+          <Text style={styles.statsText}>댓글: {item.total_comments} (점수: {item.comment_score})</Text>
+          <Text style={styles.statsText}>조회수: {item.total_views} (점수: {item.view_score})</Text>
+          <Text style={styles.statsText}>받은 좋아요: {item.total_likes} (점수: {item.received_like_score})</Text>
         </View>
       </View>
     </View>

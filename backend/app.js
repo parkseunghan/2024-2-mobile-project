@@ -17,7 +17,7 @@ if (!fs.existsSync(uploadsDir)) {
 const corsOptions = {
     origin: process.env.FRONTEND_URL || 'http://localhost:8081',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204

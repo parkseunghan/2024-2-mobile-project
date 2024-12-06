@@ -96,7 +96,7 @@ CREATE TABLE comments (
 CREATE TABLE video_summaries (
     id INT AUTO_INCREMENT PRIMARY KEY,
     video_id VARCHAR(255) NOT NULL UNIQUE, -- 비디오 ID
-    summary_text TEXT NOT NULL,          -- 요약 텍스트
+    summary_text TEXT NOT NULL,          -- ��약 텍스트
     user_id INT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -160,29 +160,48 @@ CREATE TABLE user_activity_logs (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- 사용자 점수 테이블 추가
+-- 사용자 점수 테이블
 CREATE TABLE user_scores (
     id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
-    score INT DEFAULT 0,                  -- 현재 점수
-    total_posts INT DEFAULT 0,            -- 총 게시글 수
-    total_comments INT DEFAULT 0,         -- 총 댓글 수
-    total_likes_received INT DEFAULT 0,   -- 받은 좋아요 수
-    total_view_counts INT DEFAULT 0,      -- 전체 게시글 조회수 합계
+    total_score INT DEFAULT 0,              -- 총 점수
+    post_score INT DEFAULT 0,               -- 게시글 작성 점수
+    comment_score INT DEFAULT 0,            -- 댓글 작성 점수
+    received_like_score INT DEFAULT 0,      -- 받은 좋아요 점수
+    received_comment_score INT DEFAULT 0,    -- 받은 댓글 점수
+    view_score INT DEFAULT 0,               -- 조회수 점수
+    total_posts INT DEFAULT 0,              -- 총 게시글 수
+    total_comments INT DEFAULT 0,           -- 총 댓글 수
+    total_received_likes INT DEFAULT 0,     -- 받은 총 좋아요 수
+    total_received_comments INT DEFAULT 0,  -- 받은 총 댓글 수
+    total_views INT DEFAULT 0,              -- 총 조회수
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 점수 이력 테이블 추가
-CREATE TABLE score_histories (
+-- 점수 설정 테이블
+CREATE TABLE score_settings (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    user_id INT NOT NULL,
-    score_change INT NOT NULL,            -- 점수 변동량
-    reason VARCHAR(50) NOT NULL,          -- 점수 변동 사유
+    activity_type VARCHAR(50) NOT NULL UNIQUE,  -- 활동 유형
+    points INT NOT NULL,                        -- 점수
+    max_points_per_item INT default NULL comment '항목당 최대 점수 (NULL인 경우 제한 없음)',
+    description TEXT,                           -- 설명
+    updated_by INT,                             -- 수정한 관리자
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (updated_by) REFERENCES users(id)
 );
+
+-- 기본 점수 설정 추가
+INSERT INTO score_settings 
+(activity_type, points, max_points_per_item, description) 
+VALUES 
+('post_creation', 10, NULL, '게시물 작성'),
+('comment_creation', 5, NULL, '댓글 작성'),
+('received_like', 2, NULL, '받은 좋아요'),
+('received_comment', 3, NULL, '받은 댓글'),
+('view_count', 1, 10, '조회수 1회당(게시물당 최대 10점)');
 
 -- 관리자 활동 로그 테이블 추가
 CREATE TABLE admin_activity_logs (
@@ -208,23 +227,26 @@ CREATE TABLE visits (
 );
 
 -- 기본 등급 데이터 추가
-INSERT INTO user_ranks (name, min_score, max_score, color) VALUES 
-('Bronze', 0, 99, '#CD7F32'),
-('Silver', 100, 499, '#C0C0C0'),
-('Gold', 500, 999, '#FFD700'),
-('Platinum', 1000, 4999, '#E5E4E2'),
-('Diamond', 5000, 999999, '#B9F2FF');
+INSERT INTO user_ranks (name, min_score, max_score, color) 
+VALUES 
+('Bronze', 0, 999, '#CD7F32'),
+('Silver', 1000, 4999, '#C0C0C0'),
+('Gold', 5000, 49999, '#FFD700'),
+('Platinum', 50000, 999999, '#E5E4E2'),
+('Diamond', 1000000, 9999999, '#B9F2FF'),
+('Master', 10000000, 99999999, '#6A0FAD'),
+('God', 100000000, 2147483647, '#C72C41');
 
 -- 테스트 계정 생성 (비밀번호는 'superuser!1'로 해시화)
 INSERT INTO users (username, email, password, role, current_rank_id)
 VALUES 
 ('god', 'god', '$2b$10$3Cl2A2TtIzdPLLuy/3.wluT3Hrg0/lG9Lq2kKUAXtkAUHM.U6ni1a', 'god', 
- (SELECT id FROM user_ranks WHERE name = 'Diamond'));
+ (SELECT id FROM user_ranks WHERE name = 'God'));
 
--- god 계정의 초기 점수 설정
-INSERT INTO user_scores (user_id, score)
-SELECT id, 5000
-FROM users
+-- god 계정의 초기 점�� 설정
+INSERT INTO user_scores (user_id, total_score) 
+SELECT id, 1000000000 
+FROM users 
 WHERE email = 'god';
 
 
@@ -250,7 +272,8 @@ CREATE INDEX idx_visits_user_id ON visits(user_id);
 --     user_ranks,
 --     visits,
 --     poll_options,
---     poll_votes; 
+--     poll_votes,
+--     score_settings;
 -- SET FOREIGN_KEY_CHECKS = 1;
 
 
