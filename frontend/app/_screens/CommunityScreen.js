@@ -38,7 +38,7 @@ export default function CommunityScreen() {
         staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
     });
 
-    // 카아요한 게시글 쿼리 추가
+    // 좋아요한 게시글 쿼리 추가
     const {
         data: likedPostsData,
         isLoading: isLoadingLikedPosts,
@@ -87,10 +87,10 @@ export default function CommunityScreen() {
                         <Text style={styles.statText}>{item.view_count}</Text>
                     </View>
                     <View style={styles.statItem}>
-                        <Icon
-                            name="thumb-up"
+                        <FontAwesome5
+                            name="heart"
                             size={16}
-                            color={item.is_liked ? colors.primary : colors.text.secondary}
+                            color={item.is_liked ? colors.error : colors.text.secondary}
                         />
                         <Text style={styles.statText}>{item.like_count}</Text>
                     </View>
