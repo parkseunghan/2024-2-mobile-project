@@ -42,6 +42,7 @@ app.use('/api/categories', require('./routes/categoryRoutes'));
 app.use('/api/search', require('./routes/searchRoutes'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/users', require('./routes/userRoutes'));
 
 // 에러 핸들링
 app.use((err, req, res, next) => {

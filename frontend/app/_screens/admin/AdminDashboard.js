@@ -2,12 +2,18 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Link } from 'expo-router';
 import { useAuth } from '@app/_context/AuthContext';
+import { LoadingSpinner } from '@app/_components/common/LoadingSpinner';
 
 export default function AdminDashboard() {
-    const { user } = useAuth();
+    const { user, isLoading } = useAuth();
+
+    // 로딩 상태 처리
+    if (isLoading) {
+        return <LoadingSpinner />;
+    }
 
     // 관리자 권한 체크
-    if (user?.role !== 'admin' && user?.role !== 'god') {
+    if (!user || (user.role !== 'admin' && user.role !== 'god')) {
         return (
             <View style={styles.container}>
                 <Text>접근 권한이 없습니다.</Text>
@@ -20,7 +26,6 @@ export default function AdminDashboard() {
             <Text style={styles.title}>관리자 대시보드</Text>
             
             <View style={styles.menuGrid}>
-                {/* 기존 메뉴들 */}
                 <Link href="/users" asChild>
                     <Pressable style={styles.menuItem}>
                         <Text style={styles.menuTitle}>사용자 관리</Text>
@@ -35,7 +40,6 @@ export default function AdminDashboard() {
                     </Pressable>
                 </Link>
 
-                {/* 새로운 카테고리 관리 메뉴 */}
                 <Link href="/categories" asChild>
                     <Pressable style={styles.menuItem}>
                         <Text style={styles.menuTitle}>카테고리 관리</Text>

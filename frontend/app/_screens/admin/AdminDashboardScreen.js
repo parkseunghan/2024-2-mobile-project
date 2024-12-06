@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
@@ -11,16 +11,21 @@ import { useAdminDashboard } from '@app/_lib/hooks/useAdminDashboard';
 import { useAuth } from '@app/_lib/hooks/useAuth';
 
 export default function AdminDashboardScreen() {
-    const { user } = useAuth();
+    const { user, isLoading: authLoading } = useAuth();
     const { 
         stats, 
-        loading, 
+        loading: statsLoading, 
         error, 
         refreshData 
     } = useAdminDashboard();
     const [refreshing, setRefreshing] = useState(false);
 
-    // 1. 먼저 권한 체크
+    // 인증 로딩 상태 처리
+    if (authLoading) {
+        return <LoadingSpinner />;
+    }
+
+    // 권한 체크
     if (!user || (user.role !== 'admin' && user.role !== 'god')) {
         return (
             <View style={styles.container}>
@@ -29,17 +34,22 @@ export default function AdminDashboardScreen() {
         );
     }
 
-    // 2. 로딩 상태 체크
-    if (loading && !refreshing) {
+    // 통계 데이터 로딩 상태 처리
+    if (statsLoading && !refreshing) {
         return <LoadingSpinner />;
     }
 
-    // 3. 에러 상태 체크
+    // 에러 상태 처리
     if (error) {
         return <ErrorState message={error} onRetry={refreshData} />;
     }
 
-    // 4. 실제 대시보드 렌더링
+    const onRefresh = React.useCallback(async () => {
+        setRefreshing(true);
+        await refreshData();
+        setRefreshing(false);
+    }, [refreshData]);
+
     return (
         <ScrollView 
             style={styles.container}

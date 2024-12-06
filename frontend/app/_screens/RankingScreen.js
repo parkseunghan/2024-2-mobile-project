@@ -1,99 +1,100 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
-
-// 현재 월 가져오기
-const currentMonth = new Date().toLocaleString('default', { month: 'long' });
-const currentDate = new Date().toLocaleDateString();
-
-// 예제 데이터
-const data = [
-  { rank: 1, nickname: "사용자1", monthlyPoints: 6810, totalPoints: 55310 },
-  { rank: 2, nickname: "사용자2", monthlyPoints: 5410, totalPoints: 35410 },
-  { rank: 3, nickname: "사용자3", monthlyPoints: 4950, totalPoints: 18410 },
-  { rank: 4, nickname: "사용자4", monthlyPoints: 3950, totalPoints: 8250 },
-  { rank: 5, nickname: "사용자5", monthlyPoints: 3800, totalPoints: 20900 },
-  { rank: 6, nickname: "사용자6", monthlyPoints: 2700, totalPoints: 20000 },
-  { rank: 7, nickname: "사용자7", monthlyPoints: 2600, totalPoints: 15000 },
-  { rank: 8, nickname: "사용자8", monthlyPoints: 2400, totalPoints: 14000 },
-  { rank: 9, nickname: "사용자9", monthlyPoints: 2300, totalPoints: 15000 },
-  { rank: 10, nickname: "사용자10", monthlyPoints: 2300, totalPoints: 69400 },
-];
-
-// 로그인한 사용자 정보
-const loggedInUser = {
-  nickname: "사용자3", // 로그인한 사용자의 닉네임
-};
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { colors } from '@app/_styles/colors';
+import { spacing } from '@app/_styles/spacing';
+import { typography } from '@app/_styles/typography';
+import { userApi } from '@app/_lib/api/userApi';
+import { useAuth } from '@app/_lib/hooks';
 
 export default function RankingScreen() {
-  const renderItem = ({ item }) => (
-    <View style={styles.row}>
-      <Text
-        style={[
-          styles.cell,
-          item.nickname === loggedInUser.nickname && styles.highlightedText,
-        ]}
-      >
-        {item.rank === 1
-          ? "🥇"
-          : item.rank === 2
-          ? "🥈"
-          : item.rank === 3
-          ? "🥉"
-          : item.rank}
-      </Text>
-      <Text
-        style={[
-          styles.cell,
-          item.nickname === loggedInUser.nickname && styles.highlightedText,
-        ]}
-      >
-        {item.nickname}
-      </Text>
-      <Text
-        style={[
-          styles.cell,
-          item.nickname === loggedInUser.nickname && styles.highlightedText,
-        ]}
-      >
-        {item.monthlyPoints}
-      </Text>
-      <Text
-        style={[
-          styles.cell,
-          item.nickname === loggedInUser.nickname && styles.highlightedText,
-        ]}
-      >
-        {item.totalPoints}
-      </Text>
+  const [rankings, setRankings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+  
+  useEffect(() => {
+    console.log('[RankingScreen] 컴포넌트 마운트');
+    loadRankings();
+    return () => {
+      console.log('[RankingScreen] 컴포넌트 언마운트');
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log('[RankingScreen] rankings 업데이트:', rankings);
+  }, [rankings]);
+
+  const loadRankings = async () => {
+    console.log('[RankingScreen] loadRankings 시작');
+    try {
+      setLoading(true);
+      console.log('[RankingScreen] API 호출 전');
+      const response = await userApi.getRankings();
+      console.log('[RankingScreen] API 응답:', response);
+      
+      if (!response?.data) {
+        console.warn('[RankingScreen] 응답 데이터 없음');
+        setRankings([]);
+        return;
+      }
+
+      setRankings(response.data);
+    } catch (error) {
+      console.error('[RankingScreen] 랭킹 로드 실패:', error);
+      Alert.alert('오류', '랭킹 정보를 불러오는데 실패했습니다.');
+      setRankings([]);
+    } finally {
+      setLoading(false);
+      console.log('[RankingScreen] loadRankings 완료');
+    }
+  };
+
+  const renderItem = ({ item, index }) => (
+    <View style={[
+      styles.row,
+      user?.id === item.id && styles.highlightedRow
+    ]}>
+      <View style={styles.rankContainer}>
+        <Text style={[styles.cell, styles.rankText]}>
+          {index + 1 <= 3 ? 
+            ['🥇', '🥈', '🥉'][index] : 
+            (index + 1).toString()
+          }
+        </Text>
+      </View>
+      <View style={styles.userInfoContainer}>
+        <View style={styles.nameRankContainer}>
+          <Text style={[styles.username, user?.id === item.id && styles.highlightedText]}>
+            {item.username}
+          </Text>
+          <View style={[styles.rankBadge, { backgroundColor: item.rank_color }]}>
+            <Text style={styles.rankBadgeText}>{item.rank_name}</Text>
+          </View>
+        </View>
+        <View style={styles.statsContainer}>
+          <Text style={styles.statsText}>총점: {item.total_score}</Text>
+          <Text style={styles.statsText}>게시글: {item.total_posts}</Text>
+          <Text style={styles.statsText}>댓글: {item.total_comments}</Text>
+          <Text style={styles.statsText}>조회수: {item.total_views}</Text>
+          <Text style={styles.statsText}>좋아요: {item.total_likes}</Text>
+        </View>
+      </View>
     </View>
   );
 
+  if (loading) {
+    return <ActivityIndicator style={styles.loading} size="large" color={colors.primary} />;
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>랭킹 화면</Text>
-      <Text style={styles.date}>{currentDate}</Text>
-      <View style={styles.tableHeader}>
-        <Text style={[styles.cell, styles.headerCell]}>순위</Text>
-        <Text style={[styles.cell, styles.headerCell]}>닉네임</Text>
-        <Text style={[styles.cell, styles.headerCell]}>{`${currentMonth} 적립 포인트`}</Text>
-        <Text style={[styles.cell, styles.headerCell]}>총 적립 포인트</Text>
-      </View>
+      <Text style={styles.header}>유저 랭킹</Text>
       <FlatList
-        data={data}
+        data={rankings}
         renderItem={renderItem}
-        keyExtractor={(item) => item.rank.toString()}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContainer}
       />
-      <View style={styles.userInfo}>
-        <Text style={[styles.userText, styles.highlightedText]}>
-          {loggedInUser.nickname}님의 순위는 {data.find((item) => item.nickname === loggedInUser.nickname)?.rank}위 입니다.
-        </Text>
-        <Text style={[styles.userText, styles.highlightedText]}>
-          {currentMonth} 적립 포인트는 {data.find((item) => item.nickname === loggedInUser.nickname)?.monthlyPoints}포인트,
-        </Text>
-        <Text style={[styles.userText, styles.highlightedText]}>
-          총 적립 포인트는 {data.find((item) => item.nickname === loggedInUser.nickname)?.totalPoints}포인트입니다.
-        </Text>
-      </View>
     </View>
   );
 }
@@ -101,61 +102,76 @@ export default function RankingScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
+  },
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   header: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    ...typography.h1,
     textAlign: 'center',
-    marginBottom: 10,
+    padding: spacing.md,
   },
-  date: {
-    fontSize: 16,
-    color: '#888',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#4CAF50', // 헤더 배경색
-    paddingVertical: 5,
-    borderBottomWidth: 1,
-    borderColor: '#ccc',
-    borderTopLeftRadius: 10, // 왼쪽 상단 둥글게
-    borderTopRightRadius: 10, // 오른쪽 상단 둥글게
-  },
-  headerCell: {
-    color: '#fff', // 헤더 텍스트 색상
-    fontWeight: 'bold',
-    textAlign: 'center',
+  listContainer: {
+    padding: spacing.sm,
   },
   row: {
     flexDirection: 'row',
-    paddingVertical: 5,
-    borderBottomWidth: 1,
-    borderColor: '#eee',
+    padding: spacing.sm,
+    backgroundColor: colors.surface,
+    marginBottom: spacing.sm,
+    borderRadius: 8,
+    elevation: 2,
   },
-  cell: {
+  highlightedRow: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  rankContainer: {
+    width: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rankText: {
+    ...typography.h2,
+    color: colors.text.primary,
+  },
+  userInfoContainer: {
     flex: 1,
-    textAlign: 'center',
-    fontSize: 14,
+    marginLeft: spacing.sm,
+  },
+  nameRankContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  username: {
+    ...typography.subtitle,
+    marginRight: spacing.sm,
   },
   highlightedText: {
-    color: '#FF5722', // 로그인한 사용자 텍스트 색상
+    color: colors.primary,
     fontWeight: 'bold',
   },
-  userInfo: {
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: '#f9f9f9',
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#ddd',
+  rankBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: 4,
   },
-  userText: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 5,
+  rankBadgeText: {
+    ...typography.caption,
+    color: colors.background,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  statsText: {
+    ...typography.caption,
+    color: colors.text.secondary,
   },
 });

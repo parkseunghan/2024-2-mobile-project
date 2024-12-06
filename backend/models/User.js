@@ -77,6 +77,47 @@ class User {
       throw new Error('사용자 조회에 실패했습니다.');
     }
   }
+
+  /**
+   * 랭킹 정보 가져오기
+   * @returns {Promise<Array>} 랭킹 정보 배열
+   */
+  static async getRankings() {
+    try {
+      const [rows] = await db.query(`
+        SELECT 
+          u.id,
+          u.username,
+          u.created_at as join_date,
+          ur.name as rank_name,
+          ur.color as rank_color,
+          us.score as total_score,
+          COUNT(DISTINCT p.id) as total_posts,
+          COUNT(DISTINCT c.id) as total_comments,
+          COALESCE(SUM(p.view_count), 0) as total_views,
+          COALESCE(
+            (SELECT COUNT(*) 
+             FROM post_likes pl 
+             JOIN posts up ON pl.post_id = up.id 
+             WHERE up.user_id = u.id), 
+            0
+          ) as total_likes
+        FROM users u
+        LEFT JOIN user_ranks ur ON u.current_rank_id = ur.id
+        LEFT JOIN user_scores us ON u.id = us.user_id
+        LEFT JOIN posts p ON u.id = p.user_id AND p.is_deleted = false
+        LEFT JOIN comments c ON u.id = c.user_id AND c.is_deleted = false
+        WHERE u.is_active = true
+        GROUP BY u.id, u.username, u.created_at, ur.name, ur.color, us.score
+        ORDER BY us.score DESC
+        LIMIT 100
+      `);
+      return rows;
+    } catch (error) {
+      console.error('랭킹 조회 에러:', error);
+      throw new Error('랭킹 정보를 불러오는데 실패했습니다.');
+    }
+  }
 }
 
 module.exports = User;
