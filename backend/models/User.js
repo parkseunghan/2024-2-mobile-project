@@ -84,34 +84,30 @@ class User {
    */
   static async getRankings() {
     try {
-      const [rows] = await db.query(`
+      const [rankings] = await db.query(`
         SELECT 
           u.id,
           u.username,
-          u.created_at as join_date,
           ur.name as rank_name,
           ur.color as rank_color,
-          us.total_score,
-          us.total_posts,
-          us.total_comments,
-          us.total_views,
-          us.total_received_likes as total_likes,
-          us.post_score,
-          us.comment_score,
-          us.received_like_score,
-          us.received_comment_score,
-          us.view_score
+          COALESCE(us.total_score, 0) as total_score,
+          COALESCE(us.total_posts, 0) as total_posts,
+          COALESCE(us.total_comments, 0) as total_comments,
+          COALESCE(us.total_received_likes, 0) as total_received_likes,
+          COALESCE(us.total_received_comments, 0) as total_received_comments,
+          COALESCE(us.total_views, 0) as total_views
         FROM users u
         LEFT JOIN user_ranks ur ON u.current_rank_id = ur.id
         LEFT JOIN user_scores us ON u.id = us.user_id
         WHERE u.is_active = true
-        ORDER BY us.total_score DESC
-        LIMIT 100
+        ORDER BY us.total_score DESC, u.created_at ASC
       `);
-      return rows;
+
+      console.log('[User.getRankings] 조회된 랭킹 데이터:', rankings.length);
+      return rankings;
     } catch (error) {
-      console.error('랭킹 조회 에러:', error);
-      throw new Error('랭킹 정보를 불러오는데 실패했습니다.');
+      console.error('[User.getRankings] 랭킹 조회 에러:', error);
+      throw error;
     }
   }
 
@@ -150,7 +146,7 @@ class User {
   }
 
   /**
-   * 사용자의 점수를 업데이트합니다.
+   * 사용자의 점수를 업데이���합니다.
    * @param {number} userId - 사용자 ID
    */
   static async updateUserScore(userId) {
