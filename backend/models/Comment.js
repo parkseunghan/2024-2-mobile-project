@@ -59,7 +59,7 @@ class Comment {
         LEFT JOIN users u ON c.user_id = u.id
         LEFT JOIN ranks r ON u.rank = r.id
         WHERE c.post_id = ?
-        ORDER BY c.created_at ASC
+        ORDER BY c.created_at DESC
       `, [postId]);
       return rows;
     } catch (error) {

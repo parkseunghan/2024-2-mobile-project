@@ -113,17 +113,15 @@ export default function PostDetailScreen() {
             // 새로운 댓글을 포함한 게시글 상태 업데이트
             setPost(prevPost => ({
                 ...prevPost,
-                comments: [...(prevPost.comments || []), response.data.comment],
+                comments: [...(prevPost.comments || []), {
+                    ...response.data.comment,
+                    rank_color: colors.new, // 새 댓글 표시용 노란색
+                    is_new: true // 새 댓글 여부 표시
+                }],
                 comment_count: (prevPost.comment_count || 0) + 1
             }));
             
-            // 입력창 초기화
             setNewComment('');
-            
-            // 스크롤을 최하단으로 이동
-            setTimeout(() => {
-                scrollViewRef.current?.scrollToEnd({ animated: true });
-            }, 100);
         } catch (error) {
             console.error('댓글 작성 실패:', error);
             Alert.alert('오류', '댓글 작성에 실패했습니다.');
@@ -256,10 +254,15 @@ export default function PostDetailScreen() {
                         <View key={comment.id} style={styles.commentItem}>
                             <View style={styles.commentHeader}>
                                 <View style={styles.commentAuthor}>
-                                    <Text style={styles.commentAuthorName}>{comment.author_name}</Text>
-                                    <View style={[styles.rankBadge, { backgroundColor: comment.rank_color }]}>
-                                        <Text style={styles.rankText}>{comment.rank_name}</Text>
-                                    </View>
+                                    <View 
+                                        style={[
+                                            styles.rankDot, 
+                                            { backgroundColor: comment.rank_color || colors.border }
+                                        ]} 
+                                    />
+                                    <Text style={styles.commentAuthorName}>
+                                        {comment.author_name}
+                                    </Text>
                                 </View>
                                 <Text style={styles.commentDate}>
                                     {new Date(comment.created_at).toLocaleString('ko-KR', {
@@ -459,9 +462,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
+    rankDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        marginRight: spacing.xs,
+        backgroundColor: colors.border, // 기본 색상
+    },
     commentAuthorName: {
         ...typography.subtitle,
-        marginRight: spacing.sm,
+        color: colors.text.primary,
     },
     commentDate: {
         ...typography.caption,

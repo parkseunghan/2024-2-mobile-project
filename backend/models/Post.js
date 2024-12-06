@@ -109,7 +109,7 @@ class Post {
             LEFT JOIN users u ON c.user_id = u.id
             LEFT JOIN user_ranks ur ON u.current_rank_id = ur.id
             WHERE c.post_id = ? AND c.is_deleted = false
-            ORDER BY c.created_at DESC
+            ORDER BY c.created_at ASC
         `, [postId]);
 
         return {
@@ -280,7 +280,7 @@ class Post {
       return result.affectedRows > 0;
     } catch (error) {
       console.error('게시글 삭제 에러:', error);
-      throw new Error('게시글 삭제�� 실패했습니다.');
+      throw new Error('게시글 삭제 실패했습니다.');
     }
   }
 
@@ -349,7 +349,7 @@ class Post {
       return rows.length > 0;
     } catch (error) {
       console.error('좋아요 확인 에러:', error);
-      throw new Error('좋아요 확인에 실패했습니다.');
+      throw new Error('좋아요 확인에 실패했습니���.');
     }
   }
 
