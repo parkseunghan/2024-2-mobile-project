@@ -120,38 +120,36 @@ export default function CommunityScreen() {
     return (
         <View style={styles.container}>
             {/* 검색 입력 */}
-            <TextInput
-                style={styles.searchInput}
-                placeholder="제목, 내용, 작성자로 검색"
-                value={searchText}
-                onChangeText={setSearchText}
-            />
+            <View style={styles.headerSection}>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="제목, 내용, 작성자로 검색"
+                    value={searchText}
+                    onChangeText={setSearchText}
+                />
 
-            {/* 탭 메뉴 */}
-            <View style={styles.tabContainer}>
-                <Pressable
-                    style={[styles.tab, activeTab === 'all' && styles.activeTab]}
-                    onPress={() => setActiveTab('all')}
-                >
-                    <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
-                        전체 게시글
-                    </Text>
-                </Pressable>
-                <Pressable
-                    style={[styles.tab, activeTab === 'liked' && styles.activeTab]}
-                    onPress={() => {
-                        setActiveTab('liked');
-                    }}
-                >
-                    <Text style={[styles.tabText, activeTab === 'liked' && styles.activeTabText]}>
-                        좋아요한 글
-                    </Text>
-                </Pressable>
-            </View>
+                {/* 탭 메뉴 */}
+                <View style={styles.tabContainer}>
+                    <Pressable
+                        style={[styles.tab, activeTab === 'all' && styles.activeTab]}
+                        onPress={() => setActiveTab('all')}
+                    >
+                        <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
+                            전체 게시글
+                        </Text>
+                    </Pressable>
+                    <Pressable
+                        style={[styles.tab, activeTab === 'liked' && styles.activeTab]}
+                        onPress={() => setActiveTab('liked')}
+                    >
+                        <Text style={[styles.tabText, activeTab === 'liked' && styles.activeTabText]}>
+                            좋아요한 글
+                        </Text>
+                    </Pressable>
+                </View>
 
-            {activeTab === 'all' ? (
-                <>
-                    {/* 카테고리 필터 */}
+                {/* 카테고리 필터 */}
+                {activeTab === 'all' && (
                     <ScrollView
                         horizontal
                         style={styles.categoryContainer}
@@ -175,7 +173,11 @@ export default function CommunityScreen() {
                             </Pressable>
                         ))}
                     </ScrollView>
+                )}
+            </View>
 
+            {activeTab === 'all' ? (
+                <>
                     {/* 전체 게시글 리스트 */}
                     <FlatList
                         data={allPostsData?.pages.flatMap(page => page.posts) ?? []}
@@ -488,5 +490,40 @@ const styles = StyleSheet.create({
     buttonContainer: {
         width: '100%',
         maxWidth: 300,
+    },
+    headerSection: {
+        backgroundColor: colors.background,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border,
+        paddingBottom: spacing.sm,
+        zIndex: 1, // 헤더 섹션이 리스트 위에 오도록 설정
+    },
+    searchInput: {
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: 8,
+        padding: spacing.sm,
+        margin: spacing.sm,
+        backgroundColor: colors.surface,
+    },
+    tabContainer: {
+        flexDirection: 'row',
+        paddingHorizontal: spacing.md,
+        marginBottom: spacing.sm,
+    },
+    categoryContainer: {
+        paddingHorizontal: spacing.sm,
+        marginBottom: spacing.sm,
+    },
+    categoryButton: {
+        paddingHorizontal: spacing.md,
+        paddingVertical: spacing.sm,
+        marginRight: spacing.sm,
+        borderRadius: 16,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+        height: 36,
+        justifyContent: 'center',
     },
 });
