@@ -120,7 +120,7 @@ exports.getSearchStats = async (req, res) => {
     const stats = await SearchHistory.getSearchStats();
     res.json({ success: true, stats });
   } catch (error) {
-    console.error('검색 통계 조회 에러:', error);
+    console.error('검색 ��계 조회 에러:', error);
     res.status(500).json({ message: '통계 조회에 실패했습니다.' });
   }
 };
@@ -164,7 +164,7 @@ exports.updateCategory = async (req, res) => {
     res.json({ message: '카테고리가 수정되었습니다.' });
   } catch (error) {
     console.error('카테고리 수정 에러:', error);
-    res.status(500).json({ message: '카테고리 수정에 실패했습니다.' });
+    res.status(500).json({ message: '카테��리 수정에 실패했습니다.' });
   }
 };
 
@@ -197,26 +197,20 @@ exports.updateUserStatus = async (req, res) => {
     const { status } = req.body;
     
     if (!['active', 'inactive'].includes(status)) {
-      return res.status(400).json({ message: '잘못된 상태값입니다.' });
+      return res.status(400).json({ message: '유효하지 않은 상태입니다.' });
     }
 
-    const user = await User.findByIdAndUpdate(
-      id,
-      { status },
-      { new: true }
-    );
-
-    if (!user) {
+    const success = await User.updateStatus(id, status);
+    if (!success) {
       return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
     }
 
     res.json({ 
       success: true, 
-      message: '사용자 상태가 업데이트되었습니다.',
-      user 
+      message: `사용자가 ${status === 'active' ? '활성화' : '비활성화'}되었습니다.` 
     });
   } catch (error) {
     console.error('사용자 상태 업데이트 에러:', error);
-    res.status(500).json({ message: '사용자 상태 업데이트에 실패했습니다.' });
+    res.status(500).json({ message: '상태 업데이트에 실패했습니다.' });
   }
 };

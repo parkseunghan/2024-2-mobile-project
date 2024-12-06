@@ -236,7 +236,7 @@ VALUES
 ('Bronze', 0, 999, '#CD7F32'),
 ('Silver', 1000, 4999, '#C0C0C0'),
 ('Gold', 5000, 49999, '#FFD700'),
-('Platinum', 50000, 999999, '#E5E4E2'),
+('Platinum', 50000, 999999, '#b2d1d0'),
 ('Diamond', 1000000, 9999999, '#B9F2FF'),
 ('Master', 10000000, 99999999, '#6A0FAD'),
 ('God', 100000000, 2147483647, '#C72C41');
@@ -248,16 +248,16 @@ VALUES
  (SELECT id FROM user_ranks WHERE name = 'God')),
  ('admin', 'admin', '$2b$10$3Cl2A2TtIzdPLLuy/3.wluT3Hrg0/lG9Lq2kKUAXtkAUHM.U6ni1a', 'admin', 
  (SELECT id FROM user_ranks WHERE name = 'Master')),
- ('user1', 'user5', '$2b$10$KAdw5SESnXiXhMrqkFu4j.h.qWg58W7eQMEDZyXurCHWmbKbulueu', 'user', 
- (SELECT id FROM user_ranks WHERE name = 'Bronze')),
- ('user2', 'user4', '$2b$10$KAdw5SESnXiXhMrqkFu4j.h.qWg58W7eQMEDZyXurCHWmbKbulueu', 'user', 
- (SELECT id FROM user_ranks WHERE name = 'Silver')),
+ ('user1', 'user1', '$2b$10$KAdw5SESnXiXhMrqkFu4j.h.qWg58W7eQMEDZyXurCHWmbKbulueu', 'user', 
+ (SELECT id FROM user_ranks WHERE name = 'Diamond')),
+ ('user2', 'user2', '$2b$10$KAdw5SESnXiXhMrqkFu4j.h.qWg58W7eQMEDZyXurCHWmbKbulueu', 'user', 
+ (SELECT id FROM user_ranks WHERE name = 'Platinum')),
  ('user3', 'user3', '$2b$10$KAdw5SESnXiXhMrqkFu4j.h.qWg58W7eQMEDZyXurCHWmbKbulueu', 'user', 
  (SELECT id FROM user_ranks WHERE name = 'Gold')),
- ('user4', 'user2', '$2b$10$KAdw5SESnXiXhMrqkFu4j.h.qWg58W7eQMEDZyXurCHWmbKbulueu', 'user', 
- (SELECT id FROM user_ranks WHERE name = 'Platinum')),
- ('user5', 'user1', '$2b$10$KAdw5SESnXiXhMrqkFu4j.h.qWg58W7eQMEDZyXurCHWmbKbulueu', 'user', 
- (SELECT id FROM user_ranks WHERE name = 'Diamond'));
+ ('user4', 'user4', '$2b$10$KAdw5SESnXiXhMrqkFu4j.h.qWg58W7eQMEDZyXurCHWmbKbulueu', 'user', 
+ (SELECT id FROM user_ranks WHERE name = 'Silver')),
+ ('user5', 'user5', '$2b$10$KAdw5SESnXiXhMrqkFu4j.h.qWg58W7eQMEDZyXurCHWmbKbulueu', 'user', 
+ (SELECT id FROM user_ranks WHERE name = 'Bronze'));
 
  
  -- Bronze, Silver, Gold, Platinum, Diamond

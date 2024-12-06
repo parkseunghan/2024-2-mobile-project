@@ -25,5 +25,5 @@ export const colors = {
   
   // 경계선 색상
   border: '#E5E5EA',
-  new: '#4CAF50', // 새 댓글 표시용 노란색
+  new: '#b2d1d0', // 새 댓글 표시용 노란색
 }; 

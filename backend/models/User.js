@@ -270,6 +270,36 @@ class User {
       throw error;
     }
   }
+
+  static async updateStatus(id, status) {
+    try {
+      const [result] = await db.query(
+        'UPDATE users SET is_active = ? WHERE id = ?',
+        [status === 'active', id]
+      );
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('사용자 상태 업데이트 에러:', error);
+      throw error;
+    }
+  }
+
+  static async updateRole(id, role) {
+    try {
+      if (!['user', 'admin'].includes(role)) {
+        throw new Error('유효하지 않은 역할입니다.');
+      }
+      
+      const [result] = await db.query(
+        'UPDATE users SET role = ? WHERE id = ?',
+        [role, id]
+      );
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('사용자 역할 업데이트 에러:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = User;
