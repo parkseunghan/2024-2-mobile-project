@@ -41,7 +41,7 @@ export const communityApi = {
         client.delete(`/community/posts/${postId}`),
 
     /**
-     * ��시글 좋아요/좋아요 취소
+     * 시글 좋아요/좋아요 취소
      * @param {string} postId - 게시글 ID
      */
     toggleLike: (postId) => 
@@ -50,10 +50,10 @@ export const communityApi = {
     /**
      * 댓글 작성
      * @param {string} postId - 게시글 ID
-     * @param {Object} commentData - 댓글 데이터
+     * @param {string} content - 댓글 내용
      */
-    createComment: (postId, commentData) => 
-        client.post(`/community/posts/${postId}/comments`, commentData),
+    createComment: (postId, content) => 
+        client.post(`/community/posts/${postId}/comments`, { content }),
 
     /**
      * 댓글 삭제

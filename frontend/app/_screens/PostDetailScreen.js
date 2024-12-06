@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert, Pressable, TextInput, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -107,22 +107,26 @@ export default function PostDetailScreen() {
 
     // 댓글 작성 핸들러
     const handleComment = async () => {
-        if (!user) {
-            Alert.alert('알림', '로그인이 필요한 기능입니다.');
-            return;
-        }
-
-        if (!newComment.trim()) {
-            Alert.alert('알림', '댓글 내용을 입력해주세요.');
-            return;
-        }
-
         try {
-            await communityApi.createComment(postId, newComment);
+            const response = await communityApi.createComment(postId, newComment);
+            
+            // 새로운 댓글을 포함한 게시글 상태 업데이트
+            setPost(prevPost => ({
+                ...prevPost,
+                comments: [...(prevPost.comments || []), response.data.comment],
+                comment_count: (prevPost.comment_count || 0) + 1
+            }));
+            
+            // 입력창 초기화
             setNewComment('');
-            loadPost(); // 게시글 데이터 새로고침
+            
+            // 스크롤을 최하단으로 이동
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
         } catch (error) {
-            Alert.alert('오', '댓글 작성에 실패했습니다.');
+            console.error('댓글 작성 실패:', error);
+            Alert.alert('오류', '댓글 작성에 실패했습니다.');
         }
     };
 
@@ -140,6 +144,9 @@ export default function PostDetailScreen() {
             Alert.alert('오류', '투표 처리 중 오류가 발생했습니.');
         }
     };
+
+    // ScrollView ref 추가
+    const scrollViewRef = useRef(null);
 
     // 로딩 상태 표시
     if (loading) {
@@ -165,7 +172,10 @@ export default function PostDetailScreen() {
 
     // 게시글 렌더링
     return (
-        <ScrollView style={styles.container}>
+        <ScrollView 
+            ref={scrollViewRef}
+            style={styles.container}
+        >
             <View style={styles.postHeader}>
                 <Text style={styles.title}>{post.title}</Text>
                 <View style={styles.authorInfo}>
@@ -240,7 +250,35 @@ export default function PostDetailScreen() {
             <View style={styles.commentsSection}>
                 <Text style={styles.commentsTitle}>댓글 {post.comment_count}개</Text>
 
-                {/* 댓글 입력 */}
+                {/* 댓글 목록 */}
+                <View style={styles.commentsList}>
+                    {post.comments?.map((comment) => (
+                        <View key={comment.id} style={styles.commentItem}>
+                            <View style={styles.commentHeader}>
+                                <View style={styles.commentAuthor}>
+                                    <Text style={styles.commentAuthorName}>{comment.author_name}</Text>
+                                    <View style={[styles.rankBadge, { backgroundColor: comment.rank_color }]}>
+                                        <Text style={styles.rankText}>{comment.rank_name}</Text>
+                                    </View>
+                                </View>
+                                <Text style={styles.commentDate}>
+                                    {new Date(comment.created_at).toLocaleString('ko-KR', {
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit',
+                                        hour12: false
+                                    })}
+                                </Text>
+                            </View>
+                            <Text style={styles.commentContent}>{comment.content}</Text>
+                        </View>
+                    ))}
+                </View>
+
+                {/* 댓글 입력은 목록 아래에 위치 */}
                 {user && (
                     <View style={styles.commentInputContainer}>
                         <TextInput
@@ -262,24 +300,6 @@ export default function PostDetailScreen() {
                         </Pressable>
                     </View>
                 )}
-
-                {/* 댓글 목록 */}
-                {post.comments?.map((comment) => (
-                    <View key={comment.id} style={styles.commentItem}>
-                        <View style={styles.commentHeader}>
-                            <View style={styles.commentAuthor}>
-                                <Text style={styles.commentAuthorName}>{comment.author_name}</Text>
-                                <View style={[styles.rankBadge, { backgroundColor: comment.rank_color }]}>
-                                    <Text style={styles.rankText}>{comment.author_rank}</Text>
-                                </View>
-                            </View>
-                            <Text style={styles.commentDate}>
-                                {new Date(comment.created_at).toLocaleDateString('ko-KR')}
-                            </Text>
-                        </View>
-                        <Text style={styles.commentContent}>{comment.content}</Text>
-                    </View>
-                ))}
             </View>
         </ScrollView>
     );
@@ -315,11 +335,13 @@ const styles = StyleSheet.create({
     rankBadge: {
         paddingHorizontal: spacing.sm,
         paddingVertical: spacing.xs,
-        borderRadius: 12,
+        borderRadius: 4,
+        marginLeft: spacing.sm,
     },
     rankText: {
         ...typography.caption,
-        color: colors.text.primary,
+        color: colors.background,
+        fontWeight: 'bold',
     },
     postStats: {
         flexDirection: 'row',
@@ -469,5 +491,8 @@ const styles = StyleSheet.create({
     retryButtonText: {
         ...typography.button,
         color: colors.background,
+    },
+    commentsList: {
+        marginTop: spacing.md,
     },
 });

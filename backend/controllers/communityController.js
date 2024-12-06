@@ -76,7 +76,7 @@ exports.createPost = async (req, res) => {
     } catch (error) {
         console.error('게시글 작성 에러:', error);
         res.status(error.status || 500).json({ 
-            message: error.message || '게시글 작성에 실했습니다.' 
+            message: error.message || '게시글 작성에 실��습니다.' 
         });
     }
 };
@@ -118,7 +118,7 @@ exports.deletePost = async (req, res) => {
         }
 
         if (post.userId !== userId) {
-            return res.status(403).json({ message: '게시글을 삭제할 권한이 없��니다.' });
+            return res.status(403).json({ message: '게시글을 삭제할 권한이 없니다.' });
         }
 
         await Post.delete(postId);
@@ -132,15 +132,31 @@ exports.deletePost = async (req, res) => {
 
 exports.createComment = async (req, res) => {
     try {
+        console.log('Creating comment - Request:', {
+            body: req.body,
+            params: req.params,
+            user: req.user
+        });
+
         const { postId } = req.params;
         const { content } = req.body;
-        const userId = req.user.id;
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ message: '로그인이 필요합니다.' });
+        }
+
+        if (!content?.trim()) {
+            return res.status(400).json({ message: '댓글 내용을 입력해주세요.' });
+        }
 
         const comment = await Comment.create({
-            postId,
-            content,
-            userId
+            postId: parseInt(postId),
+            userId,
+            content
         });
+
+        console.log('Created comment:', comment);
 
         res.status(201).json({ 
             message: '댓글이 작성되었습니다.',

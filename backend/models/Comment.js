@@ -6,21 +6,38 @@ const db = require('../config/database');
 class Comment {
   /**
    * 새로운 댓글을 생성합니다.
-   * @param {number} postId - 게시글 ID
-   * @param {number} userId - 작성자 ID
-   * @param {string} content - 댓글 내용
-   * @returns {Promise<number>} 생성된 댓글의 ID
+   * @param {Object} commentData - 댓글 데이터
+   * @param {number} commentData.postId - 게시글 ID
+   * @param {number} commentData.userId - 작성자 ID
+   * @param {string} commentData.content - 댓글 내용
+   * @returns {Promise<Object>} 생성된 댓글 정보
    */
-  static async create(postId, userId, content) {
+  static async create({ postId, userId, content }) {
     try {
+      console.log('Creating comment:', { postId, userId, content });
+      
+      if (!content?.trim()) {
+        throw new Error('댓글 내용은 필수입니다.');
+      }
+
       const [result] = await db.query(
-        'INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)',
+        `INSERT INTO comments (post_id, user_id, content, created_at)
+         VALUES (?, ?, ?, NOW())`,
         [postId, userId, content]
       );
-      return result.insertId;
+
+      const [comment] = await db.query(
+        `SELECT c.*, u.username as author_name
+         FROM comments c
+         JOIN users u ON c.user_id = u.id
+         WHERE c.id = ?`,
+        [result.insertId]
+      );
+
+      return comment[0];
     } catch (error) {
       console.error('댓글 생성 에러:', error);
-      throw new Error('댓글 생성에 실패했습니다.');
+      throw error;
     }
   }
 
@@ -32,11 +49,17 @@ class Comment {
   static async findByPostId(postId) {
     try {
       const [rows] = await db.query(`
-        SELECT c.*, u.username as author_name
+        SELECT 
+          c.*,
+          u.username as author_name,
+          u.rank as author_rank,
+          r.color as rank_color,
+          r.name as rank_name
         FROM comments c
         LEFT JOIN users u ON c.user_id = u.id
+        LEFT JOIN ranks r ON u.rank = r.id
         WHERE c.post_id = ?
-        ORDER BY c.created_at DESC
+        ORDER BY c.created_at ASC
       `, [postId]);
       return rows;
     } catch (error) {
