@@ -8,8 +8,10 @@ import { DashboardChart } from '@app/_components/admin/DashboardChart';
 import { LoadingSpinner } from '@app/_components/common/LoadingSpinner';
 import { ErrorState } from '@app/_components/common/ErrorState';
 import { useAdminDashboard } from '@app/_lib/hooks/useAdminDashboard';
+import { useAuth } from '@app/_lib/hooks/useAuth';
 
 export default function AdminDashboardScreen() {
+    const { user } = useAuth();
     const { 
         stats, 
         loading, 
@@ -18,20 +20,26 @@ export default function AdminDashboardScreen() {
     } = useAdminDashboard();
     const [refreshing, setRefreshing] = useState(false);
 
-    const onRefresh = async () => {
-        setRefreshing(true);
-        await refreshData();
-        setRefreshing(false);
-    };
+    // 1. 먼저 권한 체크
+    if (!user || (user.role !== 'admin' && user.role !== 'god')) {
+        return (
+            <View style={styles.container}>
+                <Text>접근 권한이 없습니다.</Text>
+            </View>
+        );
+    }
 
+    // 2. 로딩 상태 체크
     if (loading && !refreshing) {
         return <LoadingSpinner />;
     }
 
+    // 3. 에러 상태 체크
     if (error) {
         return <ErrorState message={error} onRetry={refreshData} />;
     }
 
+    // 4. 실제 대시보드 렌더링
     return (
         <ScrollView 
             style={styles.container}
