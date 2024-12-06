@@ -11,10 +11,25 @@ const statisticsService = new StatisticsService(statisticsRepository);
 exports.getUsers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const users = await User.getAllUsers(page);
-    res.json({ success: true, users });
+    const limit = parseInt(req.query.limit) || 20;
+    const search = req.query.search || '';
+
+    const users = await User.getAllUsers(page, limit, search);
+    
+    res.json({ 
+      success: true, 
+      users,
+      page,
+      limit,
+      hasMore: users.length === limit
+    });
   } catch (error) {
-    res.status(500).json({ message: '사용자 목록 조회에 실패했습니다.' });
+    console.error('사용자 목록 조회 에러:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: '사용자 목록 조회에 실패했습니다.',
+      error: error.message 
+    });
   }
 };
 
@@ -160,7 +175,7 @@ exports.deleteCategory = async (req, res) => {
     // 카테고리 존재 여부 확인
     const category = await Category.findById(id);
     if (!category) {
-      return res.status(404).json({ message: '카테고리를 찾을 수 없습니다.' });
+      return res.status(404).json({ message: '카테고리를 찾을 수 습니다.' });
     }
 
     // 카테고리 삭제
@@ -173,5 +188,35 @@ exports.deleteCategory = async (req, res) => {
   } catch (error) {
     console.error('카테고리 삭제 에러:', error);
     res.status(500).json({ message: '카테고리 삭제에 실패했습니다.' });
+  }
+};
+
+exports.updateUserStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    if (!['active', 'inactive'].includes(status)) {
+      return res.status(400).json({ message: '잘못된 상태값입니다.' });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ message: '사용자를 찾을 수 없습니다.' });
+    }
+
+    res.json({ 
+      success: true, 
+      message: '사용자 상태가 업데이트되었습니다.',
+      user 
+    });
+  } catch (error) {
+    console.error('사용자 상태 업데이트 에러:', error);
+    res.status(500).json({ message: '사용자 상태 업데이트에 실패했습니다.' });
   }
 };

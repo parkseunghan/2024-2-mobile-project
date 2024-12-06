@@ -1,4 +1,4 @@
-import MainScreen from '@app/_screens/MainScreen';
+import MainScreen from '@app/_screens/home/MainScreen';
 
 /**
  * 홈 화면 컴포넌트

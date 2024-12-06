@@ -111,10 +111,13 @@ export default function RankingScreen() {
     });
     
     return (
-      <View style={[
-        styles.row,
-        user?.id === item.id && styles.highlightedRow
-      ]}>
+      <View 
+        key={`ranking-${item.id}`}
+        style={[
+          styles.row,
+          user?.id === item.id && styles.highlightedRow
+        ]}
+      >
         <View style={styles.rankContainer}>
           <Text style={[styles.cell, styles.rankText]}>
             {index + 1 <= 3 ? 
@@ -174,7 +177,7 @@ export default function RankingScreen() {
       <FlatList
         data={rankings}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={item => `ranking-${item.id}`}
         contentContainerStyle={styles.listContainer}
         refreshControl={
           <RefreshControl

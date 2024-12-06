@@ -3,7 +3,7 @@ use board;
 -- 사용자 등급 테이블 추가
 CREATE TABLE user_ranks (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(50) NOT NULL UNIQUE,     -- 등급명 (Bronze, Silver, Gold, Platinum, Diamond)
+    name VARCHAR(50) NOT NULL UNIQUE,     -- 등급명 (Bronze, Silver, Gold, Platinum, Diamondm, Master,God)
     min_score INT NOT NULL,               -- 등급 최소 점수
     max_score INT NOT NULL,               -- 등급 최대 점수
     color VARCHAR(7) NOT NULL,            -- 등급 색상 코드
@@ -22,7 +22,8 @@ CREATE TABLE users (
   current_rank_id INT default 1,                          -- 현재 등급 ID
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (current_rank_id) REFERENCES user_ranks(id)
+  FOREIGN KEY (current_rank_id) REFERENCES user_ranks(id),
+  last_login_at TIMESTAMP NULL DEFAULT NULL
 );
 
 CREATE TABLE search_history (
@@ -226,6 +227,9 @@ CREATE TABLE visits (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+
+
+
 -- 기본 등급 데이터 추가
 INSERT INTO user_ranks (name, min_score, max_score, color) 
 VALUES 
@@ -241,13 +245,87 @@ VALUES
 INSERT INTO users (username, email, password, role, current_rank_id)
 VALUES 
 ('god', 'god', '$2b$10$3Cl2A2TtIzdPLLuy/3.wluT3Hrg0/lG9Lq2kKUAXtkAUHM.U6ni1a', 'god', 
- (SELECT id FROM user_ranks WHERE name = 'God'));
+ (SELECT id FROM user_ranks WHERE name = 'God')),
+ ('admin', 'admin', '$2b$10$3Cl2A2TtIzdPLLuy/3.wluT3Hrg0/lG9Lq2kKUAXtkAUHM.U6ni1a', 'admin', 
+ (SELECT id FROM user_ranks WHERE name = 'Master')),
+ ('user1', 'user5', '$2b$10$KAdw5SESnXiXhMrqkFu4j.h.qWg58W7eQMEDZyXurCHWmbKbulueu', 'user', 
+ (SELECT id FROM user_ranks WHERE name = 'Bronze')),
+ ('user2', 'user4', '$2b$10$KAdw5SESnXiXhMrqkFu4j.h.qWg58W7eQMEDZyXurCHWmbKbulueu', 'user', 
+ (SELECT id FROM user_ranks WHERE name = 'Silver')),
+ ('user3', 'user3', '$2b$10$KAdw5SESnXiXhMrqkFu4j.h.qWg58W7eQMEDZyXurCHWmbKbulueu', 'user', 
+ (SELECT id FROM user_ranks WHERE name = 'Gold')),
+ ('user4', 'user2', '$2b$10$KAdw5SESnXiXhMrqkFu4j.h.qWg58W7eQMEDZyXurCHWmbKbulueu', 'user', 
+ (SELECT id FROM user_ranks WHERE name = 'Platinum')),
+ ('user5', 'user1', '$2b$10$KAdw5SESnXiXhMrqkFu4j.h.qWg58W7eQMEDZyXurCHWmbKbulueu', 'user', 
+ (SELECT id FROM user_ranks WHERE name = 'Diamond'));
 
--- god 계정의 초기 점�� 설정
+ 
+ -- Bronze, Silver, Gold, Platinum, Diamond
+ 
+
+-- god 계정의 초기 점수 설정
 INSERT INTO user_scores (user_id, total_score) 
-SELECT id, 1000000000 
-FROM users 
-WHERE email = 'god';
+values
+((SELECT id FROM users WHERE email = 'god'), 100000000),
+((SELECT id FROM users WHERE email = 'admin'), 10000000),
+((SELECT id FROM users WHERE email = 'user1'), 1000000),
+((SELECT id FROM users WHERE email = 'user2'), 50000),
+((SELECT id FROM users WHERE email = 'user3'), 5000),
+((SELECT id FROM users WHERE email = 'user4'), 1000),
+((SELECT id FROM users WHERE email = 'user5'), 0);
+
+-- 기본 게시글 카테고리 데이터 추가
+INSERT INTO post_categories (name, description, created_by) VALUES
+('공부', '공부 꿀팁 게시글', 1),
+('요리', '요리 꿀팁 게시글', 1),
+('컴퓨터', '컴퓨터 꿀팁 게시글', 1),
+('스마트폰', '스마트폰 꿀팁 게시글', 1),
+('생활', '생활 꿀팁 게시글', 1),
+('운동', '운동 꿀팁 게시글', 1),
+('패션', '패션 꿀팁 게시글', 1),
+('자동차', '자동차 꿀팁 게시글', 1);
+
+-- 기본 게시글 데이터 추가
+INSERT INTO posts (user_id, title, content, category, media_url, is_deleted, is_notice, is_hidden, last_comment_at, view_count, score) VALUES
+(1, '효율적인 공부법', '효율적으로 공부하는 방법에 대한 글입니다.', '공부', NULL, false, false, false, NULL, 120, 12),
+(2, '맛있는 요리 레시피', '쉽고 맛있는 요리 레시피를 공유합니다.', '요리', NULL, false, false, false, NULL, 80, 8),
+(3, '컴퓨터 성능 향상 팁', '컴퓨터 성능을 높이는 팁을 소개합니다.', '컴퓨터', NULL, false, false, false, NULL, 90, 9),
+(4, '스마트폰 활용법', '스마트폰을 효율적으로 사용하는 방법입니다.', '스마트폰', NULL, false, false, false, NULL, 150, 15),
+(5, '생활 속 꿀팁', '일상에서 유용하게 사용할 수 있는 꿀팁입니다.', '생활', NULL, false, false, false, NULL, 200, 20),
+(6, '운동으로 건강 챙기기', '운동을 통해 건강을 유지하는 방법에 대한 글입니다.', '운동', NULL, false, false, false, NULL, 60, 6),
+(7, '패션 트렌드 2024', '2024년 패션 트렌드에 대한 논의입니다.', '패션', NULL, false, false, false, NULL, 110, 11),
+(1, '자동차 관리 팁', '자동차를 잘 관리하는 방법에 대해 이야기합니다.', '자동차', NULL, false, false, false, NULL, 70, 7);
+
+-- 기본 댓글 데이터 추가
+INSERT INTO comments (post_id, user_id, parent_id, depth, content, is_deleted, like_count) VALUES
+(1, 2, NULL, 0, '효율적인 공부법, 정말 도움이 됩니다!', false, 5),
+(1, 3, NULL, 0, '이 방법은 저도 시도해볼게요!', false, 3),
+(2, 1, NULL, 0, '요리 레시피 정말 기대돼요!', false, 4),
+(2, 4, NULL, 0, '이 레시피로 요리해볼게요!', false, 2),
+(3, 2, NULL, 0, '컴퓨터 성능 팁, 너무 유용합니다!', false, 6),
+(3, 5, NULL, 0, '이 팁을 사용해보니 효과가 좋았어요!', false, 1),
+(4, 3, NULL, 0, '스마트폰 활용법, 정말 유용하네요!', false, 2),
+(4, 6, NULL, 0, '더 많은 팁을 알고 싶어요!', false, 1),
+(5, 1, NULL, 0, '생활 꿀팁 감사합니다!', false, 0),
+(5, 7, NULL, 0, '이런 정보는 항상 필요해요!', false, 3),
+(6, 2, NULL, 0, '정기적으로 운동하는 게 중요하죠!', false, 4),
+(6, 6, NULL, 0, '운동 루틴을 공유해주시면 좋겠어요!', false, 2),
+(7, 3, NULL, 0, '패션 트렌드에 대해 더 알고 싶어요!', false, 5),
+(7, 4, NULL, 0, '2024년 패션 정말 기대됩니다!', false, 3),
+(1, 2, NULL, 0, '효율적인 공부법에 대한 좋은 정보입니다!', false, 5),
+(1, 3, 1, 1, '저도 이 방법을 사용해봤어요. 효과적이더라고요!', false, 3),
+(2, 1, NULL, 0, '요리 레시피가 정말 맛있어 보이네요!', false, 4),
+(2, 4, 2, 1, '레시피를 따라 해보겠습니다!', false, 2),
+(3, 2, NULL, 0, '컴퓨터 성능 향상 방법 정말 유용합니다!', false, 6),
+(4, 3, NULL, 0, '스마트폰 활용법에 대해 더 알고 싶어요.', false, 1),
+(5, 1, NULL, 0, '생활 속 꿀팁 감사합니다!', false, 0),
+(6, 2, NULL, 0, '운동으로 건강을 챙기는 게 중요하죠!', false, 7),
+(7, 3, NULL, 0, '패션 트렌드에 대해 이야기해주셔서 감사합니다!', false, 2);
+
+-- 기본 좋아요 데이터 추가
+INSERT INTO post_likes (post_id, user_id) VALUES
+(1, 2),(1, 3),(1, 4),(2, 1),(2, 3),(2, 5),(3, 2),(3, 4),(3, 6),(4, 1),(4, 5),(5, 2),(5, 3),(5, 7),(6, 1),(6, 2),(6, 4),(7, 3),(7, 4),(7, 5);
+
 
 
 CREATE INDEX idx_visits_created_at ON visits(created_at);
@@ -256,26 +334,24 @@ CREATE INDEX idx_visits_user_id ON visits(user_id);
 -- 모든 테이블 삭제 (필요시 주석 해제하여 사용)
 -- SET FOREIGN_KEY_CHECKS = 0;
 -- DROP TABLE IF EXISTS
---     admin_activity_logs,
---     user_activity_logs,
---     comment_likes,
---     post_likes,
---     score_histories,
---     user_scores,
---     comments,
---     posts,
---     video_summaries,
---     search_statistics,
---     search_history,
---     post_categories,
---     users,
---     user_ranks,
---     visits,
---     poll_options,
---     poll_votes,
---     score_settings;
+-- admin_activity_logs,
+-- comment_likes,
+-- comments,
+-- poll_options,
+-- poll_votes,
+-- post_categories,
+-- post_likes,
+-- posts,
+-- score_settings,
+-- search_history,
+-- search_statistics,
+-- user_activity_logs,
+-- user_ranks,
+-- user_scores,
+-- users,
+-- video_summaries,
+-- visits;
 -- SET FOREIGN_KEY_CHECKS = 1;
-
 
 
 

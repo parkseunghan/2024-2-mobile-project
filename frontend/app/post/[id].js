@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import PostDetailScreen from '@app/_screens/PostDetailScreen';
+import PostDetailScreen from '@app/_screens/community/PostDetailScreen';
 import { Header } from '@app/_components/common/Header';
 
 export default function PostDetail() {

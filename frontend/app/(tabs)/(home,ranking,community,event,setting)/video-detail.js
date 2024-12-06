@@ -1,4 +1,4 @@
-import VideoDetailScreen from '@app/_screens/VideoDetailScreen';
+import VideoDetailScreen from '@app/_screens/home/VideoDetailScreen';
 import { useLocalSearchParams } from 'expo-router';
 
 /**

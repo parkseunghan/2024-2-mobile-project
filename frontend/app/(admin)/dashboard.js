@@ -1,6 +1,6 @@
 import React from 'react';
-import AdminDashboard from '@app/_screens/admin/AdminDashboard';
+import AdminDashboardScreen from '@app/_screens/admin/AdminDashboardScreen';
 
 export default function Dashboard() {
-    return <AdminDashboard />;
+    return <AdminDashboardScreen />;
 } 

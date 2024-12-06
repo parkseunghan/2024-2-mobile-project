@@ -1,7 +1,7 @@
 import React from 'react';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { Header } from '@app/_components/common/Header';
-import CategoryDetailScreen from '@app/_screens/CategoryDetailScreen';
+import CategoryDetailScreen from '@app/_screens/home/CategoryDetailScreen';
 
 export default function CategoryDetail() {
     const { id, title } = useLocalSearchParams();

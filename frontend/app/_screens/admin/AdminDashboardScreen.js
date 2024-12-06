@@ -1,31 +1,18 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { colors } from '@app/_styles/colors';
-import { spacing } from '@app/_styles/spacing';
-import { typography } from '@app/_styles/typography';
-import { DashboardCard } from '@app/_components/admin/DashboardCard';
-import { DashboardChart } from '@app/_components/admin/DashboardChart';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { Link } from 'expo-router';
+import { useAuth } from '@app/_context/AuthContext';
 import { LoadingSpinner } from '@app/_components/common/LoadingSpinner';
-import { ErrorState } from '@app/_components/common/ErrorState';
-import { useAdminDashboard } from '@app/_lib/hooks/useAdminDashboard';
-import { useAuth } from '@app/_lib/hooks/useAuth';
 
-export default function AdminDashboardScreen() {
-    const { user, isLoading: authLoading } = useAuth();
-    const { 
-        stats, 
-        loading: statsLoading, 
-        error, 
-        refreshData 
-    } = useAdminDashboard();
-    const [refreshing, setRefreshing] = useState(false);
+export default function AdminDashboard() {
+    const { user, isLoading } = useAuth();
 
-    // 인증 로딩 상태 처리
-    if (authLoading) {
+    // 로딩 상태 처리
+    if (isLoading) {
         return <LoadingSpinner />;
     }
 
-    // 권한 체크
+    // 관리자 권한 체크
     if (!user || (user.role !== 'admin' && user.role !== 'god')) {
         return (
             <View style={styles.container}>
@@ -34,66 +21,31 @@ export default function AdminDashboardScreen() {
         );
     }
 
-    // 통계 데이터 로딩 상태 처리
-    if (statsLoading && !refreshing) {
-        return <LoadingSpinner />;
-    }
-
-    // 에러 상태 처리
-    if (error) {
-        return <ErrorState message={error} onRetry={refreshData} />;
-    }
-
-    const onRefresh = React.useCallback(async () => {
-        setRefreshing(true);
-        await refreshData();
-        setRefreshing(false);
-    }, [refreshData]);
-
     return (
-        <ScrollView 
-            style={styles.container}
-            refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-        >
+        <ScrollView style={styles.container}>
             <Text style={styles.title}>관리자 대시보드</Text>
             
-            <View style={styles.statsGrid}>
-                <DashboardCard
-                    title="총 사용자"
-                    value={stats?.totalUsers || 0}
-                    icon="users"
-                    color={colors.primary}
-                />
-                <DashboardCard
-                    title="오늘의 방문자"
-                    value={stats?.todayVisitors || 0}
-                    icon="user-clock"
-                    color={colors.success}
-                />
-                <DashboardCard
-                    title="총 게시물"
-                    value={stats?.totalPosts || 0}
-                    icon="file-alt"
-                    color={colors.warning}
-                />
-                <DashboardCard
-                    title="신규 가입자"
-                    value={stats?.newUsers || 0}
-                    icon="user-plus"
-                    color={colors.info}
-                />
-            </View>
+            <View style={styles.menuGrid}>
+                <Link href="/users" asChild>
+                    <Pressable style={styles.menuItem}>
+                        <Text style={styles.menuTitle}>사용자 관리</Text>
+                        <Text style={styles.menuDescription}>사용자 목록 조회 및 권한 관리</Text>
+                    </Pressable>
+                </Link>
 
-            <View style={styles.chartSection}>
-                <Text style={styles.sectionTitle}>사용자 통계</Text>
-                <DashboardChart data={stats?.userStats} />
-            </View>
+                <Link href="/statistics" asChild>
+                    <Pressable style={styles.menuItem}>
+                        <Text style={styles.menuTitle}>통계</Text>
+                        <Text style={styles.menuDescription}>사이트 사용 통계 확인</Text>
+                    </Pressable>
+                </Link>
 
-            <View style={styles.chartSection}>
-                <Text style={styles.sectionTitle}>게시물 통계</Text>
-                <DashboardChart data={stats?.postStats} />
+                <Link href="/categories" asChild>
+                    <Pressable style={styles.menuItem}>
+                        <Text style={styles.menuTitle}>카테고리 관리</Text>
+                        <Text style={styles.menuDescription}>게시글 카테고리 생성 및 관리</Text>
+                    </Pressable>
+                </Link>
             </View>
         </ScrollView>
     );
@@ -102,24 +54,31 @@ export default function AdminDashboardScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: colors.background,
-        padding: spacing.md,
+        padding: 20,
+        backgroundColor: '#fff',
     },
     title: {
-        ...typography.h1,
-        marginBottom: spacing.lg,
+        fontSize: 24,
+        fontWeight: 'bold',
+        marginBottom: 20,
     },
-    statsGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        marginBottom: spacing.xl,
+    menuGrid: {
+        gap: 15,
     },
-    chartSection: {
-        marginBottom: spacing.xl,
+    menuItem: {
+        padding: 20,
+        backgroundColor: '#f5f5f5',
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
     },
-    sectionTitle: {
-        ...typography.h2,
-        marginBottom: spacing.md,
+    menuTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 5,
+    },
+    menuDescription: {
+        fontSize: 14,
+        color: '#666',
     },
 }); 

@@ -146,7 +146,7 @@ class User {
   }
 
   /**
-   * 사용자의 점수를 업데이���합니다.
+   * 사용자의 점수를 업데이트합니다.
    * @param {number} userId - 사용자 ID
    */
   static async updateUserScore(userId) {
@@ -221,6 +221,53 @@ class User {
     } catch (error) {
       console.error('사용자 점수 업데이트 에러:', error);
       throw new Error('점수 업데이트에 실패했습니다.');
+    }
+  }
+
+  static async getAllUsers(page = 1, limit = 20, search = '') {
+    try {
+        const offset = (page - 1) * limit;
+        let query = `
+            SELECT 
+                id, 
+                username, 
+                email, 
+                role, 
+                is_active as status, 
+                created_at,
+                current_rank_id as user_rank
+            FROM users
+            WHERE is_active = true
+        `;
+
+        const params = [];
+        
+        if (search) {
+            query += ` AND (username LIKE ? OR email LIKE ?)`;
+            params.push(`%${search}%`, `%${search}%`);
+        }
+
+        query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+        params.push(limit, offset);
+
+        const [users] = await db.query(query, params);
+        return users;
+    } catch (error) {
+        console.error('사용자 목록 조회 에러:', error);
+        throw error;
+    }
+  }
+
+  static async findByIdAndUpdate(id, updates) {
+    try {
+      const [result] = await db.query(
+        'UPDATE users SET ? WHERE id = ?',
+        [updates, id]
+      );
+      return result.affectedRows > 0;
+    } catch (error) {
+      console.error('사용자 업데이트 에러:', error);
+      throw error;
     }
   }
 }
