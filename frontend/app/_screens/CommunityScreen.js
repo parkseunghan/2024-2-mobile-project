@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, Image, TextInput, ScrollView, Alert } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, Image, TextInput, ScrollView, Alert, Button } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
@@ -14,14 +14,15 @@ export default function CommunityScreen() {
     const { user } = useAuth();
     const [selectedCategory, setSelectedCategory] = useState('전체');
     const [searchText, setSearchText] = useState('');
+    const [activeTab, setActiveTab] = useState('all');
 
     // 게시글 무한 스크롤 쿼리
     const {
-        data,
-        fetchNextPage,
-        hasNextPage,
-        isLoading,
-        isFetchingNextPage
+        data: allPostsData,
+        fetchNextPage: fetchNextAllPosts,
+        hasNextPage: hasNextAllPosts,
+        isLoading: isLoadingAllPosts,
+        isFetchingNextPage: isFetchingNextAllPosts
     } = useInfiniteQuery({
         queryKey: ['posts', selectedCategory, searchText],
         queryFn: ({ pageParam = 1 }) => postsApi.fetchPosts({ 
@@ -34,6 +35,17 @@ export default function CommunityScreen() {
         staleTime: 1000 * 60 * 5, // 5분간 캐시 유지
     });
 
+    // 카아요한 게시글 쿼리 추가
+    const {
+        data: likedPostsData,
+        isLoading: isLoadingLikedPosts,
+    } = useQuery({
+        queryKey: ['likedPosts'],
+        queryFn: postsApi.fetchLikedPosts,
+        enabled: !!user, // 로그인한 경우에만 실행
+        staleTime: 1000 * 60 * 5,
+    });
+
     // 카테고리 목록 조회
     const { data: categories = [] } = useQuery({
         queryKey: ['categories'],
@@ -41,7 +53,7 @@ export default function CommunityScreen() {
         staleTime: 1000 * 60 * 30, // 30분간 캐시 유지
     });
 
-    const posts = data?.pages.flatMap(page => page.posts) ?? [];
+    const posts = allPostsData?.pages.flatMap(page => page.posts) ?? [];
 
     const renderPost = useCallback(({ item }) => (
         <Pressable
@@ -98,63 +110,124 @@ export default function CommunityScreen() {
 
     // 무한 스크롤 처리
     const onEndReached = useCallback(() => {
-        if (hasNextPage && !isFetchingNextPage) {
-            fetchNextPage();
+        if (hasNextAllPosts && !isFetchingNextAllPosts) {
+            fetchNextAllPosts();
         }
-    }, [hasNextPage, isFetchingNextPage]);
+    }, [hasNextAllPosts, isFetchingNextAllPosts]);
+
+    // 비로그인 상태에서 좋아요 탭 클릭시 보여줄 컴포넌트
+    const UnauthorizedState = () => (
+        <View style={styles.unauthorizedContainer}>
+            <FontAwesome5 name="heart" size={50} color={colors.primary} style={styles.icon} />
+            <Text style={styles.unauthorizedTitle}>로그인이 필요합니다</Text>
+            <Text style={styles.unauthorizedSubtitle}>
+                좋아요한 게시글을 보려면 로그인이 필요합니다.
+            </Text>
+            <View style={styles.buttonContainer}>
+                <Button
+                    title="로그인하기"
+                    onPress={() => router.push('/login')}
+                    variant="primary"
+                    fullWidth
+                />
+            </View>
+        </View>
+    );
 
     return (
         <View style={styles.container}>
             {/* 검색 입력 */}
             <TextInput
                 style={styles.searchInput}
-                placeholder="제목, 내용, 작성로 검색"
+                placeholder="제목, 내용, 작성자로 검색"
                 value={searchText}
                 onChangeText={setSearchText}
             />
 
-            {/* 카테고리 필터 */}
-            <ScrollView 
-                horizontal 
-                style={styles.categoryContainer}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoryContent}
-            >
-                {categories.map((category) => (
-                    <Pressable
-                        key={category.id}
-                        onPress={() => setSelectedCategory(category.name)}
-                        style={[
-                            styles.categoryButton,
-                            selectedCategory === category.name && styles.categorySelected,
-                        ]}
-                    >
-                        <Text style={[
-                            styles.categoryText,
-                            selectedCategory === category.name && styles.categoryTextSelected,
-                        ]}>
-                            {category.name}
-                        </Text>
-                    </Pressable>
-                ))}
-            </ScrollView>
+            {/* 탭 메뉴 추가 */}
+            <View style={styles.tabContainer}>
+                <Pressable
+                    style={[styles.tab, activeTab === 'all' && styles.activeTab]}
+                    onPress={() => setActiveTab('all')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
+                        전체 게시글
+                    </Text>
+                </Pressable>
+                <Pressable
+                    style={[styles.tab, activeTab === 'liked' && styles.activeTab]}
+                    onPress={() => setActiveTab('liked')}
+                >
+                    <Text style={[styles.tabText, activeTab === 'liked' && styles.activeTabText]}>
+                        좋아요한 글
+                    </Text>
+                </Pressable>
+            </View>
 
-            {/* 게시글 리스트 */}
-            <FlatList
-                data={posts}
-                renderItem={renderPost}
-                keyExtractor={item => item.id.toString()}
-                onEndReached={onEndReached}
-                onEndReachedThreshold={0.5}
-                ListFooterComponent={isFetchingNextPage ? <LoadingSpinner /> : null}
-                ListEmptyComponent={
-                    !isLoading && (
-                        <View style={styles.emptyContainer}>
-                            <Text style={styles.emptyText}>게시글이 없습니다.</Text>
-                        </View>
-                    )
-                }
-            />
+            {activeTab === 'all' ? (
+                <>
+                    {/* 카테고리 필터 */}
+                    <ScrollView 
+                        horizontal 
+                        style={styles.categoryContainer}
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.categoryContent}
+                    >
+                        {categories.map((category) => (
+                            <Pressable
+                                key={category.id}
+                                onPress={() => setSelectedCategory(category.name)}
+                                style={[
+                                    styles.categoryButton,
+                                    selectedCategory === category.name && styles.categorySelected,
+                                ]}
+                            >
+                                <Text style={[
+                                    styles.categoryText,
+                                    selectedCategory === category.name && styles.categoryTextSelected,
+                                ]}>
+                                    {category.name}
+                                </Text>
+                            </Pressable>
+                        ))}
+                    </ScrollView>
+
+                    {/* 전체 게시글 리스트 */}
+                    <FlatList
+                        data={allPostsData?.pages.flatMap(page => page.posts) ?? []}
+                        renderItem={renderPost}
+                        keyExtractor={item => item.id.toString()}
+                        onEndReached={onEndReached}
+                        onEndReachedThreshold={0.5}
+                        ListFooterComponent={isFetchingNextAllPosts ? <LoadingSpinner /> : null}
+                        ListEmptyComponent={
+                            !isLoadingAllPosts && (
+                                <View style={styles.emptyContainer}>
+                                    <Text style={styles.emptyText}>게시글이 없습니다.</Text>
+                                </View>
+                            )
+                        }
+                    />
+                </>
+            ) : (
+                // 좋아요 탭 컨텐츠
+                !user ? (
+                    <UnauthorizedState />
+                ) : (
+                    <FlatList
+                        data={likedPostsData?.data?.posts ?? []}
+                        renderItem={renderPost}
+                        keyExtractor={item => item.id.toString()}
+                        ListEmptyComponent={
+                            !isLoadingLikedPosts && (
+                                <View style={styles.emptyContainer}>
+                                    <Text style={styles.emptyText}>좋아요한 게시글이 없습니다.</Text>
+                                </View>
+                            )
+                        }
+                    />
+                )
+            )}
 
             {/* 게시글 작성 버튼 */}
             <Pressable
@@ -343,5 +416,53 @@ const styles = StyleSheet.create({
     emptyText: {
         fontSize: 16,
         color: colors.text.secondary,
+    },
+    tabContainer: {
+        flexDirection: 'row',
+        paddingHorizontal: 16,
+        marginBottom: 8,
+    },
+    tab: {
+        flex: 1,
+        paddingVertical: 12,
+        alignItems: 'center',
+        borderBottomWidth: 2,
+        borderBottomColor: 'transparent',
+    },
+    activeTab: {
+        borderBottomColor: colors.primary,
+    },
+    tabText: {
+        fontSize: 14,
+        color: colors.text.secondary,
+    },
+    activeTabText: {
+        color: colors.primary,
+        fontWeight: 'bold',
+    },
+    unauthorizedContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    unauthorizedTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    unauthorizedSubtitle: {
+        fontSize: 16,
+        color: colors.text.secondary,
+        textAlign: 'center',
+        marginBottom: 24,
+    },
+    icon: {
+        marginBottom: 16,
+    },
+    buttonContainer: {
+        width: '100%',
+        maxWidth: 300,
     },
 });
