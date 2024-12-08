@@ -44,20 +44,18 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: spacing.md,
   },
-  label: {
-    ...typography.body,
-    marginBottom: spacing.xs,
+  input: {
+    backgroundColor: colors.surface,
+    borderRadius: 10,
+    borderColor: colors.border,
+    borderWidth: 2,
+    padding: spacing.md,
     color: colors.text.primary,
   },
-  input: {
-    height: 48,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    backgroundColor: colors.background,
+  label: {
     color: colors.text.primary,
-    ...typography.body,
+    marginBottom: spacing.xs,
+    fontWeight: '500',
   },
   inputError: {
     borderColor: colors.error,

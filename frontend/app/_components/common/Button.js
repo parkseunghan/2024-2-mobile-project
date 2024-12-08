@@ -75,9 +75,13 @@ export const Button = ({
 const styles = StyleSheet.create({
     button: {
         padding: spacing.md,
-        borderRadius: 8,
+        borderRadius: 25,
         alignItems: 'center',
         justifyContent: 'center',
+        flexDirection: 'row',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.3,
+        shadowRadius: 5,
     },
     content: {
         flexDirection: 'row',
@@ -91,27 +95,31 @@ const styles = StyleSheet.create({
         width: '100%',
     },
     primary: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.button.primary,
+        shadowColor: colors.shadow.primary,
     },
     secondary: {
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.border,
+        backgroundColor: colors.button.secondary,
+        shadowColor: colors.shadow.secondary,
     },
     danger: {
         backgroundColor: colors.error,
+        shadowColor: colors.error,
     },
     primaryText: {
-        color: colors.background,
-        ...typography.button,
+        color: colors.text.light,
+        fontSize: 16,
+        fontWeight: 'bold',
     },
     secondaryText: {
-        color: colors.text.primary,
-        ...typography.button,
+        color: colors.text.light,
+        fontSize: 16,
+        fontWeight: 'bold',
     },
     dangerText: {
-        color: colors.background,
-        ...typography.button,
+        color: colors.text.light,
+        fontSize: 16,
+        fontWeight: 'bold',
     },
     disabled: {
         opacity: 0.5,
