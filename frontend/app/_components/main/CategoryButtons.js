@@ -3,13 +3,14 @@ import { View, StyleSheet, Text, Pressable, FlatList, SafeAreaView, ScrollView }
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { CATEGORIES } from '@app/_config/constants';
+import { colors } from '@app/_styles/colors';
 
 /**
  * 유동적인 카테고리 버튼 목록 컴포넌트
  */
 export const CategoryButtons = () => {
     const router = useRouter();
-    const [activeCategory, setActiveCategory] = useState(null);
+    const [activeCategory, setActiveCategory] = useState(CATEGORIES[0]?.id || null);
 
     const handleCategoryPress = (categoryId) => {
         setActiveCategory(activeCategory === categoryId ? null : categoryId);
@@ -29,13 +30,20 @@ export const CategoryButtons = () => {
         <Pressable
             key={category.id}
             style={({ pressed }) => [
-                styles.button,
+                styles.categoryButton,
                 pressed && styles.buttonPressed,
-                activeCategory === category.id && styles.activeButton,
+                activeCategory === category.id && styles.categorySelected,
             ]}
             onPress={() => handleCategoryPress(category.id)}
         >
-            <Text style={styles.buttonText}>{category.title}</Text>
+            <Text
+                style={[
+                    styles.categoryText,
+                    activeCategory === category.id && styles.categoryTextSelected,
+                ]}
+            >
+                {category.title}
+            </Text>
         </Pressable>
     );
 
@@ -96,27 +104,37 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'flex-start',
-        alignItems: 'center',
-        paddingTop: 20,
+        paddingTop: 10,
+        backgroundColor: colors.background,
     },
     scrollContainer: {
-        alignItems: 'center',
+        paddingHorizontal: 1,
+        marginBottom: 10,
     },
-    button: {
-        backgroundColor: 'white',
-        borderRadius: 20,
-        paddingVertical: 12,
+    categoryButton: {
         paddingHorizontal: 20,
-        marginHorizontal: 8,
-        alignItems: 'center',
+        paddingVertical: 20,
+        marginHorizontal: 5,
+        borderRadius: 16,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+        height: 36,
         justifyContent: 'center',
-        elevation: 3,
     },
-    activeButton: {
-        backgroundColor: '#d0e8ff',
+    categorySelected: {
+        backgroundColor: colors.primary,
+    },
+    categoryText: {
+        color: colors.text.secondary,
+        fontSize: 14,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    categoryTextSelected: {
+        color: colors.background,
     },
     subItemButton: {
-        backgroundColor: 'white',
         borderRadius: 20,
         paddingVertical: 15,
         paddingHorizontal: 20,
@@ -130,12 +148,6 @@ const styles = StyleSheet.create({
     },
     buttonPressed: {
         backgroundColor: '#e0e0e0',
-    },
-    buttonText: {
-        color: '#2D3436',
-        fontSize: 14,
-        fontWeight: '600',
-        textAlign: 'center',
     },
     subItemsWrapper: {
         flexDirection: 'column',
@@ -155,8 +167,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
         textAlign: 'center',
-        overflow: 'hidden',
-        width: '150%',
-        whiteSpace: 'nowrap',
+        flexWrap: 'wrap', // 텍스트가 넘칠 경우 자동으로 줄바꿈
+        maxWidth: '100%', // 부모 컨테이너 크기에 맞게 조정
     },
 });

@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert, ScrollView, Platform } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, Text, StyleSheet, Alert, ScrollView, Platform, Animated, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Input } from '@app/_components/common/Input';
-import { Button } from '@app/_components/common/Button';
 import { colors } from '@app/_styles/colors';
 import { spacing } from '@app/_styles/spacing';
 import { typography } from '@app/_styles/typography';
@@ -20,6 +19,26 @@ export default function SignupScreen() {
   });
   const [loading, setLoading] = useState(false);
 
+  // 애니메이션 참조
+  const signupScale = useRef(new Animated.Value(1)).current;
+  const loginScale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = (scale) => {
+    Animated.spring(scale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handlePressOut = (scale) => {
+    Animated.spring(scale, {
+      toValue: 1,
+      friction: 3,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
+  };
+
   const handleSignup = async () => {
     if (!formData.username.trim() || !formData.email.trim() || 
         !formData.password || !formData.confirmPassword) {
@@ -32,7 +51,6 @@ export default function SignupScreen() {
       return;
     }
 
-    
     if (formData.password.length < AUTH.MIN_PASSWORD_LENGTH) {
       Alert.alert('알림', `비밀번호는 최소 ${AUTH.MIN_PASSWORD_LENGTH}자 이상이어야 합니다.`);
       return;
@@ -40,41 +58,26 @@ export default function SignupScreen() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-        Alert.alert('알림', '올바른 이메일 형식이 아닙니다.');
-        return;
+      Alert.alert('알림', '올바른 이메일 형식이 아닙니다.');
+      return;
     }
 
     try {
       setLoading(true);
-      console.log('Attempting signup with:', formData);
-
       await signup({
         username: formData.username.trim(),
         email: formData.email.trim(),
         password: formData.password,
-        confirmPassword: formData.confirmPassword
+        confirmPassword: formData.confirmPassword,
       });
-      
-      if (Platform.OS === 'web') {
-        window.alert('회원가입이 완료되었습니다.');
-        router.replace('/login');
-      } else {
-        Alert.alert('성공', '회원가입이 완료되었습니다.', [
-          {
-            text: '확인',
-            onPress: () => router.replace('/login'),
-          },
-        ]);
-      }
+
+      const successMessage = '회원가입이 완료되었습니다.';
+      Platform.OS === 'web' ? window.alert(successMessage) : Alert.alert('성공', successMessage, [
+        { text: '확인', onPress: () => router.replace('/login') },
+      ]);
     } catch (error) {
-      console.error('회원가입 에러:', error);
       const errorMessage = error.response?.data?.message || '회원가입 중 오류가 발생했습니다.';
-      
-      if (Platform.OS === 'web') {
-        window.alert(errorMessage);
-      } else {
-        Alert.alert('오류', errorMessage);
-      }
+      Platform.OS === 'web' ? window.alert(errorMessage) : Alert.alert('오류', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -122,19 +125,28 @@ export default function SignupScreen() {
       </View>
 
       <View style={styles.buttons}>
-        <Button
-          title={loading ? "가입 중..." : "회원가입"}
-          onPress={handleSignup}
-          disabled={loading}
-          variant="primary"
-          fullWidth
-        />
-        <Button
-          title="이미 계정이 있으신가요? 로그인"
-          onPress={() => router.push('/login')}
-          variant="secondary"
-          fullWidth
-        />
+        <Animated.View style={{ transform: [{ scale: signupScale }] }}>
+          <Pressable
+            style={styles.signupButton}
+            onPress={handleSignup}
+            onPressIn={() => handlePressIn(signupScale)}
+            onPressOut={() => handlePressOut(signupScale)}
+            disabled={loading}
+          >
+            <Text style={styles.buttonText}>{loading ? "가입 중..." : "회원가입"}</Text>
+          </Pressable>
+        </Animated.View>
+
+        <Animated.View style={{ transform: [{ scale: loginScale }] }}>
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => router.push('/login')}
+            onPressIn={() => handlePressIn(loginScale)}
+            onPressOut={() => handlePressOut(loginScale)}
+          >
+            <Text style={styles.buttonText}>이미 계정이 있으신가요? 로그인</Text>
+          </Pressable>
+        </Animated.View>
       </View>
     </ScrollView>
   );
@@ -163,8 +175,27 @@ const styles = StyleSheet.create({
   buttons: {
     gap: spacing.md,
   },
-  errorText: {
-    color: colors.error,
-    marginBottom: spacing.sm,
-  }
-}); 
+  signupButton: {
+    backgroundColor: '#FFA500',
+    borderRadius: 25,
+    paddingVertical: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#FFA000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+  },
+  secondaryButton: {
+    backgroundColor: '#FFA000',
+    borderRadius: 25,
+    paddingVertical: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});

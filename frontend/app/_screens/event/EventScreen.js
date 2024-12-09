@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, Image, TextInput } from 'react-native';
+import { View, Text, FlatList, Pressable, StyleSheet, Image, TextInput, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
+import { colors } from '@app/_styles/colors';
+import { spacing } from '@app/_styles/spacing';
+import { typography } from '@app/_styles/typography';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 const eventPostsData = [
     {
@@ -51,18 +55,6 @@ const EventHomeScreen = () => {
         post.title.toLowerCase().includes(searchText.toLowerCase())
     );
 
-    const updatePost = (updatedPost) => {
-        setPosts((prevPosts) =>
-            prevPosts.map((post) =>
-                post.id === updatedPost.id ? updatedPost : post
-            )
-        );
-    };
-
-    const addPost = (newPost) => {
-        setPosts((prevPosts) => [newPost, ...prevPosts]);
-    };
-
     const top3Posts = [...posts]
         .filter((post) => post.likes >= 10)
         .sort((a, b) => b.likes - a.likes)
@@ -108,11 +100,11 @@ const EventHomeScreen = () => {
     );
 
     return (
-        <View style={styles.container}>
+        <ScrollView style={styles.container}>
             {/* 이벤트 배너 */}
             <View style={styles.bannerContainer}>
                 <Image
-                    source={require('../../assets/banner.png')}
+                    source={require('../../../assets/banner.png')}
                     style={styles.bannerImage}
                 />
             </View>
@@ -147,39 +139,43 @@ const EventHomeScreen = () => {
                 style={styles.floatingButton}
                 onPress={() => router.push('/post/create')}
             >
-                <Icon name="add" size={24} color="#fff" />
+                <FontAwesome5 name="plus" size={24} color={colors.background} />
             </Pressable>
-        </View>
+        </ScrollView>
     );
 };
 
 const styles = StyleSheet.create({
     container: { 
         flex: 1, 
-        backgroundColor: '#fff',
+        backgroundColor: colors.background,
     },
     bannerContainer: {
         width: '100%',
-        height: 150,
+        aspectRatio: 16 / 6,  // 비율 설정
+        minHeight: 100,       // 최소 높이 보장
         marginBottom: 16,
         overflow: 'hidden',
     },
+    
     bannerImage: {
         width: '100%',
         height: '100%',
-        resizeMode: 'cover',
+        resizeMode: 'stretch',
     },
     searchInput: {
         borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 8,
-        padding: 8,
-        marginBottom: 16,
         marginHorizontal: 16,
+        backgroundColor: 'white',
+        borderColor: colors.border,
+        borderRadius: 8,
+        padding: spacing.md,
+        marginBottom: spacing.md,
+        ...typography.body,
     },
     top3Section: {
         padding: 16,
-        backgroundColor: '#f9f9f9',
+        backgroundColor: colors.background,
         marginBottom: 16,
         borderRadius: 8,
         marginHorizontal: 16,
@@ -190,11 +186,14 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     top3PostContainer: {
+        backgroundColor: colors.primary,
         padding: 8,
         borderWidth: 1,
-        borderColor: '#ddd',
         borderRadius: 8,
         marginBottom: 8,
+        borderColor: colors.border,
+        padding: spacing.md,
+        ...typography.body,
     },
     top3PostTitle: { fontSize: 14, fontWeight: 'bold' },
     top3PostLikes: { fontSize: 12, color: 'gray', marginTop: 4 },
@@ -203,14 +202,14 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         padding: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#ddd',
+        borderBottomColor: colors.border,
         marginHorizontal: 16,
     },
     mediaPreviewContainer: { marginRight: 16 },
     postImage: { width: 50, height: 50, borderRadius: 8 },
     postContent: { flex: 1 },
     postTitle: { fontSize: 16, fontWeight: 'bold' },
-    postAuthor: { fontSize: 12, color: '#555' },
+    postAuthor: { fontSize: 12, color: 'black' },
     postStats: {
         flexDirection: 'row',
         marginTop: 8,
@@ -229,12 +228,17 @@ const styles = StyleSheet.create({
         position: 'absolute',
         right: 20,
         bottom: 20,
-        backgroundColor: '#007BFF',
+        backgroundColor: colors.primary,
         width: 56,
         height: 56,
         borderRadius: 28,
         alignItems: 'center',
         justifyContent: 'center',
+        elevation: 4,
+        shadowColor: colors.text.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
     },
 });
 

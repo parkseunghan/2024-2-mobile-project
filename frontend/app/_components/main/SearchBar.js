@@ -47,7 +47,7 @@ export const SearchBar = memo(({
                     onSubmitEditing={onSubmit}
                     onFocus={handleFocus}
                     placeholder="어떤 팁을 찾으시나요?"
-                    placeholderTextColor={colors.text.secondary}
+                    placeholderTextColor={'#8E8E93'}
                     returnKeyType="search"
                     autoFocus={autoFocus}
                 />
@@ -98,6 +98,7 @@ const styles = StyleSheet.create({
         color: colors.text.primary,
         height: '100%',
         paddingVertical: 0,
+        fontSize: 14.5,
     },
     clearButtonContainer: {
         position: 'absolute',

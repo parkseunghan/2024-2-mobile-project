@@ -2,8 +2,8 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { colors } from '@app/_styles/colors';
-import { spacing } from '@app/_styles/spacing';
-import { Platform, View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+
 
 /**
  * 탭 네비게이션 레이아웃 컴포넌트
@@ -22,11 +22,7 @@ export default function TabsLayout() {
         <View style={styles.tabBarItem}>
             <FontAwesome5 name={iconName} size={20} color={color} />
             <Text 
-                style={[
-                    styles.tabBarLabel,
-                    { color },
-                    focused && styles.tabBarLabelFocused
-                ]}
+                style={[styles.tabBarLabel, { color }, focused && styles.tabBarLabelFocused]}
                 numberOfLines={1}
             >
                 {label}
@@ -38,7 +34,7 @@ export default function TabsLayout() {
         <Tabs
             screenOptions={{
                 headerShown: false,
-                tabBarStyle: styles.tabBar,
+                tabBarStyle: styles.tabBar, // 여기에 배경색 설정
                 tabBarShowLabel: false, // 기본 라벨 숨기기
             }}
         >
@@ -107,6 +103,7 @@ const styles = StyleSheet.create({
         height: 60,
         paddingBottom: 5,
         paddingTop: 5,
+        backgroundColor: colors.background,
     },
     tabBarItem: {
         alignItems: 'center',
@@ -120,4 +117,3 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 });
-

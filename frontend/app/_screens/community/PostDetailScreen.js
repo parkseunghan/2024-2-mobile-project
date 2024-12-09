@@ -449,7 +449,6 @@ const styles = StyleSheet.create({
     },
     commentItem: {
         padding: spacing.md,
-        borderBottomWidth: 1,
         borderBottomColor: colors.border,
     },
     commentHeader: {

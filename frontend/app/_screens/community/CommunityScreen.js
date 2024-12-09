@@ -422,8 +422,8 @@ const styles = StyleSheet.create({
     },
     tabContainer: {
         flexDirection: 'row',
-        paddingHorizontal: 16,
-        marginBottom: 8,
+        paddingHorizontal: spacing.md,
+        marginBottom: spacing.md,
     },
     tab: {
         flex: 1,
@@ -505,11 +505,6 @@ const styles = StyleSheet.create({
         padding: spacing.sm,
         margin: spacing.sm,
         backgroundColor: colors.surface,
-    },
-    tabContainer: {
-        flexDirection: 'row',
-        paddingHorizontal: spacing.md,
-        marginBottom: spacing.sm,
     },
     categoryContainer: {
         paddingHorizontal: spacing.sm,

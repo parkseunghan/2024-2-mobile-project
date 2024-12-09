@@ -59,7 +59,7 @@ export function Menu({ isVisible, onClose, anchorPosition }) {
             icon: "users",
             label: "꿀팁 공유",
             onPress: () => {
-                router.push('/community');
+                router.push('community/');
                 onClose();
             }
         },
@@ -112,21 +112,20 @@ export function Menu({ isVisible, onClose, anchorPosition }) {
                             <MenuItem key={`common-${index}`} {...item} />
                         ))}
 
-                        {/* 구분선 */}
-                        {user && <View style={styles.divider} />}
-
                         {/* 관리자 메뉴 */}
                         {isAdmin && adminMenuItems.length > 0 && (
                             <>
                                 <View style={styles.divider} />
                                 {adminMenuItems.map((item, index) => (
-                                    <MenuItem key={`admin-${index}`} {...item} />
+                                    <MenuItem key={`admin-${index}`} {...item} 
+                                    />
+                                    
                                 ))}
                             </>
                         )}
 
                         {/* 로그인/로그아웃 */}
-                        <View style={styles.divider} />
+                        <View style={styles.divider}/>
                         {user ? (
                             <MenuItem
                                 icon="sign-out-alt"
@@ -154,6 +153,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     menuContainer: {
+        marginTop: 15,
         backgroundColor: 'white',
         borderRadius: 8,
         shadowColor: '#000',

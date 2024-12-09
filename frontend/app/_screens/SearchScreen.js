@@ -192,6 +192,7 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.sm,
         borderRadius: 20,
         marginRight: spacing.xs,
+        paddingbottom: spacing.xs,
     },
     historyIcon: {
         marginRight: spacing.xs,
@@ -239,6 +240,7 @@ const styles = StyleSheet.create({
         paddingVertical: spacing.sm,
         borderRadius: 16,
         marginRight: spacing.sm,
+        marginBottom: spacing.sm,
         ...Platform.select({
             ios: {
                 shadowColor: colors.text.primary,

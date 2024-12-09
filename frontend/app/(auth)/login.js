@@ -1,22 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Alert, ScrollView, Image, Animated, Pressable } from 'react-native'; // 🚀 Image, Animated, Pressable 추가
+import { View, Text, StyleSheet, Alert, ScrollView, Animated, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Input } from '@app/_components/common/Input';
-import { Button } from '@app/_components/common/Button';
 import { spacing } from '@app/_styles/spacing';
 import { useAuth } from '@app/_lib/hooks';
+import { colors } from '@app/_styles/colors';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { login, signupEmail, setSignupEmail, user, isLoading } = useAuth();
   const [formData, setFormData] = useState({ email: signupEmail || '', password: '' });
   const [loading, setLoading] = useState(false);
+
+  // 애니메이션 값
   const loginScale = useRef(new Animated.Value(1)).current;
+  const signupScale = useRef(new Animated.Value(1)).current;
+  const guestScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    return () => {
-      setSignupEmail('');
-    };
+    return () => setSignupEmail('');
   }, []);
 
   useEffect(() => {
@@ -48,26 +50,25 @@ export default function LoginScreen() {
     }
   };
 
-  const handlePressIn = () => {
-    Animated.spring(loginScale, {
+  // 애니메이션 함수
+  const handlePressIn = (scale) => {
+    Animated.spring(scale, {
       toValue: 0.95,
-      useNativeDriver: true
+      useNativeDriver: true,
     }).start();
   };
 
-  const handlePressOut = () => {
-    Animated.spring(loginScale, {
+  const handlePressOut = (scale) => {
+    Animated.spring(scale, {
       toValue: 1,
       friction: 3,
       tension: 40,
-      useNativeDriver: true
+      useNativeDriver: true,
     }).start();
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} bounces={false}>
-     
-
       <View style={styles.form}>
         <Input
           label="이메일"
@@ -91,18 +92,37 @@ export default function LoginScreen() {
 
       <View style={styles.buttons}>
         <Animated.View style={{ transform: [{ scale: loginScale }] }}>
-          <Pressable 
-            style={styles.loginButton} 
-            onPress={handleLogin} 
-            onPressIn={handlePressIn} 
-            onPressOut={handlePressOut}
+          <Pressable
+            style={styles.loginButton}
+            onPress={handleLogin}
+            onPressIn={() => handlePressIn(loginScale)}
+            onPressOut={() => handlePressOut(loginScale)}
           >
-            <Text style={styles.buttonText}>{loading ? "로그인 중..." : "로그인"}</Text>
+            <Text style={styles.buttonText}>{loading ? '로그인 중...' : '로그인'}</Text>
           </Pressable>
         </Animated.View>
-        
-        <Button title="계정이 없으신가요? 회원가입" onPress={() => router.push('/signup')} fullWidth variant="secondary" />
-        <Button title="비회원으로 이용하기" onPress={() => router.replace('/(tabs)/home')} fullWidth variant="secondary" />
+
+        <Animated.View style={{ transform: [{ scale: signupScale }] }}>
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => router.push('/signup')}
+            onPressIn={() => handlePressIn(signupScale)}
+            onPressOut={() => handlePressOut(signupScale)}
+          >
+            <Text style={styles.buttonText}>계정이 없으신가요? 회원가입</Text>
+          </Pressable>
+        </Animated.View>
+
+        <Animated.View style={{ transform: [{ scale: guestScale }] }}>
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => router.replace('/(tabs)/home')}
+            onPressIn={() => handlePressIn(guestScale)}
+            onPressOut={() => handlePressOut(guestScale)}
+          >
+            <Text style={styles.buttonText}>비회원으로 이용하기</Text>
+          </Pressable>
+        </Animated.View>
       </View>
     </ScrollView>
   );
@@ -111,20 +131,11 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFF7E0', // 🍯 꿀 느낌의 배경색
+    backgroundColor: colors.background, // 🍯 꿀 느낌의 배경색
   },
   contentContainer: {
     padding: spacing.xl,
     flexGrow: 1,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: spacing.xl,
-  },
-  logo: {
-    width: 120,
-    height: 120,
-    resizeMode: 'contain',
   },
   form: {
     marginBottom: spacing.xl,
@@ -156,7 +167,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   secondaryButton: {
-    backgroundColor: '#FFD700',
+    backgroundColor: '#FFA000',
     borderRadius: 25,
     paddingVertical: 16,
     justifyContent: 'center',

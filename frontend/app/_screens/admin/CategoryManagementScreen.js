@@ -3,6 +3,9 @@ import { View, Text, StyleSheet, TextInput, Pressable, Alert, ScrollView, Activi
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi } from '@app/_lib/api/admin';
 import { useAuth } from '@app/_context/AuthContext';
+import { colors } from '@app/_styles/colors';
+import { spacing } from '@app/_styles/spacing';
+import { typography } from '@app/_styles/typography';
 
 export default function CategoryManagement() {
     const { user } = useAuth();
@@ -148,7 +151,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: '#fff',
+        backgroundColor: colors.background,
     },
     title: {
         fontSize: 24,
@@ -158,25 +161,25 @@ const styles = StyleSheet.create({
     formContainer: {
         marginBottom: 20,
         padding: 15,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: colors.background,
         borderRadius: 10,
     },
     input: {
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: colors.border,
         borderRadius: 8,
-        padding: 12,
-        marginBottom: 10,
-        backgroundColor: '#fff',
+        padding: spacing.md,
+        marginBottom: spacing.md,
+        ...typography.body,
     },
     submitButton: {
-        backgroundColor: '#007AFF',
+        backgroundColor: colors.primary,
         padding: 15,
         borderRadius: 8,
         alignItems: 'center',
     },
     submitButtonText: {
-        color: '#fff',
+        color: 'white',
         fontSize: 16,
         fontWeight: '600',
     },
@@ -188,7 +191,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 15,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: 'white',
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#e0e0e0',
