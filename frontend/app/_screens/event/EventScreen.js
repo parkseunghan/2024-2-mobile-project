@@ -44,17 +44,19 @@ export default function EventScreen() {
 
     const posts = allPostsData?.pages.flatMap((page) => page.posts) ?? [];
 
+    // "공지" 또는 "이벤트" 카테고리의 게시물만 필터링
+    const filteredPosts = posts.filter((post) => post.category === '공지' || post.category === '이벤트');
+
     // '공지' 카테고리의 최신 게시물 3개 가져오기
     const noticePosts = posts.filter((post) => post.category === '공지').slice(0, 3);
 
-    // 좋아요 수가 1개 이상인 게시물 필터링 및 정렬
-    const topLikedPosts = posts
-        .filter((post) => post.like_count > 0)
+    // 이벤트 게시물 중 조회수와 좋아요 수가 상위 3개를 가져오기
+    const topEventPosts = posts
+        .filter((post) => post.category === '이벤트')
         .sort((a, b) => {
-            if (b.like_count === a.like_count) {
-                return b.view_count - a.view_count;
-            }
-            return b.like_count - a.like_count;
+            const scoreA = a.like_count + a.view_count;
+            const scoreB = b.like_count + b.view_count;
+            return scoreB - scoreA; // 높은 점수 순으로 정렬
         })
         .slice(0, 3);
 
@@ -178,10 +180,10 @@ export default function EventScreen() {
                     />
                 )}
 
-                {/* 인기 게시물 리스트 */}
-                {topLikedPosts.length > 0 && (
+                {/* 이벤트 상위 3개 게시물 리스트 */}
+                {topEventPosts.length > 0 && (
                     <FlatList
-                        data={topLikedPosts}
+                        data={topEventPosts}
                         renderItem={({ item, index }) => (
                             <Pressable
                                 style={styles.topPostContainer}
@@ -217,13 +219,13 @@ export default function EventScreen() {
                         )}
                         keyExtractor={item => item.id.toString()}
                         showsVerticalScrollIndicator={false}
-                        ListHeaderComponent={<Text style={styles.topPostsHeader}>인기 게시물</Text>}
+                        ListHeaderComponent={<Text style={styles.topPostsHeader}>이벤트 당첨 후보 TOP3</Text>}
                     />
                 )}
 
-                {/* 전체 게시글 리스트 */}
+                {/* 전체 게시글 리스트 (공지 및 이벤트 게시물만) */}
                 <FlatList
-                    data={posts}
+                    data={filteredPosts}
                     renderItem={renderPost}
                     keyExtractor={item => item.id.toString()}
                     onEndReached={onEndReached}
@@ -426,19 +428,5 @@ const styles = StyleSheet.create({
         resizeMode: 'cover',
         borderRadius: 15, // 배너 둥글게
     },
-    postHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 4,
-    },
-    category: {
-        fontSize: 12,
-        color: colors.primary,
-        fontWeight: '500',
-    },
-    postDate: {
-        fontSize: 12,
-        color: colors.text.secondary,
-    },
 });
+

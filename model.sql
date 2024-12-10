@@ -283,7 +283,9 @@ INSERT INTO post_categories (name, description, created_by) VALUES
 ('생활', '생활 꿀팁 게시글', 1),
 ('운동', '운동 꿀팁 게시글', 1),
 ('패션', '패션 꿀팁 게시글', 1),
-('자동차', '자동차 꿀팁 게시글', 1);
+('자동차', '자동차 꿀팁 게시글', 1),
+('공지', '공지 게시글', 1),
+('이벤트', '이벤트 게시글', 1);
 
 -- 기본 게시글 데이터 추가
 INSERT INTO posts (user_id, title, content, category, media_url, is_deleted, is_notice, is_hidden, last_comment_at, view_count, score) VALUES
@@ -294,7 +296,11 @@ INSERT INTO posts (user_id, title, content, category, media_url, is_deleted, is_
 (5, '생활 속 꿀팁', '일상에서 유용하게 사용할 수 있는 꿀팁입니다.', '생활', NULL, false, false, false, NULL, 200, 20),
 (6, '운동으로 건강 챙기기', '운동을 통해 건강을 유지하는 방법에 대한 글입니다.', '운동', NULL, false, false, false, NULL, 60, 6),
 (7, '패션 트렌드 2024', '2024년 패션 트렌드에 대한 논의입니다.', '패션', NULL, false, false, false, NULL, 110, 11),
-(1, '자동차 관리 팁', '자동차를 잘 관리하는 방법에 대해 이야기합니다.', '자동차', NULL, false, false, false, NULL, 70, 7);
+(1, '자동차 관리 팁', '자동차를 잘 관리하는 방법에 대해 이야기합니다.', '자동차', NULL, false, false, false, NULL, 70, 7),
+(1, '🎉 커뮤니티 이용 안내 및 공지사항', '안녕하세요! 이 커뮤니티의 이용 방법과 공지사항에 대해 알려드립니다. 여기에서는 유익한 꿀팁을 서로 공유할 수 있습니다. 불건전한 게시글은 삭제될 수 있습니다.', '공지', NULL, false, false, false, NULL, 999, 0),
+(2, '겨울 난방비 절약 꿀팁 5가지', '겨울철 난방비를 줄일 수 있는 꿀팁 5가지를 소개합니다. 첫째, 창문에 단열 필름을 붙이세요. 둘째, 바닥에 카펫을 깔아보세요. 셋째, 외출 시 보일러 온도를 낮추고 외출 모드를 활용하세요. 넷째, 사용하지 않는 방의 문은 닫아두세요. 다섯째, 스마트 플러그로 대기 전력을 차단하세요.', '이벤트', 'https://via.placeholder.com/150', false, false, false, NULL, 45, 0),
+(3, '난방비 폭탄 피하는 법', '이번 겨울에는 난방비 폭탄을 피하기 위해 몇 가지 팁을 실천하고 있어요. 저는 보일러의 외출 모드를 적극 활용하고 있습니다. 이 기능을 사용하면 집에 아무도 없을 때 보일러가 자동으로 온도를 낮춰서 에너지 절약이 가능하더라구요!', '이벤트', 'https://via.placeholder.com/150', false, false, false, NULL, 30, 0),
+(5, '보일러 절약의 핵심은 문단속!', '문을 열어두면 따뜻한 공기가 쉽게 빠져나가기 때문에, 꼭 문을 닫고 생활하세요! 특히, 사용하지 않는 방의 문을 닫아두면 전체 난방비 절약에 효과적이에요. 간단하지만 효과가 큰 방법입니다.', '이벤트', 'https://via.placeholder.com/150', false, false, false, NULL, 25, 0);
 
 -- 기본 댓글 데이터 추가
 INSERT INTO comments (post_id, user_id, parent_id, depth, content, is_deleted, like_count) VALUES
