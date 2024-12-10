@@ -1,5 +1,5 @@
-const db = require('../config/database');
-const bcrypt = require('bcrypt');
+const db = require('../config/database'); // 데이터베이스 연결 설정을 불러옴.
+const bcrypt = require('bcrypt'); // 비밀번호 해싱을 위한 bcrypt 모듈을 불러옴.
 
 /**
  * 사용자 관련 데이터베이스 작업을 처리하는 Model 클래스
@@ -11,16 +11,17 @@ class User {
    * @param {string} userData.username - 사용자명
    * @param {string} userData.email - 이메일
    * @param {string} userData.password - 비밀번호
+   * @param {string} [userData.role='user'] - 사용자 역할, 기본값은 'user'
    * @returns {Promise<Object>} 생성된 사용자 정보
    */
   static async create({ username, email, password, role = 'user' }) {
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10); // 비밀번호 해싱
     const [result] = await db.query(
         `INSERT INTO users (username, email, password, role) 
          VALUES (?, ?, ?, ?)`,
         [username, email, hashedPassword, role]
     );
-    return { id: result.insertId, username, email, role };
+    return { id: result.insertId, username, email, role }; // 생성된 사용자 정보 반환
   }
 
   /**
@@ -37,21 +38,21 @@ class User {
          WHERE u.email = ? AND u.is_active = true`,
         [email]
       );
-      return users[0];
+      return users[0]; // 찾은 사용자 정보 반환
     } catch (error) {
       console.error('사용자 조회 에러:', error);
-      throw new Error('사용자 조회에 실패했습니다.');
+      throw new Error('사용자 조회에 실패했습니다.'); // 에러 처리
     }
   }
 
   /**
-   * 모밀번호 검증
+   * 비밀번호 검증
    * @param {string} password - 입력된 비밀번호
    * @param {string} hashedPassword - 저장된 해시 비밀번호
    * @returns {Promise<boolean>} 검증 결과
    */
   static async verifyPassword(password, hashedPassword) {
-    return await bcrypt.compare(password, hashedPassword);
+    return await bcrypt.compare(password, hashedPassword); // 비밀번호 검증
   }
 
   /**
@@ -71,10 +72,10 @@ class User {
          WHERE u.id = ?`,
         [id]
       );
-      return users[0];
+      return users[0]; // 찾은 사용자 정보 반환
     } catch (error) {
       console.error('사용자 조회 에러:', error);
-      throw new Error('사용자 조회에 실패했습니다.');
+      throw new Error('사용자 조회에 실패했습니다.'); // 에러 처리
     }
   }
 
@@ -104,10 +105,10 @@ class User {
       `);
 
       console.log('[User.getRankings] 조회된 랭킹 데이터:', rankings.length);
-      return rankings;
+      return rankings; // 랭킹 정보 반환
     } catch (error) {
       console.error('[User.getRankings] 랭킹 조회 에러:', error);
-      throw error;
+      throw error; // 에러 처리
     }
   }
 
@@ -123,7 +124,7 @@ class User {
         ['view_count']
       );
       
-      if (!settings[0]) return 0;
+      if (!settings[0]) return 0; // 설정이 없을 경우 0 반환
       
       const { points, max_points_per_item } = settings[0];
       
@@ -138,10 +139,10 @@ class User {
       // 모든 게시물의 조회수 점수 합계 계산
       const totalViewScore = rows.reduce((sum, row) => sum + row.post_view_score, 0);
       
-      return totalViewScore;
+      return totalViewScore; // 총 조회수 점수 반환
     } catch (error) {
       console.error('조회수 점수 계산 에러:', error);
-      return 0;
+      return 0; // 에러 발생 시 0 반환
     }
   }
 
@@ -220,86 +221,111 @@ class User {
 
     } catch (error) {
       console.error('사용자 점수 업데이트 에러:', error);
-      throw new Error('점수 업데이트에 실패했습니다.');
+      throw new Error('점수 업데이트에 실패했습니다.'); // 에러 처리
     }
   }
 
+  /**
+   * 모든 사용자를 조회합니다.
+   * @param {number} [page=1] - 페이지 번호
+   * @param {number} [limit=20] - 페이지당 사용자 수
+   * @param {string} [search=''] - 검색어
+   * @returns {Promise<Array>} 사용자 목록
+   */
   static async getAllUsers(page = 1, limit = 20, search = '') {
     try {
-        const offset = (page - 1) * limit;
-        let query = `
-            SELECT 
-                id, 
-                username, 
-                email, 
-                role, 
-                is_active as status, 
-                created_at,
-                current_rank_id as user_rank
-            FROM users
-            WHERE is_active = true
-        `;
+      const offset = (page - 1) * limit; // 오프셋 계산
+      let query = `
+          SELECT 
+              id, 
+              username, 
+              email, 
+              role, 
+              is_active as status, 
+              created_at,
+              current_rank_id as user_rank
+          FROM users
+          WHERE is_active = true
+      `;
 
-        const params = [];
-        
-        if (search) {
-            query += ` AND (username LIKE ? OR email LIKE ?)`;
-            params.push(`%${search}%`, `%${search}%`);
-        }
+      const params = [];
+      
+      if (search) {
+          query += ` AND (username LIKE ? OR email LIKE ?)`; // 검색어가 있을 경우
+          params.push(`%${search}%`, `%${search}%`);
+      }
 
-        query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-        params.push(limit, offset);
+      query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+      params.push(limit, offset);
 
-        const [users] = await db.query(query, params);
-        return users;
+      const [users] = await db.query(query, params); // 사용자 목록 조회
+      return users; // 사용자 목록 반환
     } catch (error) {
-        console.error('사용자 목록 조회 에러:', error);
-        throw error;
+      console.error('사용자 목록 조회 에러:', error);
+      throw error; // 에러 처리
     }
   }
 
+  /**
+   * ID로 사용자를 찾고 업데이트합니다.
+   * @param {number} id - 사용자 ID
+   * @param {Object} updates - 업데이트할 데이터
+   * @returns {Promise<boolean>} 업데이트 성공 여부
+   */
   static async findByIdAndUpdate(id, updates) {
     try {
       const [result] = await db.query(
         'UPDATE users SET ? WHERE id = ?',
         [updates, id]
       );
-      return result.affectedRows > 0;
+      return result.affectedRows > 0; // 업데이트 성공 여부 반환
     } catch (error) {
       console.error('사용자 업데이트 에러:', error);
-      throw error;
+      throw error; // 에러 처리
     }
   }
 
+  /**
+   * 사용자 상태를 업데이트합니다.
+   * @param {number} id - 사용자 ID
+   * @param {string} status - 활성화 또는 비활성화 상태
+   * @returns {Promise<boolean>} 업데이트 성공 여부
+   */
   static async updateStatus(id, status) {
     try {
       const [result] = await db.query(
         'UPDATE users SET is_active = ? WHERE id = ?',
         [status === 'active', id]
       );
-      return result.affectedRows > 0;
+      return result.affectedRows > 0; // 업데이트 성공 여부 반환
     } catch (error) {
       console.error('사용자 상태 업데이트 에러:', error);
-      throw error;
+      throw error; // 에러 처리
     }
   }
 
+  /**
+   * 사용자의 역할을 업데이트합니다.
+   * @param {number} id - 사용자 ID
+   * @param {string} role - 사용자 역할
+   * @returns {Promise<boolean>} 업데이트 성공 여부
+   */
   static async updateRole(id, role) {
     try {
       if (!['user', 'admin'].includes(role)) {
-        throw new Error('유효하지 않은 역할입니다.');
+        throw new Error('유효하지 않은 역할입니다.'); // 유효하지 않은 역할 처리
       }
       
       const [result] = await db.query(
         'UPDATE users SET role = ? WHERE id = ?',
         [role, id]
       );
-      return result.affectedRows > 0;
+      return result.affectedRows > 0; // 업데이트 성공 여부 반환
     } catch (error) {
       console.error('사용자 역할 업데이트 에러:', error);
-      throw error;
+      throw error; // 에러 처리
     }
   }
 }
 
-module.exports = User;
+module.exports = User; // User 모듈을 내보냄.
