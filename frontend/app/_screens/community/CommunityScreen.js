@@ -57,58 +57,61 @@ export default function CommunityScreen() {
 
     const posts = allPostsData?.pages.flatMap(page => page.posts) ?? [];
 
-    const renderPost = useCallback(({ item }) => (
-        <Pressable
-            style={styles.postContainer}
-            onPress={() => router.push(`/post/${item.id}`)}
-        >
-            <View style={styles.postContent}>
-                <View style={styles.postHeader}>
-                    <Text style={styles.category}>{item.category}</Text>
-                    <Text style={styles.postDate}>
-                        {new Date(item.created_at).toLocaleDateString()}
+    const renderPost = useCallback(({ item }) => {
+        if (item.category === '이벤트') return null;
+        return (
+            <Pressable
+                style={styles.postContainer}
+                onPress={() => router.push(`/post/${item.id}`)}
+            >
+                <View style={styles.postContent}>
+                    <View style={styles.postHeader}>
+                        <Text style={styles.category}>{item.category}</Text>
+                        <Text style={styles.postDate}>
+                            {new Date(item.created_at).toLocaleDateString()}
+                        </Text>
+                    </View>
+                    <Text style={styles.postTitle} numberOfLines={2}>
+                        {item.title}
                     </Text>
-                </View>
-                <Text style={styles.postTitle} numberOfLines={2}>
-                    {item.title}
-                </Text>
-                <View style={styles.authorContainer}>
-                    <Text style={[
-                        styles.authorRank,
-                        { color: item.author_rank_color }
-                    ]}>
-                        {item.author_rank}
-                    </Text>
-                    <Text style={styles.authorName}>{item.author_name}</Text>
-                </View>
-                <View style={styles.postStats}>
-                    <View style={styles.statItem}>
-                        <Icon name="remove-red-eye" size={16} color={colors.text.secondary} />
-                        <Text style={styles.statText}>{item.view_count}</Text>
+                    <View style={styles.authorContainer}>
+                        <Text style={[
+                            styles.authorRank,
+                            { color: item.author_rank_color }
+                        ]}>
+                            {item.author_rank}
+                        </Text>
+                        <Text style={styles.authorName}>{item.author_name}</Text>
                     </View>
-                    <View style={styles.statItem}>
-                        <FontAwesome5
-                            name="heart"
-                            size={16}
-                            color={item.is_liked ? colors.error : colors.text.secondary}
-                        />
-                        <Text style={styles.statText}>{item.like_count}</Text>
-                    </View>
-                    <View style={styles.statItem}>
-                        <Icon name="comment" size={16} color={colors.text.secondary} />
-                        <Text style={styles.statText}>{item.comment_count}</Text>
+                    <View style={styles.postStats}>
+                        <View style={styles.statItem}>
+                            <Icon name="remove-red-eye" size={16} color={colors.text.secondary} />
+                            <Text style={styles.statText}>{item.view_count}</Text>
+                        </View>
+                        <View style={styles.statItem}>
+                            <FontAwesome5
+                                name="heart"
+                                size={16}
+                                color={item.is_liked ? colors.error : colors.text.secondary}
+                            />
+                            <Text style={styles.statText}>{item.like_count}</Text>
+                        </View>
+                        <View style={styles.statItem}>
+                            <Icon name="comment" size={16} color={colors.text.secondary} />
+                            <Text style={styles.statText}>{item.comment_count}</Text>
+                        </View>
                     </View>
                 </View>
-            </View>
-            {item.media_url && (
-                <Image
-                    source={{ uri: item.media_url }}
-                    style={styles.postImage}
-                    resizeMode="cover"
-                />
-            )}
-        </Pressable>
-    ), []);
+                {item.media_url && (
+                    <Image
+                        source={{ uri: item.media_url }}
+                        style={styles.postImage}
+                        resizeMode="cover"
+                    />
+                )}
+            </Pressable>
+        );
+    }, []);
 
     // 무한 스크롤 처리
     const onEndReached = useCallback(() => {
