@@ -55,10 +55,13 @@ export default function CommunityScreen() {
         staleTime: 1000 * 60 * 30, // 30분간 캐시 유지
     });
 
+    // '이벤트'와 '공지' 카테고리를 제외한 카테고리 필터링
+    const filteredCategories = categories.filter(category => category.name !== '이벤트' && category.name !== '공지');
+
     const posts = allPostsData?.pages.flatMap(page => page.posts) ?? [];
 
     const renderPost = useCallback(({ item }) => {
-        if (item.category === '이벤트') return null;
+        if (item.category === '이벤트' || item.category === '공지') return null;
         return (
             <Pressable
                 style={styles.postContainer}
@@ -158,7 +161,7 @@ export default function CommunityScreen() {
                         style={styles.categoryContainer}
                         showsHorizontalScrollIndicator={false}
                     >
-                        {categories.map((category) => (
+                        {filteredCategories.map((category) => (
                             <Pressable
                                 key={category.id}
                                 onPress={() => setSelectedCategory(category.name)}
