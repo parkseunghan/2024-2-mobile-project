@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const db = require('../config/database'); // 데이터베이스 설정을 불러옴.
 
 /**
  * 검색 기록 관련 데이터베이스 작업을 처리하는 Model 클래스
@@ -11,9 +11,9 @@ class SearchHistory {
    * @returns {Promise<number>} 생성된 검색 기록의 ID
    */
   static async add(userId, query) {
-    const connection = await db.getConnection();
+    const connection = await db.getConnection(); // 데이터베이스 연결 가져오기
     try {
-      await connection.beginTransaction();
+      await connection.beginTransaction(); // 트랜잭션 시작
 
       // 동일한 검색어가 있다면 삭제
       await connection.query(
@@ -50,14 +50,14 @@ class SearchHistory {
         [userId, query]
       );
 
-      await connection.commit();
-      return result.insertId;
+      await connection.commit(); // 트랜잭션 커밋
+      return result.insertId; // 생성된 검색 기록의 ID 반환
 
     } catch (error) {
-      await connection.rollback();
-      throw error;
+      await connection.rollback(); // 에러 발생 시 트랜잭션 롤백
+      throw error; // 에러 발생
     } finally {
-      connection.release();
+      connection.release(); // 데이터베이스 연결 해제
     }
   }
 
@@ -76,7 +76,7 @@ class SearchHistory {
        LIMIT 10`,
       [userId]
     );
-    return rows;
+    return rows; // 검색 기록 목록 반환
   }
 
   /**
@@ -85,7 +85,7 @@ class SearchHistory {
    * @returns {Promise<void>}
    */
   static async deleteByUserId(userId) {
-    await db.query('DELETE FROM search_history WHERE user_id = ?', [userId]);
+    await db.query('DELETE FROM search_history WHERE user_id = ?', [userId]); // 검색 기록 삭제
   }
 
   /**
@@ -97,7 +97,7 @@ class SearchHistory {
   static async deleteQuery(userId, query) {
     await db.query(
       'DELETE FROM search_history WHERE user_id = ? AND query = ?',
-      [userId, query]
+      [userId, query] // 특정 검색어 삭제
     );
   }
 
@@ -116,7 +116,7 @@ class SearchHistory {
       ORDER BY search_count DESC, search_date DESC
       LIMIT 10
     `);
-    return rows;
+    return rows; // 검색 통계 정보 반환
   }
 
   /**
@@ -132,8 +132,8 @@ class SearchHistory {
       GROUP BY HOUR(created_at)
       ORDER BY hour
     `);
-    return rows;
+    return rows; // 시간대별 검색 통계 반환
   }
 }
 
-module.exports = SearchHistory; 
+module.exports = SearchHistory; // SearchHistory 모델을 내보냄.

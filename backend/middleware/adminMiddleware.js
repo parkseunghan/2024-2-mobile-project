@@ -1,3 +1,9 @@
+/**
+ * 관리자 권한을 확인하는 미들웨어
+ * @param {Object} req - 요청 객체
+ * @param {Object} res - 응답 객체
+ * @param {Function} next - 다음 미들웨어로 이동하는 함수
+ */
 const adminMiddleware = (req, res, next) => {
     try {
         // 인증된 사용자 정보가 없을 경우
